@@ -131,12 +131,17 @@ CREATE POLICY "Users can update their own couple profile" ON couples
   );
 
 -- Profiles policies
+CREATE OR REPLACE FUNCTION public.get_my_couple_id()
+RETURNS UUID AS $$
+BEGIN
+  RETURN (SELECT couple_id FROM public.profiles WHERE id = auth.uid());
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER;
+
 CREATE POLICY "Users can view profiles in same couple" ON profiles
   FOR SELECT USING (
     id = auth.uid() OR 
-    couple_id IN (
-      SELECT couple_id FROM profiles WHERE id = auth.uid()
-    )
+    (couple_id IS NOT NULL AND couple_id = public.get_my_couple_id())
   );
 
 CREATE POLICY "Users can update own profile" ON profiles
