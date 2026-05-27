@@ -137,6 +137,46 @@ export default function HomeScreen() {
         </Text>
       </TouchableOpacity>
 
+      {/* Relationship Health Card */}
+      <TouchableOpacity
+        style={[
+          styles.journalCard,
+          (!isPaired || completedSessionsCount < 10) && styles.journalCardLocked,
+        ]}
+        onPress={() => {
+          if (!isPaired) {
+            Alert.alert('Pairing Required', 'You need to be paired with a partner to access Relationship Health.');
+          } else if (completedSessionsCount < 10) {
+            Alert.alert(
+              'Milestone Locked 🔒',
+              `Complete 10 shared sessions to unlock Relationship Health Check-ins. Progress: ${completedSessionsCount}/10 sessions.`
+            );
+          } else {
+            router.push('/health');
+          }
+        }}
+        activeOpacity={0.85}
+      >
+        <View style={styles.journalHeaderRow}>
+          <Text style={styles.journalEmoji}>❤️</Text>
+          {completedSessionsCount < 10 ? (
+            <View style={styles.lockedBadge}>
+              <Text style={styles.lockedBadgeText}>🔒 Locked</Text>
+            </View>
+          ) : (
+            <View style={styles.lockedBadge}>
+              <Text style={styles.lockedBadgeText}>✨ Unlocked</Text>
+            </View>
+          )}
+        </View>
+        <Text style={styles.journalTitle}>Relationship Health</Text>
+        <Text style={styles.journalDesc}>
+          {completedSessionsCount >= 10
+            ? 'Track and visualize your weekly couple alignment radar'
+            : `Unlock after 10 sessions • Progress: ${completedSessionsCount}/10`}
+        </Text>
+      </TouchableOpacity>
+
       {/* Status Card */}
       <View style={styles.statusCard}>
         <Text style={styles.statusTitle}>Relationship Status</Text>

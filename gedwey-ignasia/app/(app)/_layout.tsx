@@ -73,6 +73,8 @@ export default function AppLayout() {
       <Stack.Screen name="capsule/index" />
       <Stack.Screen name="capsule/create" />
       <Stack.Screen name="capsule/[id]" />
+      <Stack.Screen name="health/index" />
+      <Stack.Screen name="health/checkin" />
     </Stack>
   );
 }
