@@ -1,0 +1,94 @@
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { supabase } from '../supabase';
+
+export interface JournalEntry {
+  id: string;
+  created_at: string;
+  updated_at: string;
+  couple_id: string;
+  creator_id: string;
+  title: string;
+  content: string;
+  image_url: string | null;
+  profiles?: {
+    display_name: string | null;
+  };
+}
+
+// Fetch all journal entries for a couple
+export const useJournalEntries = (coupleId: string) => {
+  return useQuery<JournalEntry[], Error>({
+    queryKey: ['journalEntries', coupleId],
+    queryFn: async () => {
+      if (!coupleId) return [];
+
+      const { data, error } = await supabase
+        .from('journal_entries')
+        .select('*, profiles:creator_id(display_name)')
+        .eq('couple_id', coupleId)
+        .order('created_at', { ascending: false });
+
+      if (error) {
+        throw new Error(error.message);
+      }
+      return (data || []) as JournalEntry[];
+    },
+    enabled: !!coupleId,
+  });
+};
+
+// Fetch a single journal entry by ID
+export const useJournalEntry = (entryId: string) => {
+  return useQuery<JournalEntry, Error>({
+    queryKey: ['journalEntry', entryId],
+    queryFn: async () => {
+      if (!entryId) throw new Error('Entry ID is required');
+
+      const { data, error } = await supabase
+        .from('journal_entries')
+        .select('*, profiles:creator_id(display_name)')
+        .eq('id', entryId)
+        .single();
+
+      if (error) {
+        throw new Error(error.message);
+      }
+      return data as JournalEntry;
+    },
+    enabled: !!entryId,
+  });
+};
+
+// Create a new journal entry
+export const useCreateJournalEntry = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation<
+    JournalEntry,
+    Error,
+    { coupleId: string; creatorId: string; title: string; content: string; imageUrl?: string }
+  >({
+    mutationFn: async ({ coupleId, creatorId, title, content, imageUrl }) => {
+      const { data, error } = await supabase
+        .from('journal_entries')
+        .insert({
+          couple_id: coupleId,
+          creator_id: creatorId,
+          title,
+          content,
+          image_url: imageUrl || null,
+        })
+        .select('*, profiles:creator_id(display_name)')
+        .single();
+
+      if (error) {
+        throw new Error(error.message);
+      }
+      return data as JournalEntry;
+    },
+    onSuccess: (data) => {
+      // Invalidate the entries list for this couple
+      queryClient.invalidateQueries({ queryKey: ['journalEntries', data.couple_id] });
+    },
+  });
+};

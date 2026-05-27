@@ -4,11 +4,16 @@ import { useRouter } from 'expo-router';
 import { supabase } from '../../lib/supabase';
 import { useAuthStore } from '../../lib/store/authStore';
 import { useUserProfile } from '../../lib/queries/profile';
+import { useSessionHistory } from '../../lib/queries/sessions';
 
 export default function HomeScreen() {
   const { user } = useAuthStore();
   const { data: profile } = useUserProfile(user?.id ?? '');
   const router = useRouter();
+  
+  const { data: sessionHistory } = useSessionHistory(profile?.couple_id ?? '');
+  const completedSessionsCount = sessionHistory?.length ?? 0;
+  const isJournalUnlocked = completedSessionsCount >= 5;
 
   const handleSignOut = async () => {
     try {
@@ -63,6 +68,42 @@ export default function HomeScreen() {
           </Text>
         </TouchableOpacity>
       </View>
+
+      {/* Shared Journal Card */}
+      <TouchableOpacity
+        style={[
+          styles.journalCard,
+          (!isPaired || !isJournalUnlocked) && styles.journalCardLocked,
+        ]}
+        onPress={() => {
+          if (!isPaired) {
+            Alert.alert('Pairing Required', 'You need to be paired with a partner to access the Shared Journal.');
+          } else if (!isJournalUnlocked) {
+            Alert.alert(
+              'Journal Locked 🔒',
+              `Complete 5 sessions to unlock your shared space. Currently completed: ${completedSessionsCount}/5 sessions.`
+            );
+          } else {
+            router.push('/journal');
+          }
+        }}
+        activeOpacity={0.85}
+      >
+        <View style={styles.journalHeaderRow}>
+          <Text style={styles.journalEmoji}>📓</Text>
+          {!isJournalUnlocked && (
+            <View style={styles.lockedBadge}>
+              <Text style={styles.lockedBadgeText}>🔒 Locked</Text>
+            </View>
+          )}
+        </View>
+        <Text style={styles.journalTitle}>Shared Journal</Text>
+        <Text style={styles.journalDesc}>
+          {isJournalUnlocked
+            ? 'Write and explore shared private memories'
+            : `Unlock after 5 sessions • Progress: ${completedSessionsCount}/5`}
+        </Text>
+      </TouchableOpacity>
 
       {/* Status Card */}
       <View style={styles.statusCard}>
@@ -160,6 +201,57 @@ const styles = StyleSheet.create({
     color: '#64748B',
     textAlign: 'center',
     lineHeight: 16,
+  },
+  journalCard: {
+    backgroundColor: '#FFFFFF',
+    borderRadius: 16,
+    padding: 20,
+    borderWidth: 1,
+    borderColor: '#E5E7EB',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.03,
+    shadowRadius: 6,
+    elevation: 2,
+    marginBottom: 20,
+  },
+  journalCardLocked: {
+    borderColor: '#E2E8F0',
+    backgroundColor: '#F8FAFC',
+    opacity: 0.85,
+  },
+  journalHeaderRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 10,
+  },
+  journalEmoji: {
+    fontSize: 32,
+  },
+  lockedBadge: {
+    backgroundColor: '#EFF6FF',
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: '#DBEAFE',
+  },
+  lockedBadgeText: {
+    fontSize: 11,
+    fontWeight: '700',
+    color: '#2563EB',
+  },
+  journalTitle: {
+    fontSize: 18,
+    fontWeight: '700',
+    color: '#0F172A',
+    marginBottom: 4,
+  },
+  journalDesc: {
+    fontSize: 13,
+    color: '#64748B',
+    lineHeight: 18,
   },
   statusCard: {
     backgroundColor: '#FFFFFF',

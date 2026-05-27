@@ -66,6 +66,9 @@ export default function AppLayout() {
       <Stack.Screen name="session/mood" />
       <Stack.Screen name="session/card" />
       <Stack.Screen name="session/reveal" />
+      <Stack.Screen name="journal/index" />
+      <Stack.Screen name="journal/create" />
+      <Stack.Screen name="journal/[id]" />
     </Stack>
   );
 }
