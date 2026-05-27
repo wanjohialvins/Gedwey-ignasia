@@ -62,6 +62,10 @@ export default function AppLayout() {
       <Stack.Screen name="onboarding/mode-select" />
       <Stack.Screen name="onboarding/stage" />
       <Stack.Screen name="onboarding/invite" />
+      <Stack.Screen name="session/start" />
+      <Stack.Screen name="session/mood" />
+      <Stack.Screen name="session/card" />
+      <Stack.Screen name="session/reveal" />
     </Stack>
   );
 }
