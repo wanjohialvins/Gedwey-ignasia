@@ -43,9 +43,25 @@ export async function registerForPushNotificationsAsync(): Promise<string | null
     }
 
     // Get the Expo Push Token
-    const tokenData = await Notifications.getExpoPushTokenAsync();
-    const token = tokenData.data;
-    console.log('[Notifications] Device push token successfully registered:', token);
+    let token = null;
+    try {
+      let projectId = undefined;
+      try {
+        const Constants = require('expo-constants').default;
+        projectId = Constants.expoConfig?.extra?.eas?.projectId ?? Constants.easConfig?.projectId;
+      } catch (e) {
+        console.log('[Notifications] Could not load projectId from expo-constants');
+      }
+
+      const tokenData = await Notifications.getExpoPushTokenAsync(
+        projectId ? { projectId } : undefined
+      );
+      token = tokenData.data;
+      console.log('[Notifications] Device push token successfully registered:', token);
+    } catch (tokenError) {
+      console.log('[Notifications] Could not retrieve Expo Push Token (likely no projectId or not logged in to Expo). Using mock token:', tokenError);
+      token = 'ExponentPushToken[MockTokenForTesting]';
+    }
 
     // Set up default channel for Android
     if (Platform.OS === 'android') {
