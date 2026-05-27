@@ -1,6 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '../supabase';
 import { Card } from './cards';
+import { sendPushNotification } from '../notifications';
 
 export interface CoupleSession {
   id: string;
@@ -150,6 +151,40 @@ export const useSubmitSessionAnswer = () => {
         .single();
 
       if (error) throw new Error(error.message);
+
+      // Trigger notification to partner asynchronously
+      try {
+        const { data: myProfile } = await supabase
+          .from('profiles')
+          .select('partner_id')
+          .eq('id', userId)
+          .maybeSingle();
+
+        const partnerId = myProfile?.partner_id;
+        if (partnerId) {
+          const { data: partnerProfile } = await supabase
+            .from('profiles')
+            .select('expo_push_token')
+            .eq('id', partnerId)
+            .maybeSingle();
+
+          if (partnerProfile?.expo_push_token) {
+            const partnerToken = partnerProfile.expo_push_token;
+            const title = 'Moments';
+            const body = data.completed
+              ? 'Both of you have answered! Tap to reveal the answers.'
+              : "Your partner has answered today's session. Your turn!";
+
+            sendPushNotification(partnerToken, title, body, {
+              type: 'session_answered',
+              sessionId: data.id,
+            });
+          }
+        }
+      } catch (notificationError) {
+        console.error('[Notifications] Failed to send answer notification:', notificationError);
+      }
+
       return data as CoupleSession;
     },
     onSuccess: (data) => {

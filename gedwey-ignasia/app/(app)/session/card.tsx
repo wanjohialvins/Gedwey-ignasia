@@ -16,6 +16,7 @@ import { useAuthStore } from '../../../lib/store/authStore';
 import { useUserProfile } from '../../../lib/queries/profile';
 import { useCards, Card } from '../../../lib/queries/cards';
 import { useActiveSession, useCreateSession, useSubmitSessionAnswer } from '../../../lib/queries/sessions';
+import { scheduleLocalNotification } from '../../../lib/notifications';
 
 export default function SessionCardScreen() {
   const router = useRouter();
@@ -61,6 +62,14 @@ export default function SessionCardScreen() {
           answer: answer.trim(),
           mood: mood || undefined,
         });
+
+        // Schedule daily session reminder for 24 hours from now
+        await scheduleLocalNotification(
+          'Daily Check-in Reminder 🎴',
+          'It has been 24 hours since your last session. Connect with your partner today!',
+          86400,
+          'daily_session_reminder'
+        );
       } else {
         // Create new session with the answer
         await createSession.mutateAsync({
@@ -93,7 +102,14 @@ export default function SessionCardScreen() {
           answer: answer.trim(),
           mood: mood || undefined,
         })
-        .then(() => {
+        .then(async () => {
+          // Schedule daily session reminder for 24 hours from now
+          await scheduleLocalNotification(
+            'Daily Check-in Reminder 🎴',
+            'It has been 24 hours since your last session. Connect with your partner today!',
+            86400,
+            'daily_session_reminder'
+          );
           router.replace('/session/reveal');
         })
         .catch((err) => {

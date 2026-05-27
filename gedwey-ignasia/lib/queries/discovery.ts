@@ -1,6 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '../supabase';
 import { Card } from './cards';
+import { sendPushNotification } from '../notifications';
 
 export interface DiscoverySession {
   id: string;
@@ -93,6 +94,31 @@ export const useSubmitGuestAnswer = () => {
       if (error) {
         throw new Error(error.message);
       }
+
+      // Trigger notification to the discovery creator asynchronously
+      try {
+        const creatorId = data.creator_id;
+        if (creatorId) {
+          const { data: creatorProfile } = await supabase
+            .from('profiles')
+            .select('expo_push_token')
+            .eq('id', creatorId)
+            .maybeSingle();
+
+          if (creatorProfile?.expo_push_token) {
+            const creatorToken = creatorProfile.expo_push_token;
+            const title = 'Moments';
+            const body = `${guestName} answered your discovery card! Tap to read.`;
+
+            sendPushNotification(creatorToken, title, body, {
+              type: 'session_answered',
+            });
+          }
+        }
+      } catch (notificationError) {
+        console.error('[Notifications] Failed to send guest answer notification:', notificationError);
+      }
+
       return data as DiscoverySession;
     },
     onSuccess: (data) => {

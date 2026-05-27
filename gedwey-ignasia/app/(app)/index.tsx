@@ -3,9 +3,10 @@ import { View, Text, TouchableOpacity, StyleSheet, Alert, ScrollView } from 'rea
 import { useRouter } from 'expo-router';
 import { supabase } from '../../lib/supabase';
 import { useAuthStore } from '../../lib/store/authStore';
-import { useUserProfile } from '../../lib/queries/profile';
+import { useUserProfile, useUpdateProfile } from '../../lib/queries/profile';
 import { useSessionHistory } from '../../lib/queries/sessions';
 import { useTimeCapsules } from '../../lib/queries/capsules';
+import { registerForPushNotificationsAsync } from '../../lib/notifications';
 
 export default function HomeScreen() {
   const { user } = useAuthStore();

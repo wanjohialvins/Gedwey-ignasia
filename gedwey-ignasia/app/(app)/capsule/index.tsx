@@ -13,6 +13,7 @@ import { useRouter } from 'expo-router';
 import { useAuthStore } from '../../../lib/store/authStore';
 import { useUserProfile } from '../../../lib/queries/profile';
 import { useTimeCapsules, useOpenTimeCapsule, TimeCapsule } from '../../../lib/queries/capsules';
+import { scheduleLocalNotification } from '../../../lib/notifications';
 
 function getCountdownText(openDateString: string): { label: string; isReady: boolean } {
   const openDate = new Date(openDateString);
@@ -43,6 +44,26 @@ export default function CapsuleListScreen() {
   const openTimeCapsule = useOpenTimeCapsule();
 
   const isLoading = profileLoading || capsulesLoading;
+
+  // Schedule local notifications for future capsules on list load
+  React.useEffect(() => {
+    if (!capsules || capsules.length === 0) return;
+
+    capsules.forEach((capsule) => {
+      if (capsule.is_opened) return;
+      const openTime = new Date(capsule.open_date).getTime();
+      const delaySeconds = Math.floor((openTime - Date.now()) / 1000);
+
+      if (delaySeconds > 0) {
+        scheduleLocalNotification(
+          'Time Capsule Unlocked! ⏳',
+          `Your time capsule "${capsule.title}" is ready to be opened.`,
+          delaySeconds,
+          capsule.id
+        );
+      }
+    });
+  }, [capsules]);
 
   if (isLoading) {
     return (

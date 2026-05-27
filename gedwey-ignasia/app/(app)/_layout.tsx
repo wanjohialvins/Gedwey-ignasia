@@ -1,8 +1,10 @@
 import React, { useEffect } from 'react';
 import { Stack, useRouter, useSegments } from 'expo-router';
 import { View, Text } from 'react-native';
-import { useUserProfile } from '../../lib/queries/profile';
+import * as Notifications from 'expo-notifications';
+import { useUserProfile, useUpdateProfile } from '../../lib/queries/profile';
 import { useAuthStore } from '../../lib/store/authStore';
+import { registerForPushNotificationsAsync } from '../../lib/notifications';
 
 export default function AppLayout() {
   const { user } = useAuthStore();
@@ -11,6 +13,47 @@ export default function AppLayout() {
 
   // Fetch user profile via React Query
   const { data: profile, isLoading, error } = useUserProfile(user?.id ?? '');
+  const updateProfile = useUpdateProfile();
+
+  // 1. Setup notification permissions & retrieve/save push token
+  useEffect(() => {
+    if (!profile || !user?.id) return;
+
+    const setupNotifications = async () => {
+      try {
+        const token = await registerForPushNotificationsAsync();
+        if (token && token !== profile.expo_push_token) {
+          console.log('[AppLayout] Updating profile with new push token:', token);
+          await updateProfile.mutateAsync({
+            id: user.id,
+            expo_push_token: token,
+          });
+        }
+      } catch (err) {
+        console.error('[AppLayout] Push notification setup failed:', err);
+      }
+    };
+
+    setupNotifications();
+  }, [profile?.id, profile?.expo_push_token, user?.id]);
+
+  // 2. Add listener to route when user interacts with/taps a notification
+  useEffect(() => {
+    const subscription = Notifications.addNotificationResponseReceivedListener((response) => {
+      const data = response.notification.request.content.data;
+      console.log('[AppLayout] Notification response received:', data);
+
+      if (data?.type === 'session_answered') {
+        router.push('/session/reveal');
+      } else if (data?.type === 'capsule_ready') {
+        router.push('/capsule');
+      }
+    });
+
+    return () => {
+      subscription.remove();
+    };
+  }, [router]);
 
   useEffect(() => {
     if (isLoading || !profile) return;

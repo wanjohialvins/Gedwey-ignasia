@@ -16,6 +16,7 @@ import { useRouter } from 'expo-router';
 import { useAuthStore } from '../../../lib/store/authStore';
 import { useUserProfile } from '../../../lib/queries/profile';
 import { useCreateTimeCapsule } from '../../../lib/queries/capsules';
+import { scheduleLocalNotification } from '../../../lib/notifications';
 
 interface Timeframe {
   label: string;
@@ -83,13 +84,25 @@ export default function CapsuleCreateScreen() {
     openDate.setDate(openDate.getDate() + daysToLock);
 
     try {
-      await createCapsule.mutateAsync({
+      const result = await createCapsule.mutateAsync({
         coupleId,
         creatorId,
         title: title.trim(),
         content: content.trim(),
         openDate: openDate.toISOString(),
       });
+
+      // Calculate delay in seconds and schedule local notification
+      const delaySeconds = Math.floor((openDate.getTime() - Date.now()) / 1000);
+      if (delaySeconds > 0) {
+        await scheduleLocalNotification(
+          'Time Capsule Unlocked! ⏳',
+          `Your time capsule "${title.trim()}" is ready to be opened.`,
+          delaySeconds,
+          result.id
+        );
+      }
+
       router.replace('/capsule');
     } catch (err: any) {
       Alert.alert('Error', err.message || 'Could not seal your time capsule.');

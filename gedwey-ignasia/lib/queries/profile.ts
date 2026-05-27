@@ -11,6 +11,7 @@ export interface Profile {
   app_mode: 'discovery' | 'early_dating' | 'couples';
   relationship_stage: string | null;
   invite_code: string | null;
+  expo_push_token: string | null;
 }
 
 // Fetch user profile
