@@ -56,11 +56,12 @@ function InitialLayout() {
     if (loading) return;
 
     const inAuthGroup = segments[0] === '(auth)';
-    console.log('[InitialLayout] Checking route redirect. inAuthGroup:', inAuthGroup);
+    const inDiscoveryGroup = segments.includes('discovery');
+    console.log('[InitialLayout] Checking route redirect. inAuthGroup:', inAuthGroup, 'inDiscoveryGroup:', inDiscoveryGroup);
 
-    if (!session && !inAuthGroup) {
+    if (!session && !inAuthGroup && !inDiscoveryGroup) {
       console.log('[InitialLayout] Redirecting to /(auth)/sign-in');
-      // Redirect to sign-in if not logged in
+      // Redirect to sign-in if not logged in and not in public groups
       router.replace('/(auth)/sign-in');
     } else if (session && inAuthGroup) {
       console.log('[InitialLayout] Redirecting to /(app)');

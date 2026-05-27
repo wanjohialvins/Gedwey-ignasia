@@ -148,8 +148,8 @@ CREATE POLICY "Users can update own profile" ON profiles
   FOR UPDATE USING (id = auth.uid());
 
 -- Cards policies
-CREATE POLICY "Anyone authenticated can view cards" ON cards
-  FOR SELECT TO authenticated USING (true);
+CREATE POLICY "Anyone can view cards" ON cards
+  FOR SELECT TO public USING (true);
 
 -- Discovery Sessions policies
 CREATE POLICY "Users can view discovery sessions they created" ON discovery_sessions
