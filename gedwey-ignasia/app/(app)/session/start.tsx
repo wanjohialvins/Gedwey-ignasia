@@ -19,7 +19,7 @@ export default function SessionStartScreen() {
       Alert.alert('Not Paired', 'You need to be paired with a partner to start a session.');
       return;
     }
-    router.push('/session/mood');
+    router.push('/session/deck');
   };
 
   const handleResumeSession = () => {

@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
-import { useRouter } from 'expo-router';
+import { useRouter, useLocalSearchParams } from 'expo-router';
 
 const MOODS = [
   { key: 'happy', emoji: '😊', label: 'Happy' },
@@ -15,12 +15,13 @@ const MOODS = [
 
 export default function MoodScreen() {
   const router = useRouter();
+  const { deck } = useLocalSearchParams<{ deck: string }>();
   const [selectedMood, setSelectedMood] = useState<string | null>(null);
 
   const handleContinue = () => {
     if (!selectedMood) return;
-    // Pass mood to the card screen via query params
-    router.push(`/session/card?mood=${selectedMood}`);
+    // Pass mood and deck to the card screen via query params
+    router.push(`/session/card?mood=${selectedMood}&deck=${deck || ''}`);
   };
 
   return (

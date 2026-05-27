@@ -19,12 +19,14 @@ import { useActiveSession, useCreateSession, useSubmitSessionAnswer } from '../.
 
 export default function SessionCardScreen() {
   const router = useRouter();
-  const { mood } = useLocalSearchParams<{ mood: string }>();
+  const { mood, deck } = useLocalSearchParams<{ mood: string; deck: string }>();
   const { user } = useAuthStore();
   const { data: profile } = useUserProfile(user?.id ?? '');
   const coupleId = profile?.couple_id ?? '';
   const { data: activeSession, isLoading: sessionLoading } = useActiveSession(coupleId);
-  const { data: cards, isLoading: cardsLoading } = useCards();
+  const { data: cards, isLoading: cardsLoading } = useCards(
+    deck as 'discovery' | 'intimacy' | 'fun' | 'relationship_health' || undefined
+  );
   const createSession = useCreateSession();
   const submitAnswer = useSubmitSessionAnswer();
 
