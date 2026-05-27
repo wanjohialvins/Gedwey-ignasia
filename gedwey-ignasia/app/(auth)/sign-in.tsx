@@ -17,6 +17,25 @@ export default function SignInScreen() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
+  const [errorMessage, setErrorMessage] = useState<string>('');
+  const DEV_MODE = true;
+
+  const handleResendConfirmation = async () => {
+    if (!email) {
+      Alert.alert('Missing Email', 'Please enter your email address to resend confirmation.');
+      return;
+    }
+    try {
+      const { error } = await supabase.auth.resend({ type: 'signup', email: email.trim() });
+      if (error) {
+        Alert.alert('Resend Failed', error.message);
+      } else {
+        Alert.alert('Email Sent', 'A confirmation email has been sent. Please check your inbox.');
+      }
+    } catch (e) {
+      Alert.alert('Error', 'Unable to resend confirmation email.');
+    }
+  };
 
   const handleSignIn = async () => {
     if (!email || !password) {
@@ -25,6 +44,7 @@ export default function SignInScreen() {
     }
 
     setLoading(true);
+    setErrorMessage('');
     try {
       const { error } = await supabase.auth.signInWithPassword({
         email: email.trim(),
@@ -32,6 +52,7 @@ export default function SignInScreen() {
       });
 
       if (error) {
+        setErrorMessage(error.message);
         Alert.alert('Sign In Failed', error.message);
       }
       // If successful, the auth listener in _layout.tsx will redirect automatically
@@ -80,16 +101,27 @@ export default function SignInScreen() {
             onChangeText={setPassword}
           />
 
+          {/* Sign In Button */}
+        <TouchableOpacity
+          style={[styles.primaryButton, loading && styles.buttonDisabled]}
+          onPress={handleSignIn}
+          disabled={loading}
+          activeOpacity={0.8}
+        >
+          <Text style={styles.primaryButtonText}>
+            {loading ? 'Signing in...' : 'Sign In'}
+          </Text>
+        </TouchableOpacity>
+        {/* Resend Confirmation */}
+        {errorMessage && errorMessage.includes('email not confirmed') && (
           <TouchableOpacity
-            style={[styles.primaryButton, loading && styles.buttonDisabled]}
-            onPress={handleSignIn}
-            disabled={loading}
+            style={[styles.linkButton]}
+            onPress={handleResendConfirmation}
             activeOpacity={0.8}
           >
-            <Text style={styles.primaryButtonText}>
-              {loading ? 'Signing in...' : 'Sign In'}
-            </Text>
+            <Text style={styles.linkText}>Resend confirmation email</Text>
           </TouchableOpacity>
+        )}
         </View>
 
         {/* Footer */}
@@ -181,6 +213,16 @@ const styles = StyleSheet.create({
   },
   buttonDisabled: {
     opacity: 0.6,
+  },
+  linkButton: {
+    marginTop: 12,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  linkText: {
+    color: '#2563EB',
+    fontSize: 14,
+    textDecorationLine: 'underline',
   },
   footer: {
     flexDirection: 'row',
