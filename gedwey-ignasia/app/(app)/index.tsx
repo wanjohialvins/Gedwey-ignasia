@@ -5,6 +5,7 @@ import { supabase } from '../../lib/supabase';
 import { useAuthStore } from '../../lib/store/authStore';
 import { useUserProfile } from '../../lib/queries/profile';
 import { useSessionHistory } from '../../lib/queries/sessions';
+import { useTimeCapsules } from '../../lib/queries/capsules';
 
 export default function HomeScreen() {
   const { user } = useAuthStore();
@@ -14,6 +15,9 @@ export default function HomeScreen() {
   const { data: sessionHistory } = useSessionHistory(profile?.couple_id ?? '');
   const completedSessionsCount = sessionHistory?.length ?? 0;
   const isJournalUnlocked = completedSessionsCount >= 5;
+
+  const { data: capsules } = useTimeCapsules(profile?.couple_id ?? '');
+  const capsulesCount = capsules?.length ?? 0;
 
   const handleSignOut = async () => {
     try {
@@ -102,6 +106,34 @@ export default function HomeScreen() {
           {isJournalUnlocked
             ? 'Write and explore shared private memories'
             : `Unlock after 5 sessions • Progress: ${completedSessionsCount}/5`}
+        </Text>
+      </TouchableOpacity>
+
+      {/* Time Capsule Card */}
+      <TouchableOpacity
+        style={[styles.journalCard, !isPaired && styles.featureCardDisabled]}
+        onPress={() => {
+          if (isPaired) {
+            router.push('/capsule');
+          } else {
+            Alert.alert('Pairing Required', 'You need to pair with a partner to access Time Capsules.');
+          }
+        }}
+        activeOpacity={0.85}
+      >
+        <View style={styles.journalHeaderRow}>
+          <Text style={styles.journalEmoji}>⏳</Text>
+          {isPaired && capsulesCount > 0 && (
+            <View style={styles.lockedBadge}>
+              <Text style={styles.lockedBadgeText}>{capsulesCount} Capsules</Text>
+            </View>
+          )}
+        </View>
+        <Text style={styles.journalTitle}>Time Capsules</Text>
+        <Text style={styles.journalDesc}>
+          {isPaired
+            ? 'Lock messages & photos to open together in the future'
+            : 'Pair with your partner to lock memories'}
         </Text>
       </TouchableOpacity>
 

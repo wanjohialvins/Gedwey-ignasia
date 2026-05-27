@@ -70,6 +70,9 @@ export default function AppLayout() {
       <Stack.Screen name="journal/index" />
       <Stack.Screen name="journal/create" />
       <Stack.Screen name="journal/[id]" />
+      <Stack.Screen name="capsule/index" />
+      <Stack.Screen name="capsule/create" />
+      <Stack.Screen name="capsule/[id]" />
     </Stack>
   );
 }
