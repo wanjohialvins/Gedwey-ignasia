@@ -3,7 +3,6 @@ import {
   View,
   Text,
   Alert,
-  Clipboard,
   ScrollView,
   KeyboardAvoidingView,
   Platform,
@@ -11,6 +10,7 @@ import {
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import * as Linking from 'expo-linking';
+import * as Clipboard from 'expo-clipboard';
 import { useCards, Card as CardType } from '../../lib/queries/cards';
 import { useCreateDiscoverySession } from '../../lib/queries/discovery';
 import { useAuthStore } from '../../lib/store/authStore';
@@ -107,8 +107,11 @@ export default function DiscoveryHomeScreen() {
         token: token,
       });
 
-      // Generate deep link URL
-      const link = Linking.createURL('discovery/' + token);
+      // Generate share link URL (supporting cPanel web URL configured in env)
+      const webUrl = process.env.EXPO_PUBLIC_WEB_URL;
+      const link = webUrl 
+        ? `${webUrl.replace(/\/$/, '')}/discovery/${token}`
+        : Linking.createURL('discovery/' + token);
       setShareLink(link);
       setSessionToken(token);
     } catch (err: any) {
@@ -116,9 +119,9 @@ export default function DiscoveryHomeScreen() {
     }
   };
 
-  const handleCopyLink = () => {
+  const handleCopyLink = async () => {
     if (shareLink) {
-      Clipboard.setString(shareLink);
+      await Clipboard.setStringAsync(shareLink);
       Alert.alert('Link Copied!', 'Share link copied to clipboard. Send it to your partner or guest.');
     }
   };

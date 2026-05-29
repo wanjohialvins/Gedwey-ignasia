@@ -4,11 +4,11 @@ import {
   Text,
   ScrollView,
   Alert,
-  Clipboard,
   Switch,
   TouchableOpacity,
 } from 'react-native';
 import { useRouter } from 'expo-router';
+import * as Clipboard from 'expo-clipboard';
 import { supabase } from '../../lib/supabase';
 import { useAuthStore } from '../../lib/store/authStore';
 import {
@@ -54,6 +54,11 @@ export default function SettingsScreen() {
   const [isPairing, setIsPairing] = useState(false);
   const [isUnpairing, setIsUnpairing] = useState(false);
 
+  // Customizable Invite Code States
+  const [customCode, setCustomCode] = useState('');
+  const [showCustomForm, setShowCustomForm] = useState(false);
+  const [isCustomSaving, setIsCustomSaving] = useState(false);
+
   // Sync profile data to local state on load
   useEffect(() => {
     if (profile) {
@@ -84,10 +89,62 @@ export default function SettingsScreen() {
     }
   };
 
-  const handleCopyCode = () => {
+  // Helper to generate a random 6-character uppercase alphanumeric code
+  const generateInviteCode = (): string => {
+    const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
+    let code = '';
+    for (let i = 0; i < 6; i++) {
+      code += chars.charAt(Math.floor(Math.random() * chars.length));
+    }
+    return code;
+  };
+
+  const handleCopyCode = async () => {
     if (profile?.invite_code) {
-      Clipboard.setString(profile.invite_code);
+      await Clipboard.setStringAsync(profile.invite_code);
       Alert.alert('Code Copied!', 'Your invite code is copied. Send it to your partner to link.');
+    }
+  };
+
+  const handleGenerateRandomCode = async () => {
+    if (!user) return;
+    try {
+      const code = generateInviteCode();
+      await updateProfile.mutateAsync({
+        id: user.id,
+        invite_code: code,
+      });
+      Alert.alert('Code Generated!', `Your new invite code is "${code}".`);
+    } catch (err: any) {
+      Alert.alert('Generation Failed', err.message || 'Could not generate invite code.');
+    }
+  };
+
+  const handleSaveCustomCode = async () => {
+    const formattedCode = customCode.trim().toUpperCase();
+    if (formattedCode.length < 3 || formattedCode.length > 10) {
+      Alert.alert('Invalid Code', 'Custom code must be between 3 and 10 characters.');
+      return;
+    }
+    if (!user) return;
+
+    setIsCustomSaving(true);
+    try {
+      await updateProfile.mutateAsync({
+        id: user.id,
+        invite_code: formattedCode,
+      });
+      Alert.alert('Custom Code Saved!', `Your invite code has been updated to "${formattedCode}".`);
+      setShowCustomForm(false);
+      setCustomCode('');
+    } catch (err: any) {
+      if (err.message && (err.message.includes('unique') || err.message.includes('duplicate') || err.message.includes('already exists'))) {
+        Alert.alert('Code Taken', 'This invite code is already in use by another user. Please try another one.');
+      } else {
+        Alert.alert('Error', err.message || 'Could not update invite code.');
+      }
+    } finally {
+      setIsCustomSaving(false);
     }
   };
 
@@ -287,13 +344,71 @@ export default function SettingsScreen() {
                 <Text className="text-lg font-bold text-primary-600 tracking-wider">
                   {profile?.invite_code || '—'}
                 </Text>
-                <TouchableOpacity
-                  onPress={handleCopyCode}
-                  className="bg-primary-100 px-3 py-1.5 rounded-lg active:opacity-75"
-                >
-                  <Text className="text-2xs font-bold text-primary-600">Copy Code</Text>
-                </TouchableOpacity>
+                {profile?.invite_code && (
+                  <TouchableOpacity
+                    onPress={handleCopyCode}
+                    className="bg-primary-100 px-3 py-1.5 rounded-lg active:opacity-75"
+                  >
+                    <Text className="text-2xs font-bold text-primary-600">Copy Code</Text>
+                  </TouchableOpacity>
+                )}
               </View>
+
+              {showCustomForm ? (
+                <View className="w-full mt-3 border-t border-slate-200/50 pt-3">
+                  <Input
+                    placeholder="Custom code (3-10 chars)"
+                    autoCapitalize="characters"
+                    autoCorrect={false}
+                    maxLength={10}
+                    value={customCode}
+                    onChangeText={(val) => setCustomCode(val.replace(/[^A-Za-z0-9]/g, ''))}
+                  />
+                  <View className="flex-row gap-2 mt-2">
+                    <TouchableOpacity
+                      className="flex-1 bg-slate-100 h-10 rounded-xl items-center justify-center active:bg-slate-200"
+                      onPress={() => {
+                        setShowCustomForm(false);
+                        setCustomCode('');
+                      }}
+                      disabled={isCustomSaving}
+                    >
+                      <Text className="text-xs text-text-secondary font-semibold">Cancel</Text>
+                    </TouchableOpacity>
+                    <TouchableOpacity
+                      className="flex-[2] bg-primary-600 h-10 rounded-xl items-center justify-center active:bg-primary-700"
+                      onPress={handleSaveCustomCode}
+                      disabled={isCustomSaving || customCode.trim().length < 3}
+                    >
+                      <Text className="text-xs text-white font-semibold">
+                        {isCustomSaving ? 'Saving...' : 'Save Code'}
+                      </Text>
+                    </TouchableOpacity>
+                  </View>
+                </View>
+              ) : (
+                <View className="flex-row gap-3 mt-3 border-t border-slate-100 pt-3">
+                  <TouchableOpacity
+                    onPress={() => {
+                      setCustomCode(profile?.invite_code || '');
+                      setShowCustomForm(true);
+                    }}
+                    className="flex-1 items-center justify-center py-2.5 bg-slate-100 rounded-xl active:bg-slate-200"
+                  >
+                    <Text className="text-xs font-semibold text-text-secondary">
+                      {profile?.invite_code ? 'Customize Code' : 'Set Custom Code'}
+                    </Text>
+                  </TouchableOpacity>
+                  {!profile?.invite_code && (
+                    <TouchableOpacity
+                      onPress={handleGenerateRandomCode}
+                      className="flex-1 items-center justify-center py-2.5 bg-primary-100 rounded-xl active:bg-blue-200"
+                    >
+                      <Text className="text-xs font-semibold text-primary-600">Generate Code</Text>
+                    </TouchableOpacity>
+                  )}
+                </View>
+              )}
             </View>
 
             <View className="border-t border-slate-100 pt-3">

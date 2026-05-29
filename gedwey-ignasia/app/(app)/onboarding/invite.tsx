@@ -4,12 +4,12 @@ import {
   Text,
   TouchableOpacity,
   Alert,
-  Clipboard,
   KeyboardAvoidingView,
   Platform,
   ScrollView,
 } from 'react-native';
 import { useRouter } from 'expo-router';
+import * as Clipboard from 'expo-clipboard';
 import { useUserProfile, useUpdateProfile, usePairPartner } from '../../../lib/queries/profile';
 import { useAuthStore } from '../../../lib/store/authStore';
 import { Button } from '../../../components/Button';
@@ -35,6 +35,9 @@ export default function InviteScreen() {
   const pairPartner = usePairPartner();
   const [partnerCode, setPartnerCode] = useState('');
   const [isGenerating, setIsGenerating] = useState(false);
+  const [customCode, setCustomCode] = useState('');
+  const [showCustomForm, setShowCustomForm] = useState(false);
+  const [isCustomSaving, setIsCustomSaving] = useState(false);
 
   // Generate and save invite code if one doesn't exist
   useEffect(() => {
@@ -59,10 +62,38 @@ export default function InviteScreen() {
     }
   }, [profile, isLoading, user]);
 
-  const handleCopyCode = () => {
+  const handleCopyCode = async () => {
     if (profile?.invite_code) {
-      Clipboard.setString(profile.invite_code);
+      await Clipboard.setStringAsync(profile.invite_code);
       Alert.alert('Copied!', 'Invite code copied to clipboard.');
+    }
+  };
+
+  const handleSaveCustomCode = async () => {
+    const formattedCode = customCode.trim().toUpperCase();
+    if (formattedCode.length < 3 || formattedCode.length > 10) {
+      Alert.alert('Invalid Code', 'Custom code must be between 3 and 10 characters.');
+      return;
+    }
+    if (!user) return;
+
+    setIsCustomSaving(true);
+    try {
+      await updateProfile.mutateAsync({
+        id: user.id,
+        invite_code: formattedCode,
+      });
+      Alert.alert('Custom Code Saved!', `Your invite code has been updated to "${formattedCode}".`);
+      setShowCustomForm(false);
+      setCustomCode('');
+    } catch (err: any) {
+      if (err.message && (err.message.includes('unique') || err.message.includes('duplicate') || err.message.includes('already exists'))) {
+        Alert.alert('Code Taken', 'This invite code is already in use by another user. Please try another one.');
+      } else {
+        Alert.alert('Error', err.message || 'Could not update invite code.');
+      }
+    } finally {
+      setIsCustomSaving(false);
     }
   };
 
@@ -152,7 +183,54 @@ export default function InviteScreen() {
             <Text className="text-3xl font-bold text-primary-600 tracking-[4px]">{profile?.invite_code || '------'}</Text>
             <Text className="text-2xs text-primary-600 font-medium mt-1">Tap to Copy</Text>
           </TouchableOpacity>
-          <Text className="text-xs text-text-secondary text-center leading-relaxed px-4">
+
+          {showCustomForm ? (
+            <View className="w-full mt-2 border-t border-slate-100 pt-3 items-center">
+              <Input
+                placeholder="Custom code (3-10 chars)"
+                autoCapitalize="characters"
+                autoCorrect={false}
+                maxLength={10}
+                value={customCode}
+                onChangeText={(val) => setCustomCode(val.replace(/[^A-Za-z0-9]/g, ''))}
+                className="text-center font-bold text-base tracking-[2px] bg-background w-full"
+              />
+              <View className="flex-row gap-2 mt-2 w-full">
+                <TouchableOpacity
+                  className="flex-1 bg-slate-100 h-11 rounded-xl items-center justify-center active:bg-slate-200"
+                  onPress={() => {
+                    setShowCustomForm(false);
+                    setCustomCode('');
+                  }}
+                  disabled={isCustomSaving}
+                >
+                  <Text className="text-xs text-text-secondary font-semibold">Cancel</Text>
+                </TouchableOpacity>
+                <TouchableOpacity
+                  className="flex-[2] bg-primary-600 h-11 rounded-xl items-center justify-center active:bg-primary-700"
+                  onPress={handleSaveCustomCode}
+                  disabled={isCustomSaving || customCode.trim().length < 3}
+                >
+                  <Text className="text-xs text-white font-semibold">
+                    {isCustomSaving ? 'Saving...' : 'Save Custom Code'}
+                  </Text>
+                </TouchableOpacity>
+              </View>
+            </View>
+          ) : (
+            <TouchableOpacity
+              onPress={() => {
+                setCustomCode(profile?.invite_code || '');
+                setShowCustomForm(true);
+              }}
+              className="mt-1 py-1"
+              activeOpacity={0.7}
+            >
+              <Text className="text-xs font-semibold text-primary-600 underline">Customize Your Code</Text>
+            </TouchableOpacity>
+          )}
+
+          <Text className="text-xs text-text-secondary text-center leading-relaxed px-4 mt-3.5">
             Give this code to your partner so they can enter it on their device.
           </Text>
         </Card>
