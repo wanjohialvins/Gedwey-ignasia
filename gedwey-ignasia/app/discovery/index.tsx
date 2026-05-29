@@ -32,21 +32,21 @@ const generateToken = (): string => {
 // Fallback questions in case the database cards table is empty
 const FALLBACK_CARDS: CardType[] = [
   {
-    id: 'f1-fallback-uuid',
+    id: 'f1f1f1f1-f1f1-f1f1-f1f1-f1f1f1f1f1f1',
     created_at: new Date().toISOString(),
     text: 'What was your very first impression of me, and how has it changed?',
     category: 'discovery',
     min_relationship_stage: null,
   },
   {
-    id: 'f2-fallback-uuid',
+    id: 'f2f2f2f2-f2f2-f2f2-f2f2-f2f2f2f2f2f2',
     created_at: new Date().toISOString(),
     text: 'What is your idea of a perfect weekend getaway together?',
     category: 'discovery',
     min_relationship_stage: null,
   },
   {
-    id: 'f3-fallback-uuid',
+    id: 'f3f3f3f3-f3f3-f3f3-f3f3-f3f3f3f3f3f3',
     created_at: new Date().toISOString(),
     text: 'What is one small thing I do that always makes you smile?',
     category: 'discovery',
