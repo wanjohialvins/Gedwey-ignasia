@@ -1,7 +1,7 @@
 {
   "expo": {
     "name": "gedwey-ignasia",
-    "slug": "gedwey-ignasia",
+    "slug": "gedwey-ignesia",
     "scheme": "gedwey-ignasia",
     "version": "1.0.0",
     "orientation": "portrait",
@@ -31,6 +31,13 @@
     },
     "plugins": [
       "expo-router"
-    ]
+    ],
+    "extra": {
+      "router": {},
+      "eas": {
+        "projectId": "0b54ba96-bd86-4647-8554-e12af592359d"
+      }
+    },
+    "owner": "alvinschlof"
   }
 }
