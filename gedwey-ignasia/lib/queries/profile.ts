@@ -94,3 +94,61 @@ export const usePairPartner = () => {
     },
   });
 };
+
+// Fetch couple details (e.g. streak)
+export const useCouple = (coupleId: string) => {
+  return useQuery({
+    queryKey: ['couple', coupleId],
+    queryFn: async () => {
+      if (!coupleId) return null;
+      const { data, error } = await supabase
+        .from('couples')
+        .select('*')
+        .eq('id', coupleId)
+        .single();
+
+      if (error) {
+        throw new Error(error.message);
+      }
+      return data;
+    },
+    enabled: !!coupleId,
+  });
+};
+
+// Unpair with partner
+export const useUnpairPartner = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation<void, Error, { userId: string; partnerId: string }>({
+    mutationFn: async ({ userId, partnerId }) => {
+      // Update partner's profile first if it exists
+      if (partnerId) {
+        const { error: error1 } = await supabase
+          .from('profiles')
+          .update({ couple_id: null, partner_id: null })
+          .eq('id', partnerId);
+        
+        if (error1) {
+          throw new Error(error1.message);
+        }
+      }
+
+      // Update current user's profile
+      const { error: error2 } = await supabase
+        .from('profiles')
+        .update({ couple_id: null, partner_id: null })
+        .eq('id', userId);
+
+      if (error2) {
+        throw new Error(error2.message);
+      }
+    },
+    onSuccess: (_, variables) => {
+      queryClient.invalidateQueries({ queryKey: ['profile', variables.userId] });
+      if (variables.partnerId) {
+        queryClient.invalidateQueries({ queryKey: ['profile', variables.partnerId] });
+      }
+    },
+  });
+};
