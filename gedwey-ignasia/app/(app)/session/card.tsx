@@ -2,21 +2,22 @@ import React, { useState, useEffect } from 'react';
 import {
   View,
   Text,
-  TextInput,
-  TouchableOpacity,
-  StyleSheet,
-  ActivityIndicator,
   Alert,
   KeyboardAvoidingView,
   Platform,
   ScrollView,
+  TouchableOpacity,
 } from 'react-native';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import { useAuthStore } from '../../../lib/store/authStore';
 import { useUserProfile } from '../../../lib/queries/profile';
-import { useCards, Card } from '../../../lib/queries/cards';
+import { useCards, Card as CardType } from '../../../lib/queries/cards';
 import { useActiveSession, useCreateSession, useSubmitSessionAnswer } from '../../../lib/queries/sessions';
 import { scheduleLocalNotification } from '../../../lib/notifications';
+import { Button } from '../../../components/Button';
+import { Input } from '../../../components/Input';
+import { Card } from '../../../components/Card';
+import { Skeleton } from '../../../components/Skeleton';
 
 export default function SessionCardScreen() {
   const router = useRouter();
@@ -31,7 +32,7 @@ export default function SessionCardScreen() {
   const createSession = useCreateSession();
   const submitAnswer = useSubmitSessionAnswer();
 
-  const [selectedCard, setSelectedCard] = useState<Card | null>(null);
+  const [selectedCard, setSelectedCard] = useState<CardType | null>(null);
   const [answer, setAnswer] = useState('');
   const [hasCreatedSession, setHasCreatedSession] = useState(false);
 
@@ -80,8 +81,6 @@ export default function SessionCardScreen() {
         });
 
         // Now submit the answer to the newly created session
-        // We need to re-fetch... but the create already sets user1_mood.
-        // For a clean flow, we submit the answer separately
         setHasCreatedSession(true);
       }
 
@@ -123,158 +122,65 @@ export default function SessionCardScreen() {
 
   if (isLoading) {
     return (
-      <View style={styles.loadingContainer}>
-        <ActivityIndicator size="large" color="#2563EB" />
-        <Text style={styles.loadingText}>Loading question...</Text>
+      <View className="flex-1 bg-background px-4 pt-16 pb-6">
+        <Skeleton width={80} height={20} className="mb-4 py-1" />
+        {/* Question card Skeleton */}
+        <View className="bg-white rounded-2xl p-6 border border-neutral-border shadow-sm mb-6 items-center">
+          <Skeleton width="90%" height={24} className="mb-2" />
+          <Skeleton width="60%" height={24} />
+        </View>
+
+        {/* Form Skeleton */}
+        <View className="flex-1 gap-4">
+          <Skeleton width={100} height={16} />
+          <Skeleton width="100%" height={120} className="rounded-2xl" />
+          <Skeleton width="100%" height={48} className="rounded-xl" />
+        </View>
       </View>
     );
   }
 
   return (
     <KeyboardAvoidingView
-      style={styles.keyboardContainer}
+      className="flex-1 bg-background"
       behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
     >
-      <ScrollView contentContainerStyle={styles.scrollContainer}>
-        <TouchableOpacity style={styles.backLink} onPress={() => router.back()}>
-          <Text style={styles.backLinkText}>← Back</Text>
+      <ScrollView contentContainerStyle={{ flexGrow: 1, paddingHorizontal: 16, paddingTop: 50, paddingBottom: 24 }}>
+        <TouchableOpacity className="self-start py-1 mb-4" onPress={() => router.back()}>
+          <Text className="text-primary-600 text-sm font-semibold">← Back</Text>
         </TouchableOpacity>
 
         {/* Question card */}
         {selectedCard && (
-          <View style={styles.promptCard}>
-            <Text style={styles.quoteChar}>"</Text>
-            <Text style={styles.promptText}>{selectedCard.text}</Text>
-          </View>
+          <Card className="p-6 mb-6 items-center relative">
+            <Text className="text-7xl font-bold text-blue-50/70 absolute top-[-10px] left-4">“</Text>
+            <Text className="text-lg font-semibold text-slate-800 text-center leading-relaxed mt-5 px-2">
+              {selectedCard.text}
+            </Text>
+          </Card>
         )}
 
         {/* Answer input */}
-        <View style={styles.formContainer}>
-          <Text style={styles.inputLabel}>Your Answer</Text>
-          <TextInput
-            style={styles.input}
+        <View className="flex-1">
+          <Text className="text-sm font-semibold text-slate-700 mb-2">Your Answer</Text>
+          <Input
             placeholder="Be open and honest..."
-            placeholderTextColor="#94A3B8"
             multiline
             numberOfLines={5}
             value={answer}
             onChangeText={setAnswer}
+            className="h-32 text-left py-3.5"
           />
 
-          <TouchableOpacity
-            style={[styles.primaryButton, (!answer.trim() || isPending) && styles.buttonDisabled]}
+          <Button
+            title="Submit Answer"
             onPress={handleSubmit}
             disabled={!answer.trim() || isPending}
-            activeOpacity={0.8}
-          >
-            {isPending ? (
-              <ActivityIndicator color="#FFFFFF" size="small" />
-            ) : (
-              <Text style={styles.buttonText}>Submit Answer</Text>
-            )}
-          </TouchableOpacity>
+            loading={isPending}
+            className="w-full mt-2"
+          />
         </View>
       </ScrollView>
     </KeyboardAvoidingView>
   );
 }
-
-const styles = StyleSheet.create({
-  keyboardContainer: {
-    flex: 1,
-    backgroundColor: '#F8FAFC',
-  },
-  scrollContainer: {
-    flexGrow: 1,
-    paddingHorizontal: 16,
-    paddingTop: 50,
-    paddingBottom: 24,
-  },
-  loadingContainer: {
-    flex: 1,
-    backgroundColor: '#F8FAFC',
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  loadingText: {
-    marginTop: 12,
-    color: '#475569',
-    fontSize: 16,
-  },
-  backLink: {
-    alignSelf: 'flex-start',
-    paddingVertical: 4,
-    marginBottom: 16,
-  },
-  backLinkText: {
-    color: '#2563EB',
-    fontSize: 15,
-    fontWeight: '600',
-  },
-  promptCard: {
-    backgroundColor: '#FFFFFF',
-    borderRadius: 20,
-    padding: 24,
-    borderWidth: 1,
-    borderColor: '#E5E7EB',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.03,
-    shadowRadius: 6,
-    elevation: 2,
-    marginBottom: 24,
-    position: 'relative',
-  },
-  quoteChar: {
-    fontSize: 72,
-    fontWeight: '700',
-    color: '#EFF6FF',
-    position: 'absolute',
-    top: -10,
-    left: 16,
-  },
-  promptText: {
-    fontSize: 18,
-    fontWeight: '600',
-    color: '#1E293B',
-    lineHeight: 26,
-    marginTop: 20,
-    textAlign: 'center',
-  },
-  formContainer: {
-    flex: 1,
-  },
-  inputLabel: {
-    fontSize: 14,
-    fontWeight: '600',
-    color: '#334155',
-    marginBottom: 8,
-  },
-  input: {
-    backgroundColor: '#FFFFFF',
-    borderWidth: 1,
-    borderColor: '#E5E7EB',
-    borderRadius: 16,
-    padding: 16,
-    fontSize: 15,
-    color: '#0F172A',
-    minHeight: 120,
-    textAlignVertical: 'top',
-    marginBottom: 16,
-  },
-  primaryButton: {
-    backgroundColor: '#2563EB',
-    height: 48,
-    borderRadius: 12,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  buttonDisabled: {
-    backgroundColor: '#CBD5E1',
-  },
-  buttonText: {
-    color: '#FFFFFF',
-    fontSize: 16,
-    fontWeight: '600',
-  },
-});

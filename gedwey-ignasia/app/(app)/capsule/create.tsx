@@ -2,21 +2,20 @@ import React, { useState } from 'react';
 import {
   View,
   Text,
-  TextInput,
-  TouchableOpacity,
-  StyleSheet,
-  ActivityIndicator,
-  Alert,
   KeyboardAvoidingView,
   Platform,
   ScrollView,
   SafeAreaView,
+  TouchableOpacity,
+  Alert,
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useAuthStore } from '../../../lib/store/authStore';
 import { useUserProfile } from '../../../lib/queries/profile';
 import { useCreateTimeCapsule } from '../../../lib/queries/capsules';
 import { scheduleLocalNotification } from '../../../lib/notifications';
+import { Button } from '../../../components/Button';
+import { Input } from '../../../components/Input';
 
 interface Timeframe {
   label: string;
@@ -112,246 +111,118 @@ export default function CapsuleCreateScreen() {
   const isPending = createCapsule.isPending;
 
   return (
-    <SafeAreaView style={styles.safeArea}>
+    <SafeAreaView className="flex-1 bg-background">
       <KeyboardAvoidingView
-        style={styles.keyboardContainer}
+        className="flex-1"
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
       >
-        <ScrollView contentContainerStyle={styles.scrollContainer} showsVerticalScrollIndicator={false}>
-          <TouchableOpacity style={styles.backLink} onPress={() => router.back()}>
-            <Text style={styles.backLinkText}>← Back</Text>
+        <ScrollView contentContainerStyle={{ flexGrow: 1, paddingHorizontal: 16 }} showsVerticalScrollIndicator={false}>
+          <TouchableOpacity className="self-start py-2 mt-2 mb-2" onPress={() => router.back()}>
+            <Text className="text-primary-600 text-sm font-semibold">← Back</Text>
           </TouchableOpacity>
 
-          <Text style={styles.title}>Seal a Capsule</Text>
-          <Text style={styles.subtitle}>
+          <Text className="text-2xl font-bold text-text-primary">Seal a Capsule</Text>
+          <Text className="text-sm text-text-secondary mt-1 mb-6 leading-relaxed">
             Lock a letter or photo reference. Neither of you will be able to read it until the countdown ends.
           </Text>
 
-          <View style={styles.formContainer}>
+          <View className="flex-1 gap-4">
             {/* Title */}
-            <View style={styles.inputGroup}>
-              <Text style={styles.inputLabel}>Capsule Title</Text>
-              <TextInput
-                style={styles.inputTitle}
-                placeholder="E.g., Read this on our anniversary..."
-                placeholderTextColor="#94A3B8"
-                value={title}
-                onChangeText={setTitle}
-                maxLength={80}
-              />
-            </View>
+            <Input
+              label="Capsule Title"
+              placeholder="E.g., Read this on our anniversary..."
+              value={title}
+              onChangeText={setTitle}
+              maxLength={80}
+            />
 
             {/* Content */}
-            <View style={styles.inputGroup}>
-              <Text style={styles.inputLabel}>Sealed Message</Text>
-              <TextInput
-                style={styles.inputContent}
-                placeholder="Write your letter to the future..."
-                placeholderTextColor="#94A3B8"
-                multiline
-                numberOfLines={6}
-                value={content}
-                onChangeText={setContent}
-                textAlignVertical="top"
-              />
-            </View>
+            <Input
+              label="Sealed Message"
+              placeholder="Write your letter to the future..."
+              multiline
+              numberOfLines={6}
+              value={content}
+              onChangeText={setContent}
+              className="h-32 text-left py-3.5"
+            />
 
             {/* Timeframe selector */}
-            <View style={styles.inputGroup}>
-              <Text style={styles.inputLabel}>Seal Duration</Text>
+            <View className="mb-2">
+              <Text className="text-sm font-medium text-text-secondary mb-2">Seal Duration</Text>
               
-              <View style={styles.timeframeGrid}>
+              <View className="flex-row flex-wrap gap-2.5">
                 {TIMEFRAMES.map((tf) => {
                   const isSelected = !isCustom && selectedTimeframe?.days === tf.days;
                   return (
                     <TouchableOpacity
                       key={tf.days}
-                      style={[styles.tfCard, isSelected && styles.tfCardSelected]}
+                      style={{ borderWidth: isSelected ? 2 : 1 }}
+                      className={`flex-1 min-w-[140px] bg-white rounded-xl p-3 justify-center ${
+                        isSelected ? 'border-primary-600 bg-primary-100/50' : 'border-neutral-border'
+                      }`}
                       onPress={() => {
                         setIsCustom(false);
                         setSelectedTimeframe(tf);
                       }}
                       activeOpacity={0.8}
                     >
-                      <Text style={[styles.tfLabel, isSelected && styles.tfLabelSelected]}>
+                      <Text 
+                        className={`text-sm font-semibold mb-0.5 ${
+                          isSelected ? 'text-primary-600' : 'text-slate-700'
+                        }`}
+                      >
                         {tf.label}
                       </Text>
-                      <Text style={styles.tfSublabel}>{tf.sublabel}</Text>
+                      <Text className="text-[10px] text-text-muted">{tf.sublabel}</Text>
                     </TouchableOpacity>
                   );
                 })}
 
                 <TouchableOpacity
-                  style={[styles.tfCard, isCustom && styles.tfCardSelected]}
+                  style={{ borderWidth: isCustom ? 2 : 1 }}
+                  className={`flex-1 min-w-[140px] bg-white rounded-xl p-3 justify-center ${
+                    isCustom ? 'border-primary-600 bg-primary-100/50' : 'border-neutral-border'
+                  }`}
                   onPress={() => {
                     setIsCustom(true);
                     setSelectedTimeframe(null);
                   }}
                   activeOpacity={0.8}
                 >
-                  <Text style={[styles.tfLabel, isCustom && styles.tfLabelSelected]}>
+                  <Text 
+                    className={`text-sm font-semibold mb-0.5 ${
+                      isCustom ? 'text-primary-600' : 'text-slate-700'
+                    }`}
+                  >
                     Custom
                   </Text>
-                  <Text style={styles.tfSublabel}>Specify days offset</Text>
+                  <Text className="text-[10px] text-text-muted">Specify days offset</Text>
                 </TouchableOpacity>
               </View>
             </View>
 
             {/* Custom Days offset input */}
             {isCustom && (
-              <View style={styles.inputGroup}>
-                <Text style={styles.inputLabel}>Number of days to seal</Text>
-                <TextInput
-                  style={styles.inputTitle}
-                  placeholder="E.g., 45"
-                  placeholderTextColor="#94A3B8"
-                  keyboardType="numeric"
-                  value={customDays}
-                  onChangeText={setCustomDays}
-                />
-              </View>
+              <Input
+                label="Number of days to seal"
+                placeholder="E.g., 45"
+                keyboardType="numeric"
+                value={customDays}
+                onChangeText={setCustomDays}
+              />
             )}
 
-            <TouchableOpacity
-              style={[
-                styles.primaryButton,
-                (!title.trim() || !content.trim() || (!selectedTimeframe && !isCustom) || isPending) &&
-                  styles.buttonDisabled,
-              ]}
+            <Button
+              title="Seal in Time Vault"
               onPress={handleSubmit}
               disabled={!title.trim() || !content.trim() || (!selectedTimeframe && !isCustom) || isPending}
-              activeOpacity={0.8}
-            >
-              {isPending ? (
-                <ActivityIndicator color="#FFFFFF" size="small" />
-              ) : (
-                <Text style={styles.buttonText}>Seal in Time Vault</Text>
-              )}
-            </TouchableOpacity>
+              loading={isPending}
+              className="w-full mt-2 mb-6"
+            />
           </View>
         </ScrollView>
       </KeyboardAvoidingView>
     </SafeAreaView>
   );
 }
-
-const styles = StyleSheet.create({
-  safeArea: {
-    flex: 1,
-    backgroundColor: '#F8FAFC',
-  },
-  keyboardContainer: {
-    flex: 1,
-  },
-  scrollContainer: {
-    flexGrow: 1,
-    paddingHorizontal: 16,
-  },
-  backLink: {
-    alignSelf: 'flex-start',
-    paddingVertical: 8,
-    marginTop: 10,
-    marginBottom: 8,
-  },
-  backLinkText: {
-    color: '#2563EB',
-    fontSize: 15,
-    fontWeight: '600',
-  },
-  title: {
-    fontSize: 26,
-    fontWeight: '700',
-    color: '#0F172A',
-  },
-  subtitle: {
-    fontSize: 14,
-    color: '#475569',
-    marginTop: 2,
-    marginBottom: 20,
-    lineHeight: 20,
-  },
-  formContainer: {
-    flex: 1,
-    gap: 16,
-  },
-  inputGroup: {
-    width: '100%',
-  },
-  inputLabel: {
-    fontSize: 14,
-    fontWeight: '600',
-    color: '#334155',
-    marginBottom: 8,
-  },
-  inputTitle: {
-    backgroundColor: '#FFFFFF',
-    borderWidth: 1,
-    borderColor: '#E5E7EB',
-    borderRadius: 12,
-    height: 48,
-    paddingHorizontal: 16,
-    fontSize: 15,
-    color: '#0F172A',
-  },
-  inputContent: {
-    backgroundColor: '#FFFFFF',
-    borderWidth: 1,
-    borderColor: '#E5E7EB',
-    borderRadius: 16,
-    padding: 16,
-    fontSize: 15,
-    color: '#0F172A',
-    minHeight: 120,
-    lineHeight: 22,
-  },
-  timeframeGrid: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: 10,
-  },
-  tfCard: {
-    backgroundColor: '#FFFFFF',
-    borderRadius: 12,
-    padding: 12,
-    borderWidth: 1,
-    borderColor: '#E5E7EB',
-    flex: 1,
-    minWidth: 140,
-    justifyContent: 'center',
-  },
-  tfCardSelected: {
-    borderColor: '#2563EB',
-    backgroundColor: '#EFF6FF',
-    borderWidth: 2,
-  },
-  tfLabel: {
-    fontSize: 14,
-    fontWeight: '700',
-    color: '#334155',
-    marginBottom: 2,
-  },
-  tfLabelSelected: {
-    color: '#2563EB',
-  },
-  tfSublabel: {
-    fontSize: 11,
-    color: '#64748B',
-  },
-  primaryButton: {
-    backgroundColor: '#2563EB',
-    height: 48,
-    borderRadius: 12,
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginTop: 12,
-    marginBottom: 24,
-  },
-  buttonDisabled: {
-    backgroundColor: '#CBD5E1',
-  },
-  buttonText: {
-    color: '#FFFFFF',
-    fontSize: 16,
-    fontWeight: '600',
-  },
-});

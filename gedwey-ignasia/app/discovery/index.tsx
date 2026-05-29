@@ -2,21 +2,22 @@ import React, { useState, useEffect } from 'react';
 import {
   View,
   Text,
-  TextInput,
-  TouchableOpacity,
-  StyleSheet,
-  ActivityIndicator,
   Alert,
   Clipboard,
   ScrollView,
   KeyboardAvoidingView,
   Platform,
+  TouchableOpacity,
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import * as Linking from 'expo-linking';
-import { useCards, Card } from '../../lib/queries/cards';
+import { useCards, Card as CardType } from '../../lib/queries/cards';
 import { useCreateDiscoverySession } from '../../lib/queries/discovery';
 import { useAuthStore } from '../../lib/store/authStore';
+import { Button } from '../../components/Button';
+import { Input } from '../../components/Input';
+import { Card } from '../../components/Card';
+import { Skeleton } from '../../components/Skeleton';
 
 // Function to generate a unique 16-character token
 const generateToken = (): string => {
@@ -29,7 +30,7 @@ const generateToken = (): string => {
 };
 
 // Fallback questions in case the database cards table is empty
-const FALLBACK_CARDS: Card[] = [
+const FALLBACK_CARDS: CardType[] = [
   {
     id: 'f1-fallback-uuid',
     created_at: new Date().toISOString(),
@@ -56,10 +57,10 @@ const FALLBACK_CARDS: Card[] = [
 export default function DiscoveryHomeScreen() {
   const router = useRouter();
   const { user } = useAuthStore();
-  const { data: cards, isLoading: cardsLoading, error: cardsError } = useCards('discovery');
+  const { data: cards, isLoading: cardsLoading } = useCards('discovery');
   const createSession = useCreateDiscoverySession();
 
-  const [currentCard, setCurrentCard] = useState<Card | null>(null);
+  const [currentCard, setCurrentCard] = useState<CardType | null>(null);
   const [answer, setAnswer] = useState('');
   const [shareLink, setShareLink] = useState('');
   const [sessionToken, setSessionToken] = useState('');
@@ -124,280 +125,112 @@ export default function DiscoveryHomeScreen() {
 
   if (cardsLoading) {
     return (
-      <View style={styles.loadingContainer}>
-        <ActivityIndicator size="large" color="#2563EB" />
-        <Text style={styles.loadingText}>Fetching question cards...</Text>
+      <View className="flex-1 bg-background px-4 pt-16 pb-6">
+        {/* Header Skeleton */}
+        <View className="mb-6">
+          <Skeleton width={100} height={20} className="mb-2" />
+          <Skeleton width={180} height={28} className="mb-2" />
+          <Skeleton width="100%" height={16} className="mb-1" />
+          <Skeleton width="80%" height={16} />
+        </View>
+
+        {/* Card prompt Skeleton */}
+        <View className="bg-white rounded-2xl p-6 border border-neutral-border shadow-sm mb-5 items-center">
+          <Skeleton width={200} height={24} className="mb-4" />
+          <Skeleton width={120} height={32} className="rounded-xl" />
+        </View>
+
+        {/* Form Skeleton */}
+        <View className="flex-1 gap-4">
+          <Skeleton width={100} height={16} />
+          <Skeleton width="100%" height={120} className="rounded-2xl" />
+          <Skeleton width="100%" height={48} className="rounded-xl" />
+        </View>
       </View>
     );
   }
 
   return (
     <KeyboardAvoidingView
-      style={styles.keyboardContainer}
+      className="flex-1 bg-background"
       behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
     >
-      <ScrollView contentContainerStyle={styles.scrollContainer}>
+      <ScrollView contentContainerStyle={{ flexGrow: 1, paddingHorizontal: 16, paddingTop: 50, paddingBottom: 24 }}>
         {/* Header */}
-        <View style={styles.header}>
-          <TouchableOpacity style={styles.backLink} onPress={() => router.replace('/')}>
-            <Text style={styles.backLinkText}>← Home</Text>
+        <View className="mb-5">
+          <TouchableOpacity className="self-start py-1 mb-2" onPress={() => router.replace('/')}>
+            <Text className="text-primary-600 text-sm font-semibold">← Home</Text>
           </TouchableOpacity>
-          <Text style={styles.title}>Discovery Mode</Text>
-          <Text style={styles.subtitle}>
+          <Text className="text-2xl font-bold text-text-primary mb-1.5">Discovery Mode</Text>
+          <Text className="text-sm text-text-secondary leading-relaxed">
             Break the ice! Answer a question, share your custom link, and unlock their answer together.
           </Text>
         </View>
 
         {/* Card prompt */}
         {currentCard && (
-          <View style={styles.promptCard}>
-            <Text style={styles.quoteChar}>“</Text>
-            <Text style={styles.promptText}>{currentCard.text}</Text>
-            <TouchableOpacity style={styles.shuffleButton} onPress={handleShuffle} activeOpacity={0.7}>
-              <Text style={styles.shuffleText}>🔀 Shuffle Question</Text>
+          <Card className="p-6 mb-5 items-center relative">
+            <Text className="text-7xl font-bold text-blue-50/70 absolute top-[-10px] left-4">“</Text>
+            <Text className="text-lg font-semibold text-slate-800 text-center leading-relaxed mt-5 mb-4 px-2">
+              {currentCard.text}
+            </Text>
+            <TouchableOpacity 
+              className="bg-slate-100 px-4 py-2 rounded-xl active:bg-slate-200" 
+              onPress={handleShuffle} 
+              activeOpacity={0.7}
+            >
+              <Text className="text-xs text-text-secondary font-semibold">🔀 Shuffle Question</Text>
             </TouchableOpacity>
-          </View>
+          </Card>
         )}
 
         {/* Share Link Screen State */}
         {shareLink ? (
-          <View style={styles.successCard}>
-            <Text style={styles.successTitle}>🎉 Link Generated!</Text>
-            <Text style={styles.successText}>
+          <Card className="p-6 items-center">
+            <Text className="text-xl font-bold text-emerald-500 mb-2">🎉 Link Generated!</Text>
+            <Text className="text-sm text-text-secondary text-center leading-relaxed mb-5 px-1">
               Your answer has been saved. Share the link below with your partner/guest. Once they answer, both responses will be revealed.
             </Text>
 
-            <View style={styles.linkBox}>
-              <Text style={styles.linkText} numberOfLines={1} ellipsizeMode="middle">
+            <View className="w-full bg-background border border-slate-200 rounded-xl p-3 items-center mb-4">
+              <Text className="text-sm font-medium text-primary-600 text-center w-full" numberOfLines={1} ellipsizeMode="middle">
                 {shareLink}
               </Text>
             </View>
 
-            <TouchableOpacity style={styles.primaryButton} onPress={handleCopyLink} activeOpacity={0.8}>
-              <Text style={styles.buttonText}>Copy Share Link</Text>
-            </TouchableOpacity>
+            <Button title="Copy Share Link" onPress={handleCopyLink} className="w-full mb-3" />
 
             <TouchableOpacity
-              style={styles.secondaryButton}
+              className="bg-slate-100 h-12 rounded-xl w-full items-center justify-center active:bg-slate-200"
               onPress={() => router.push(`/discovery/${sessionToken}`)}
               activeOpacity={0.8}
             >
-              <Text style={styles.secondaryButtonText}>Open Guest Screen (Local Test)</Text>
+              <Text className="text-text-secondary text-sm font-semibold">Open Guest Screen (Local Test)</Text>
             </TouchableOpacity>
-          </View>
+          </Card>
         ) : (
           /* Form Screen State */
-          <View style={styles.formContainer}>
-            <Text style={styles.inputLabel}>Your Answer</Text>
-            <TextInput
-              style={styles.input}
+          <View className="flex-1">
+            <Text className="text-sm font-semibold text-slate-700 mb-2">Your Answer</Text>
+            <Input
               placeholder="Be honest and expressive..."
-              placeholderTextColor="#94A3B8"
               multiline
               numberOfLines={4}
               value={answer}
               onChangeText={setAnswer}
+              className="h-28 text-left py-3.5"
             />
 
-            <TouchableOpacity
-              style={[styles.primaryButton, !answer.trim() && styles.buttonDisabled]}
+            <Button
+              title="Generate Share Link"
               onPress={handleGenerateLink}
               disabled={!answer.trim() || createSession.isPending}
-              activeOpacity={0.8}
-            >
-              {createSession.isPending ? (
-                <ActivityIndicator color="#FFFFFF" size="small" />
-              ) : (
-                <Text style={styles.buttonText}>Generate Share Link</Text>
-              )}
-            </TouchableOpacity>
+              loading={createSession.isPending}
+              className="w-full"
+            />
           </View>
         )}
       </ScrollView>
     </KeyboardAvoidingView>
   );
 }
-
-const styles = StyleSheet.create({
-  keyboardContainer: {
-    flex: 1,
-    backgroundColor: '#F8FAFC',
-  },
-  scrollContainer: {
-    flexGrow: 1,
-    paddingHorizontal: 16,
-    paddingTop: 50,
-    paddingBottom: 24,
-  },
-  loadingContainer: {
-    flex: 1,
-    backgroundColor: '#F8FAFC',
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  loadingText: {
-    marginTop: 12,
-    color: '#475569',
-    fontSize: 16,
-  },
-  header: {
-    marginBottom: 20,
-  },
-  backLink: {
-    alignSelf: 'flex-start',
-    paddingVertical: 4,
-    marginBottom: 8,
-  },
-  backLinkText: {
-    color: '#2563EB',
-    fontSize: 15,
-    fontWeight: '600',
-  },
-  title: {
-    fontSize: 26,
-    fontWeight: '700',
-    color: '#0F172A',
-    marginBottom: 6,
-  },
-  subtitle: {
-    fontSize: 14,
-    color: '#475569',
-    lineHeight: 20,
-  },
-  promptCard: {
-    backgroundColor: '#FFFFFF',
-    borderRadius: 20,
-    padding: 24,
-    borderWidth: 1,
-    borderColor: '#E5E7EB',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.03,
-    shadowRadius: 6,
-    elevation: 2,
-    marginBottom: 20,
-    position: 'relative',
-  },
-  quoteChar: {
-    fontSize: 72,
-    fontWeight: '700',
-    color: '#EFF6FF',
-    position: 'absolute',
-    top: -10,
-    left: 16,
-  },
-  promptText: {
-    fontSize: 18,
-    fontWeight: '600',
-    color: '#1E293B',
-    lineHeight: 26,
-    marginTop: 20,
-    marginBottom: 16,
-    textAlign: 'center',
-  },
-  shuffleButton: {
-    alignSelf: 'center',
-    paddingVertical: 8,
-    paddingHorizontal: 16,
-    backgroundColor: '#F1F5F9',
-    borderRadius: 12,
-  },
-  shuffleText: {
-    fontSize: 13,
-    color: '#475569',
-    fontWeight: '600',
-  },
-  formContainer: {
-    flex: 1,
-  },
-  inputLabel: {
-    fontSize: 14,
-    fontWeight: '600',
-    color: '#334155',
-    marginBottom: 8,
-  },
-  input: {
-    backgroundColor: '#FFFFFF',
-    borderWidth: 1,
-    borderColor: '#E5E7EB',
-    borderRadius: 16,
-    padding: 16,
-    fontSize: 15,
-    color: '#0F172A',
-    minHeight: 100,
-    textAlignVertical: 'top',
-    marginBottom: 16,
-  },
-  primaryButton: {
-    backgroundColor: '#2563EB',
-    height: 48,
-    borderRadius: 12,
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginBottom: 12,
-  },
-  buttonDisabled: {
-    backgroundColor: '#CBD5E1',
-  },
-  buttonText: {
-    color: '#FFFFFF',
-    fontSize: 16,
-    fontWeight: '600',
-  },
-  successCard: {
-    backgroundColor: '#FFFFFF',
-    borderRadius: 20,
-    padding: 24,
-    borderWidth: 1,
-    borderColor: '#E5E7EB',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.03,
-    shadowRadius: 6,
-    elevation: 2,
-    alignItems: 'center',
-  },
-  successTitle: {
-    fontSize: 20,
-    fontWeight: '700',
-    color: '#10B981',
-    marginBottom: 8,
-  },
-  successText: {
-    fontSize: 14,
-    color: '#475569',
-    lineHeight: 20,
-    textAlign: 'center',
-    marginBottom: 20,
-  },
-  linkBox: {
-    width: '100%',
-    backgroundColor: '#F8FAFC',
-    borderRadius: 12,
-    borderWidth: 1,
-    borderColor: '#E2E8F0',
-    padding: 12,
-    alignItems: 'center',
-    marginBottom: 16,
-  },
-  linkText: {
-    fontSize: 13,
-    color: '#2563EB',
-    fontWeight: '500',
-    width: '100%',
-    textAlign: 'center',
-  },
-  secondaryButton: {
-    backgroundColor: '#F1F5F9',
-    height: 48,
-    borderRadius: 12,
-    width: '100%',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  secondaryButtonText: {
-    color: '#475569',
-    fontSize: 14,
-    fontWeight: '600',
-  },
-});

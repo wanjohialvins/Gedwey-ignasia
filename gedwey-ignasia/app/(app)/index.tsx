@@ -1,23 +1,25 @@
 import React from 'react';
-import { View, Text, TouchableOpacity, StyleSheet, Alert, ScrollView } from 'react-native';
+import { View, Text, TouchableOpacity, Alert, ScrollView } from 'react-native';
 import { useRouter } from 'expo-router';
 import { supabase } from '../../lib/supabase';
 import { useAuthStore } from '../../lib/store/authStore';
-import { useUserProfile, useUpdateProfile } from '../../lib/queries/profile';
+import { useUserProfile } from '../../lib/queries/profile';
 import { useSessionHistory } from '../../lib/queries/sessions';
 import { useTimeCapsules } from '../../lib/queries/capsules';
-import { registerForPushNotificationsAsync } from '../../lib/notifications';
+import { Button } from '../../components/Button';
+import { Card } from '../../components/Card';
+import { Skeleton } from '../../components/Skeleton';
 
 export default function HomeScreen() {
   const { user } = useAuthStore();
-  const { data: profile } = useUserProfile(user?.id ?? '');
+  const { data: profile, isLoading: isProfileLoading } = useUserProfile(user?.id ?? '');
   const router = useRouter();
   
-  const { data: sessionHistory } = useSessionHistory(profile?.couple_id ?? '');
+  const { data: sessionHistory, isLoading: isHistoryLoading } = useSessionHistory(profile?.couple_id ?? '');
   const completedSessionsCount = sessionHistory?.length ?? 0;
   const isJournalUnlocked = completedSessionsCount >= 5;
 
-  const { data: capsules } = useTimeCapsules(profile?.couple_id ?? '');
+  const { data: capsules, isLoading: isCapsulesLoading } = useTimeCapsules(profile?.couple_id ?? '');
   const capsulesCount = capsules?.length ?? 0;
 
   const handleSignOut = async () => {
@@ -32,31 +34,87 @@ export default function HomeScreen() {
   };
 
   const isPaired = !!profile?.couple_id;
+  const isLoading = isProfileLoading || (isPaired && (isHistoryLoading || isCapsulesLoading));
+
+  if (isLoading || !profile) {
+    return (
+      <ScrollView className="flex-1 bg-background" contentContainerStyle={{ paddingHorizontal: 16, paddingTop: 60, paddingBottom: 32 }}>
+        {/* Header Skeleton */}
+        <View className="mb-6">
+          <Skeleton width={120} height={28} className="mb-2" />
+          <Skeleton width={180} height={16} />
+        </View>
+
+        {/* Feature Cards Grid Skeleton */}
+        <View className="flex-row gap-3 mb-5">
+          <View className="flex-1 bg-white p-5 rounded-2xl border border-neutral-border shadow-sm items-center">
+            <Skeleton width={40} height={40} variant="circle" className="mb-3" />
+            <Skeleton width={80} height={16} className="mb-2" />
+            <Skeleton width="100%" height={24} />
+          </View>
+          <View className="flex-1 bg-white p-5 rounded-2xl border border-neutral-border shadow-sm items-center">
+            <Skeleton width={40} height={40} variant="circle" className="mb-3" />
+            <Skeleton width={80} height={16} className="mb-2" />
+            <Skeleton width="100%" height={24} />
+          </View>
+        </View>
+
+        {/* Journal, Capsule, Health Skeletons */}
+        {[1, 2, 3].map((i) => (
+          <View key={i} className="bg-white p-5 rounded-2xl border border-neutral-border shadow-sm mb-5">
+            <View className="flex-row justify-between items-center mb-3">
+              <Skeleton width={40} height={40} variant="circle" />
+              <Skeleton width={70} height={20} className="rounded-lg" />
+            </View>
+            <Skeleton width={140} height={20} className="mb-2" />
+            <Skeleton width="90%" height={16} />
+          </View>
+        ))}
+
+        {/* Status Card Skeleton */}
+        <View className="bg-white p-5 rounded-2xl border border-neutral-border shadow-sm mb-5">
+          <Skeleton width={150} height={20} className="mb-4" />
+          {[1, 2, 3].map((i) => (
+            <View key={i} className="flex-row justify-between py-2 border-b border-slate-100">
+              <Skeleton width={60} height={16} />
+              <Skeleton width={80} height={16} />
+            </View>
+          ))}
+        </View>
+      </ScrollView>
+    );
+  }
 
   return (
-    <ScrollView style={styles.container} contentContainerStyle={styles.scrollContent}>
+    <ScrollView className="flex-1 bg-background" contentContainerStyle={{ paddingHorizontal: 16, paddingTop: 60, paddingBottom: 32 }}>
       {/* Header */}
-      <View style={styles.header}>
-        <Text style={styles.greeting}>Welcome 👋</Text>
-        <Text style={styles.displayName}>{profile?.display_name || user?.email}</Text>
+      <View className="mb-6">
+        <Text className="text-3xl font-bold text-text-primary">Welcome 👋</Text>
+        <Text className="text-sm text-text-secondary mt-1 capitalize">
+          {profile?.display_name || user?.email}
+        </Text>
       </View>
 
-      {/* Feature Cards */}
-      <View style={styles.cardsGrid}>
+      {/* Feature Cards Grid */}
+      <View className="flex-row gap-3 mb-5">
         {/* Discovery Mode */}
         <TouchableOpacity
-          style={styles.featureCard}
+          className="flex-1 bg-white rounded-2xl p-5 border border-neutral-border shadow-sm items-center active:bg-slate-50"
           onPress={() => router.push('/discovery')}
           activeOpacity={0.85}
         >
-          <Text style={styles.featureEmoji}>✨</Text>
-          <Text style={styles.featureTitle}>Discovery</Text>
-          <Text style={styles.featureDesc}>Share & compare answers with anyone</Text>
+          <Text className="text-3xl mb-2">✨</Text>
+          <Text className="text-base font-semibold text-text-primary mb-1">Discovery</Text>
+          <Text className="text-xs text-text-muted text-center leading-normal">
+            Share & compare answers with anyone
+          </Text>
         </TouchableOpacity>
 
         {/* Sessions */}
         <TouchableOpacity
-          style={[styles.featureCard, !isPaired && styles.featureCardDisabled]}
+          className={`flex-1 bg-white rounded-2xl p-5 border border-neutral-border shadow-sm items-center active:bg-slate-50 ${
+            !isPaired ? 'opacity-60' : ''
+          }`}
           onPress={() => {
             if (isPaired) {
               router.push('/session/start');
@@ -66,9 +124,9 @@ export default function HomeScreen() {
           }}
           activeOpacity={0.85}
         >
-          <Text style={styles.featureEmoji}>🎴</Text>
-          <Text style={styles.featureTitle}>Sessions</Text>
-          <Text style={styles.featureDesc}>
+          <Text className="text-3xl mb-2">🎴</Text>
+          <Text className="text-base font-semibold text-text-primary mb-1">Sessions</Text>
+          <Text className="text-xs text-text-muted text-center leading-normal">
             {isPaired ? 'Shared couple sessions' : 'Pair with partner first'}
           </Text>
         </TouchableOpacity>
@@ -76,10 +134,9 @@ export default function HomeScreen() {
 
       {/* Shared Journal Card */}
       <TouchableOpacity
-        style={[
-          styles.journalCard,
-          (!isPaired || !isJournalUnlocked) && styles.journalCardLocked,
-        ]}
+        className={`bg-white rounded-2xl p-5 border border-neutral-border shadow-sm mb-5 active:bg-slate-50 ${
+          (!isPaired || !isJournalUnlocked) ? 'border-slate-200 bg-slate-50/50 opacity-90' : ''
+        }`}
         onPress={() => {
           if (!isPaired) {
             Alert.alert('Pairing Required', 'You need to be paired with a partner to access the Shared Journal.');
@@ -94,16 +151,16 @@ export default function HomeScreen() {
         }}
         activeOpacity={0.85}
       >
-        <View style={styles.journalHeaderRow}>
-          <Text style={styles.journalEmoji}>📓</Text>
+        <View className="flex-row justify-between items-center mb-2.5">
+          <Text className="text-3xl">📓</Text>
           {!isJournalUnlocked && (
-            <View style={styles.lockedBadge}>
-              <Text style={styles.lockedBadgeText}>🔒 Locked</Text>
+            <View className="bg-blue-50 px-2 py-1 rounded-lg border border-blue-100">
+              <Text className="text-2xs font-bold text-primary-600">🔒 Locked</Text>
             </View>
           )}
         </View>
-        <Text style={styles.journalTitle}>Shared Journal</Text>
-        <Text style={styles.journalDesc}>
+        <Text className="text-lg font-bold text-text-primary mb-1">Shared Journal</Text>
+        <Text className="text-xs text-text-secondary leading-normal">
           {isJournalUnlocked
             ? 'Write and explore shared private memories'
             : `Unlock after 5 sessions • Progress: ${completedSessionsCount}/5`}
@@ -112,7 +169,9 @@ export default function HomeScreen() {
 
       {/* Time Capsule Card */}
       <TouchableOpacity
-        style={[styles.journalCard, !isPaired && styles.featureCardDisabled]}
+        className={`bg-white rounded-2xl p-5 border border-neutral-border shadow-sm mb-5 active:bg-slate-50 ${
+          !isPaired ? 'opacity-60' : ''
+        }`}
         onPress={() => {
           if (isPaired) {
             router.push('/capsule');
@@ -122,16 +181,16 @@ export default function HomeScreen() {
         }}
         activeOpacity={0.85}
       >
-        <View style={styles.journalHeaderRow}>
-          <Text style={styles.journalEmoji}>⏳</Text>
+        <View className="flex-row justify-between items-center mb-2.5">
+          <Text className="text-3xl">⏳</Text>
           {isPaired && capsulesCount > 0 && (
-            <View style={styles.lockedBadge}>
-              <Text style={styles.lockedBadgeText}>{capsulesCount} Capsules</Text>
+            <View className="bg-blue-50 px-2 py-1 rounded-lg border border-blue-100">
+              <Text className="text-2xs font-bold text-primary-600">{capsulesCount} Capsules</Text>
             </View>
           )}
         </View>
-        <Text style={styles.journalTitle}>Time Capsules</Text>
-        <Text style={styles.journalDesc}>
+        <Text className="text-lg font-bold text-text-primary mb-1">Time Capsules</Text>
+        <Text className="text-xs text-text-secondary leading-normal">
           {isPaired
             ? 'Lock messages & photos to open together in the future'
             : 'Pair with your partner to lock memories'}
@@ -140,10 +199,9 @@ export default function HomeScreen() {
 
       {/* Relationship Health Card */}
       <TouchableOpacity
-        style={[
-          styles.journalCard,
-          (!isPaired || completedSessionsCount < 10) && styles.journalCardLocked,
-        ]}
+        className={`bg-white rounded-2xl p-5 border border-neutral-border shadow-sm mb-5 active:bg-slate-50 ${
+          (!isPaired || completedSessionsCount < 10) ? 'border-slate-200 bg-slate-50/50 opacity-90' : ''
+        }`}
         onPress={() => {
           if (!isPaired) {
             Alert.alert('Pairing Required', 'You need to be paired with a partner to access Relationship Health.');
@@ -158,20 +216,20 @@ export default function HomeScreen() {
         }}
         activeOpacity={0.85}
       >
-        <View style={styles.journalHeaderRow}>
-          <Text style={styles.journalEmoji}>❤️</Text>
+        <View className="flex-row justify-between items-center mb-2.5">
+          <Text className="text-3xl">❤️</Text>
           {completedSessionsCount < 10 ? (
-            <View style={styles.lockedBadge}>
-              <Text style={styles.lockedBadgeText}>🔒 Locked</Text>
+            <View className="bg-blue-50 px-2 py-1 rounded-lg border border-blue-100">
+              <Text className="text-2xs font-bold text-primary-600">🔒 Locked</Text>
             </View>
           ) : (
-            <View style={styles.lockedBadge}>
-              <Text style={styles.lockedBadgeText}>✨ Unlocked</Text>
+            <View className="bg-blue-50 px-2 py-1 rounded-lg border border-blue-100">
+              <Text className="text-2xs font-bold text-primary-600">✨ Unlocked</Text>
             </View>
           )}
         </View>
-        <Text style={styles.journalTitle}>Relationship Health</Text>
-        <Text style={styles.journalDesc}>
+        <Text className="text-lg font-bold text-text-primary mb-1">Relationship Health</Text>
+        <Text className="text-xs text-text-secondary leading-normal">
           {completedSessionsCount >= 10
             ? 'Track and visualize your weekly couple alignment radar'
             : `Unlock after 10 sessions • Progress: ${completedSessionsCount}/10`}
@@ -179,210 +237,43 @@ export default function HomeScreen() {
       </TouchableOpacity>
 
       {/* Status Card */}
-      <View style={styles.statusCard}>
-        <Text style={styles.statusTitle}>Relationship Status</Text>
-        <View style={styles.statusRow}>
-          <Text style={styles.statusLabel}>Mode</Text>
-          <Text style={styles.statusValue}>{profile?.app_mode?.replace('_', ' ') || '—'}</Text>
+      <Card className="p-5 mb-6">
+        <Text className="text-base font-semibold text-text-primary mb-4">Relationship Status</Text>
+        <View className="flex-row justify-between py-3 border-b border-slate-100">
+          <Text className="text-sm text-text-secondary">Mode</Text>
+          <Text className="text-sm font-semibold text-text-primary capitalize">
+            {profile?.app_mode?.replace('_', ' ') || '—'}
+          </Text>
         </View>
-        <View style={styles.statusRow}>
-          <Text style={styles.statusLabel}>Stage</Text>
-          <Text style={styles.statusValue}>{profile?.relationship_stage?.replace('_', ' ') || '—'}</Text>
+        <View className="flex-row justify-between py-3 border-b border-slate-100">
+          <Text className="text-sm text-text-secondary">Stage</Text>
+          <Text className="text-sm font-semibold text-text-primary capitalize">
+            {profile?.relationship_stage?.replace('_', ' ') || '—'}
+          </Text>
         </View>
-        <View style={styles.statusRow}>
-          <Text style={styles.statusLabel}>Partner</Text>
-          <Text style={styles.statusValue}>{isPaired ? 'Paired ❤️' : 'Not paired'}</Text>
+        <View className="flex-row justify-between py-3">
+          <Text className="text-sm text-text-secondary">Partner</Text>
+          <Text className="text-sm font-semibold text-text-primary capitalize">
+            {isPaired ? 'Paired ❤️' : 'Not paired'}
+          </Text>
         </View>
         {!isPaired && profile?.invite_code && (
-          <View style={styles.codeRow}>
-            <Text style={styles.statusLabel}>Your Code</Text>
-            <Text style={styles.codeValue}>{profile.invite_code}</Text>
+          <View className="flex-row justify-between py-3 border-t border-slate-100 mt-1">
+            <Text className="text-sm text-text-secondary">Your Code</Text>
+            <Text className="text-sm font-bold text-primary-600 tracking-wider">
+              {profile.invite_code}
+            </Text>
           </View>
         )}
-      </View>
+      </Card>
 
       {/* Sign Out */}
-      <TouchableOpacity
-        style={styles.signOutButton}
+      <Button
+        title="Sign Out"
         onPress={handleSignOut}
-        activeOpacity={0.8}
-      >
-        <Text style={styles.signOutText}>Sign Out</Text>
-      </TouchableOpacity>
+        variant="secondary"
+        className="w-full"
+      />
     </ScrollView>
   );
 }
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#F8FAFC',
-  },
-  scrollContent: {
-    paddingHorizontal: 16,
-    paddingTop: 60,
-    paddingBottom: 32,
-  },
-  header: {
-    marginBottom: 24,
-  },
-  greeting: {
-    fontSize: 28,
-    fontWeight: '700',
-    color: '#0F172A',
-  },
-  displayName: {
-    fontSize: 14,
-    color: '#475569',
-    marginTop: 4,
-    textTransform: 'capitalize',
-  },
-  cardsGrid: {
-    flexDirection: 'row',
-    gap: 12,
-    marginBottom: 20,
-  },
-  featureCard: {
-    flex: 1,
-    backgroundColor: '#FFFFFF',
-    borderRadius: 16,
-    padding: 20,
-    borderWidth: 1,
-    borderColor: '#E5E7EB',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.03,
-    shadowRadius: 6,
-    elevation: 2,
-    alignItems: 'center',
-  },
-  featureCardDisabled: {
-    opacity: 0.6,
-  },
-  featureEmoji: {
-    fontSize: 32,
-    marginBottom: 8,
-  },
-  featureTitle: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: '#0F172A',
-    marginBottom: 4,
-  },
-  featureDesc: {
-    fontSize: 12,
-    color: '#64748B',
-    textAlign: 'center',
-    lineHeight: 16,
-  },
-  journalCard: {
-    backgroundColor: '#FFFFFF',
-    borderRadius: 16,
-    padding: 20,
-    borderWidth: 1,
-    borderColor: '#E5E7EB',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.03,
-    shadowRadius: 6,
-    elevation: 2,
-    marginBottom: 20,
-  },
-  journalCardLocked: {
-    borderColor: '#E2E8F0',
-    backgroundColor: '#F8FAFC',
-    opacity: 0.85,
-  },
-  journalHeaderRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 10,
-  },
-  journalEmoji: {
-    fontSize: 32,
-  },
-  lockedBadge: {
-    backgroundColor: '#EFF6FF',
-    paddingHorizontal: 8,
-    paddingVertical: 4,
-    borderRadius: 8,
-    borderWidth: 1,
-    borderColor: '#DBEAFE',
-  },
-  lockedBadgeText: {
-    fontSize: 11,
-    fontWeight: '700',
-    color: '#2563EB',
-  },
-  journalTitle: {
-    fontSize: 18,
-    fontWeight: '700',
-    color: '#0F172A',
-    marginBottom: 4,
-  },
-  journalDesc: {
-    fontSize: 13,
-    color: '#64748B',
-    lineHeight: 18,
-  },
-  statusCard: {
-    backgroundColor: '#FFFFFF',
-    borderRadius: 16,
-    padding: 20,
-    borderWidth: 1,
-    borderColor: '#E5E7EB',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.02,
-    shadowRadius: 4,
-    elevation: 2,
-    marginBottom: 20,
-  },
-  statusTitle: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: '#0F172A',
-    marginBottom: 16,
-  },
-  statusRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    paddingVertical: 8,
-    borderBottomWidth: 1,
-    borderBottomColor: '#F1F5F9',
-  },
-  statusLabel: {
-    fontSize: 14,
-    color: '#64748B',
-  },
-  statusValue: {
-    fontSize: 14,
-    fontWeight: '600',
-    color: '#0F172A',
-    textTransform: 'capitalize',
-  },
-  codeRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    paddingVertical: 8,
-  },
-  codeValue: {
-    fontSize: 14,
-    fontWeight: '700',
-    color: '#2563EB',
-    letterSpacing: 2,
-  },
-  signOutButton: {
-    backgroundColor: '#DBEAFE',
-    height: 48,
-    borderRadius: 12,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  signOutText: {
-    color: '#2563EB',
-    fontSize: 16,
-    fontWeight: '600',
-  },
-});

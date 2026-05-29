@@ -2,14 +2,15 @@ import React from 'react';
 import {
   View,
   Text,
-  TouchableOpacity,
-  StyleSheet,
-  ActivityIndicator,
   ScrollView,
   SafeAreaView,
+  TouchableOpacity,
 } from 'react-native';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import { useTimeCapsule } from '../../../lib/queries/capsules';
+import { Button } from '../../../components/Button';
+import { Card } from '../../../components/Card';
+import { Skeleton } from '../../../components/Skeleton';
 
 export default function CapsuleDetailScreen() {
   const router = useRouter();
@@ -19,33 +20,51 @@ export default function CapsuleDetailScreen() {
 
   if (isLoading) {
     return (
-      <View style={styles.loadingContainer}>
-        <ActivityIndicator size="large" color="#2563EB" />
-        <Text style={styles.loadingText}>Unsealing time capsule...</Text>
-      </View>
+      <SafeAreaView className="flex-1 bg-background">
+        <View className="flex-1 px-4">
+          <Skeleton width={80} height={20} className="mt-2.5 mb-2 py-1" />
+          
+          <View className="items-center mb-6">
+            <Skeleton width={44} height={44} variant="circle" className="mb-2" />
+            <Skeleton width={120} height={24} className="mb-2" />
+            <Skeleton width={200} height={14} />
+          </View>
+
+          <View className="bg-white p-5 rounded-2xl border border-neutral-border shadow-sm mb-5">
+            <View className="flex-row justify-between mb-3">
+              <Skeleton width={80} height={14} />
+              <Skeleton width={120} height={14} />
+            </View>
+            <Skeleton width={160} height={20} className="mb-3" />
+            <View className="h-[1px] bg-slate-200 w-full mb-3" />
+            <Skeleton width="95%" height={14} className="mb-2" />
+            <Skeleton width="98%" height={14} className="mb-2" />
+            <Skeleton width="90%" height={14} className="mb-2" />
+            <Skeleton width="40%" height={14} />
+          </View>
+        </View>
+      </SafeAreaView>
     );
   }
 
   if (error || !capsule) {
     return (
-      <SafeAreaView style={styles.safeArea}>
-        <View style={styles.container}>
-          <TouchableOpacity style={styles.backLink} onPress={() => router.back()}>
-            <Text style={styles.backLinkText}>← Back</Text>
+      <SafeAreaView className="flex-1 bg-background">
+        <View className="flex-1 px-4">
+          <TouchableOpacity className="self-start py-2 mt-2 mb-2" onPress={() => router.back()}>
+            <Text className="text-primary-600 text-sm font-semibold">← Back</Text>
           </TouchableOpacity>
-          <View style={styles.errorContent}>
-            <Text style={styles.errorEmoji}>⚠️</Text>
-            <Text style={styles.errorTitle}>Failed to load capsule</Text>
-            <Text style={styles.errorSubtitle}>
+          <View className="flex-1 justify-center items-center px-6 pb-12">
+            <Text className="text-5xl mb-4">⚠️</Text>
+            <Text className="text-xl font-bold text-text-primary mb-2 text-center">Failed to load capsule</Text>
+            <Text className="text-sm text-text-secondary text-center leading-relaxed mb-6 px-4">
               {error?.message || 'The requested time capsule could not be found.'}
             </Text>
-            <TouchableOpacity
-              style={styles.primaryButton}
+            <Button
+              title="Back to Vault"
               onPress={() => router.replace('/capsule')}
-              activeOpacity={0.8}
-            >
-              <Text style={styles.buttonText}>Back to Vault</Text>
-            </TouchableOpacity>
+              className="w-full"
+            />
           </View>
         </View>
       </SafeAreaView>
@@ -68,36 +87,42 @@ export default function CapsuleDetailScreen() {
     });
 
     return (
-      <SafeAreaView style={styles.safeArea}>
-        <View style={styles.container}>
-          <TouchableOpacity style={styles.backLink} onPress={() => router.back()}>
-            <Text style={styles.backLinkText}>← Back</Text>
+      <SafeAreaView className="flex-1 bg-background">
+        <View className="flex-1 px-4">
+          <TouchableOpacity className="self-start py-2 mt-2 mb-2" onPress={() => router.back()}>
+            <Text className="text-primary-600 text-sm font-semibold">← Back</Text>
           </TouchableOpacity>
           
-          <View style={styles.lockedContent}>
-            <Text style={styles.lockedEmoji}>🔒</Text>
-            <Text style={styles.lockedTitle}>Capsule is Sealed</Text>
-            <Text style={styles.lockedSubtitle}>
+          <View className="flex-1 justify-center items-center px-6 pb-12">
+            <Text className="text-5xl mb-4">🔒</Text>
+            <Text className="text-xl font-bold text-text-primary mb-2 text-center">Capsule is Sealed</Text>
+            <Text className="text-sm text-text-secondary text-center leading-relaxed mb-6 px-4">
               This letter to the future is currently locked. Love grows in waiting.
             </Text>
 
-            <View style={styles.lockedCard}>
-              <Text style={styles.lockedLabel}>Capsule Title</Text>
-              <Text style={styles.lockedValueTitle}>{capsule.title}</Text>
+            <Card className="w-full p-5 mb-6 items-center">
+              <Text className="text-[10px] font-bold text-primary-600 uppercase tracking-widest mb-1.5">
+                Capsule Title
+              </Text>
+              <Text className="text-base font-bold text-text-primary text-center mb-3">
+                {capsule.title}
+              </Text>
               
-              <View style={styles.divider} />
+              <View className="h-[1px] bg-slate-200 w-full mb-3" />
               
-              <Text style={styles.lockedLabel}>Unlocks on</Text>
-              <Text style={styles.lockedValueDate}>{formattedOpenDate}</Text>
-            </View>
+              <Text className="text-[10px] font-bold text-primary-600 uppercase tracking-widest mb-1.5">
+                Unlocks on
+              </Text>
+              <Text className="text-sm font-semibold text-text-secondary text-center">
+                {formattedOpenDate}
+              </Text>
+            </Card>
 
-            <TouchableOpacity
-              style={styles.primaryButton}
+            <Button
+              title="Back to Vault"
               onPress={() => router.back()}
-              activeOpacity={0.8}
-            >
-              <Text style={styles.buttonText}>Back to Vault</Text>
-            </TouchableOpacity>
+              className="w-full"
+            />
           </View>
         </View>
       </SafeAreaView>
@@ -112,255 +137,42 @@ export default function CapsuleDetailScreen() {
   });
 
   return (
-    <SafeAreaView style={styles.safeArea}>
-      <View style={styles.container}>
-        <TouchableOpacity style={styles.backLink} onPress={() => router.back()}>
-          <Text style={styles.backLinkText}>← Back</Text>
+    <SafeAreaView className="flex-1 bg-background">
+      <View className="flex-1 px-4">
+        <TouchableOpacity className="self-start py-2 mt-2 mb-2" onPress={() => router.back()}>
+          <Text className="text-primary-600 text-sm font-semibold">← Back</Text>
         </TouchableOpacity>
 
-        <ScrollView contentContainerStyle={styles.scrollContainer} showsVerticalScrollIndicator={false}>
+        <ScrollView contentContainerStyle={{ flexGrow: 1, paddingBottom: 40 }} showsVerticalScrollIndicator={false}>
           {/* Confetti celebration header */}
-          <View style={styles.unlockedHeader}>
-            <Text style={styles.revealEmoji}>✨</Text>
-            <Text style={styles.revealTitle}>Vault Unlocked!</Text>
-            <Text style={styles.revealSubtitle}>
+          <View className="items-center mb-6">
+            <Text className="text-5xl mb-2">✨</Text>
+            <Text className="text-2xl font-bold text-text-primary mb-1">Vault Unlocked!</Text>
+            <Text className="text-sm text-text-secondary text-center px-4">
               An intimate letter from the past has been unsealed.
             </Text>
           </View>
 
           {/* Capsule Card */}
-          <View style={styles.revealedCard}>
-            <View style={styles.cardMetaRow}>
-              <Text style={styles.cardAuthor}>From {creatorName}</Text>
-              <Text style={styles.cardDate}>Unsealed {formattedOpenDate}</Text>
+          <Card className="p-5">
+            <View className="flex-row justify-between mb-3">
+              <Text className="text-xs font-semibold text-primary-600">From {creatorName}</Text>
+              <Text className="text-xs text-text-muted">Unsealed {formattedOpenDate}</Text>
             </View>
             
-            <Text style={styles.revealedTitle}>{capsule.title}</Text>
-            <View style={styles.divider} />
-            <Text style={styles.revealedBody}>{capsule.content}</Text>
-          </View>
+            <Text className="text-lg font-bold text-text-primary mb-3">{capsule.title}</Text>
+            <View className="h-[1px] bg-slate-200 w-full mb-4" />
+            <Text className="text-sm text-text-secondary leading-6">{capsule.content}</Text>
+          </Card>
 
-          <TouchableOpacity
-            style={styles.primaryButtonOutlined}
+          <Button
+            title="Back to Vault"
             onPress={() => router.replace('/capsule')}
-            activeOpacity={0.8}
-          >
-            <Text style={styles.buttonTextOutlined}>Back to Vault</Text>
-          </TouchableOpacity>
+            variant="secondary"
+            className="w-full mt-4"
+          />
         </ScrollView>
       </View>
     </SafeAreaView>
   );
 }
-
-const styles = StyleSheet.create({
-  safeArea: {
-    flex: 1,
-    backgroundColor: '#F8FAFC',
-  },
-  container: {
-    flex: 1,
-    paddingHorizontal: 16,
-  },
-  loadingContainer: {
-    flex: 1,
-    backgroundColor: '#F8FAFC',
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  loadingText: {
-    marginTop: 12,
-    color: '#475569',
-    fontSize: 16,
-  },
-  backLink: {
-    alignSelf: 'flex-start',
-    paddingVertical: 8,
-    marginTop: 10,
-    marginBottom: 8,
-  },
-  backLinkText: {
-    color: '#2563EB',
-    fontSize: 15,
-    fontWeight: '600',
-  },
-  scrollContainer: {
-    flexGrow: 1,
-    paddingBottom: 40,
-  },
-  errorContent: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    paddingBottom: 60,
-  },
-  errorEmoji: {
-    fontSize: 56,
-    marginBottom: 16,
-  },
-  errorTitle: {
-    fontSize: 20,
-    fontWeight: '700',
-    color: '#0F172A',
-    marginBottom: 8,
-  },
-  errorSubtitle: {
-    fontSize: 14,
-    color: '#475569',
-    textAlign: 'center',
-    lineHeight: 20,
-    marginBottom: 24,
-    paddingHorizontal: 24,
-  },
-  primaryButton: {
-    backgroundColor: '#2563EB',
-    height: 48,
-    borderRadius: 12,
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingHorizontal: 24,
-    width: '100%',
-  },
-  primaryButtonOutlined: {
-    backgroundColor: '#EFF6FF',
-    height: 48,
-    borderRadius: 12,
-    alignItems: 'center',
-    justifyContent: 'center',
-    borderWidth: 1,
-    borderColor: '#DBEAFE',
-    marginTop: 16,
-  },
-  buttonTextOutlined: {
-    color: '#2563EB',
-    fontSize: 16,
-    fontWeight: '600',
-  },
-  buttonText: {
-    color: '#FFFFFF',
-    fontSize: 16,
-    fontWeight: '600',
-  },
-  lockedContent: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    paddingBottom: 80,
-  },
-  lockedEmoji: {
-    fontSize: 64,
-    marginBottom: 16,
-  },
-  lockedTitle: {
-    fontSize: 22,
-    fontWeight: '700',
-    color: '#0F172A',
-    marginBottom: 8,
-  },
-  lockedSubtitle: {
-    fontSize: 14,
-    color: '#475569',
-    textAlign: 'center',
-    lineHeight: 20,
-    marginBottom: 24,
-    paddingHorizontal: 32,
-  },
-  lockedCard: {
-    backgroundColor: '#FFFFFF',
-    borderRadius: 20,
-    padding: 20,
-    width: '100%',
-    borderWidth: 1,
-    borderColor: '#E5E7EB',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.03,
-    shadowRadius: 6,
-    elevation: 2,
-    marginBottom: 24,
-    alignItems: 'center',
-  },
-  lockedLabel: {
-    fontSize: 11,
-    fontWeight: '700',
-    color: '#2563EB',
-    textTransform: 'uppercase',
-    letterSpacing: 1,
-    marginBottom: 6,
-  },
-  lockedValueTitle: {
-    fontSize: 16,
-    fontWeight: '700',
-    color: '#0F172A',
-    textAlign: 'center',
-    marginBottom: 16,
-  },
-  lockedValueDate: {
-    fontSize: 14,
-    fontWeight: '600',
-    color: '#475569',
-    textAlign: 'center',
-  },
-  divider: {
-    height: 1,
-    backgroundColor: '#F1F5F9',
-    width: '100%',
-    marginBottom: 16,
-  },
-  unlockedHeader: {
-    alignItems: 'center',
-    marginBottom: 24,
-  },
-  revealEmoji: {
-    fontSize: 48,
-    marginBottom: 8,
-  },
-  revealTitle: {
-    fontSize: 24,
-    fontWeight: '700',
-    color: '#0F172A',
-    marginBottom: 4,
-  },
-  revealSubtitle: {
-    fontSize: 13,
-    color: '#475569',
-    textAlign: 'center',
-  },
-  revealedCard: {
-    backgroundColor: '#FFFFFF',
-    borderRadius: 20,
-    padding: 20,
-    borderWidth: 1,
-    borderColor: '#E5E7EB',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.03,
-    shadowRadius: 6,
-    elevation: 2,
-  },
-  cardMetaRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    marginBottom: 12,
-  },
-  cardAuthor: {
-    fontSize: 12,
-    fontWeight: '600',
-    color: '#2563EB',
-  },
-  cardDate: {
-    fontSize: 12,
-    color: '#64748B',
-  },
-  revealedTitle: {
-    fontSize: 18,
-    fontWeight: '700',
-    color: '#0F172A',
-    marginBottom: 12,
-  },
-  revealedBody: {
-    fontSize: 15,
-    color: '#334155',
-    lineHeight: 24,
-  },
-});

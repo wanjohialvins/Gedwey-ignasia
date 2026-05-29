@@ -3,8 +3,6 @@ import {
   View,
   Text,
   TouchableOpacity,
-  StyleSheet,
-  ActivityIndicator,
   Alert,
   ScrollView,
   SafeAreaView,
@@ -13,6 +11,8 @@ import { useRouter } from 'expo-router';
 import { useAuthStore } from '../../../lib/store/authStore';
 import { useUserProfile } from '../../../lib/queries/profile';
 import { useSessionHistory } from '../../../lib/queries/sessions';
+import { Card } from '../../../components/Card';
+import { Skeleton } from '../../../components/Skeleton';
 
 interface DeckItem {
   key: 'fun' | 'discovery' | 'intimacy' | 'relationship_health';
@@ -67,10 +67,30 @@ export default function DeckSelectorScreen() {
 
   if (isLoading) {
     return (
-      <View style={styles.loadingContainer}>
-        <ActivityIndicator size="large" color="#2563EB" />
-        <Text style={styles.loadingText}>Loading card decks...</Text>
-      </View>
+      <SafeAreaView className="flex-1 bg-background">
+        <View className="flex-1 px-4">
+          <Skeleton width={80} height={20} className="mt-2.5 mb-2 py-1" />
+          <View className="mb-4">
+            <Skeleton width={180} height={28} className="mb-2" />
+            <Skeleton width="100%" height={16} className="mb-1" />
+            <Skeleton width="85%" height={16} />
+          </View>
+
+          <View className="gap-4">
+            {[1, 2, 3, 4].map((i) => (
+              <View key={i} className="bg-white p-5 rounded-2xl border border-neutral-border shadow-sm">
+                <View className="flex-row justify-between items-center mb-3">
+                  <Skeleton width={44} height={44} variant="circle" />
+                  {i > 2 && <Skeleton width={60} height={20} className="rounded-lg" />}
+                </View>
+                <Skeleton width={140} height={20} className="mb-2" />
+                <Skeleton width="90%" height={14} className="mb-2" />
+                <Skeleton width="80%" height={14} />
+              </View>
+            ))}
+          </View>
+        </View>
+      </SafeAreaView>
     );
   }
 
@@ -92,19 +112,19 @@ export default function DeckSelectorScreen() {
   };
 
   return (
-    <SafeAreaView style={styles.safeArea}>
-      <View style={styles.container}>
-        <TouchableOpacity style={styles.backLink} onPress={() => router.back()}>
-          <Text style={styles.backLinkText}>← Back</Text>
+    <SafeAreaView className="flex-1 bg-background">
+      <View className="flex-1 px-4">
+        <TouchableOpacity className="self-start py-2 mt-2 mb-2" onPress={() => router.back()}>
+          <Text className="text-primary-600 text-sm font-semibold">← Back</Text>
         </TouchableOpacity>
 
-        <ScrollView contentContainerStyle={styles.scrollContainer} showsVerticalScrollIndicator={false}>
-          <Text style={styles.title}>Choose a Deck</Text>
-          <Text style={styles.subtitle}>
+        <ScrollView contentContainerStyle={{ flexGrow: 1, paddingBottom: 40 }} showsVerticalScrollIndicator={false}>
+          <Text className="text-2xl font-bold text-text-primary mb-1">Choose a Deck</Text>
+          <Text className="text-sm text-text-secondary leading-relaxed mb-6">
             Select a themed prompt for today's shared couple connection.
           </Text>
 
-          <View style={styles.deckList}>
+          <View className="gap-4">
             {DECKS.map((deck) => {
               const isUnlocked = completedSessionsCount >= deck.requiredSessions;
               const progress = Math.min((completedSessionsCount / deck.requiredSessions) * 100, 100);
@@ -112,33 +132,34 @@ export default function DeckSelectorScreen() {
               return (
                 <TouchableOpacity
                   key={deck.key}
-                  style={[styles.deckCard, !isUnlocked && styles.deckCardLocked]}
                   onPress={() => handleSelectDeck(deck)}
                   activeOpacity={isUnlocked ? 0.7 : 0.85}
                 >
-                  <View style={styles.cardHeader}>
-                    <Text style={styles.deckEmoji}>{deck.emoji}</Text>
+                  <Card className={`p-5 ${!isUnlocked ? 'bg-slate-50/50 border-slate-200 opacity-90' : ''}`}>
+                    <View className="flex-row justify-between items-center mb-3">
+                      <Text className="text-4xl">{deck.emoji}</Text>
+                      {!isUnlocked && (
+                        <View className="bg-blue-50 px-2 py-1 rounded-lg border border-blue-100">
+                          <Text className="text-2xs font-bold text-primary-600">🔒 Locked</Text>
+                        </View>
+                      )}
+                    </View>
+
+                    <Text className="text-lg font-bold text-text-primary mb-1">{deck.title}</Text>
+                    <Text className="text-xs text-text-secondary leading-normal mb-1">{deck.desc}</Text>
+
+                    {/* Progress Milestone Bar for Locked Decks */}
                     {!isUnlocked && (
-                      <View style={styles.lockBadge}>
-                        <Text style={styles.lockBadgeText}>🔒 Locked</Text>
+                      <View className="mt-3 border-t border-slate-100 pt-3">
+                        <View className="h-1.5 bg-slate-200 rounded-full mb-1.5 overflow-hidden">
+                          <View style={{ width: `${progress}%` }} className="h-full bg-primary-600 rounded-full" />
+                        </View>
+                        <Text className="text-[10px] font-semibold text-text-muted">
+                          Milestone: {completedSessionsCount}/{deck.requiredSessions} sessions
+                        </Text>
                       </View>
                     )}
-                  </View>
-
-                  <Text style={styles.deckTitle}>{deck.title}</Text>
-                  <Text style={styles.deckDesc}>{deck.desc}</Text>
-
-                  {/* Progress Milestone Bar for Locked Decks */}
-                  {!isUnlocked && (
-                    <View style={styles.milestoneSection}>
-                      <View style={styles.barContainer}>
-                        <View style={[styles.bar, { width: `${progress}%` }]} />
-                      </View>
-                      <Text style={styles.milestoneText}>
-                        Milestone: {completedSessionsCount}/{deck.requiredSessions} sessions
-                      </Text>
-                    </View>
-                  )}
+                  </Card>
                 </TouchableOpacity>
               );
             })}
@@ -148,129 +169,3 @@ export default function DeckSelectorScreen() {
     </SafeAreaView>
   );
 }
-
-const styles = StyleSheet.create({
-  safeArea: {
-    flex: 1,
-    backgroundColor: '#F8FAFC',
-  },
-  container: {
-    flex: 1,
-    paddingHorizontal: 16,
-  },
-  loadingContainer: {
-    flex: 1,
-    backgroundColor: '#F8FAFC',
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  loadingText: {
-    marginTop: 12,
-    color: '#475569',
-    fontSize: 16,
-  },
-  backLink: {
-    alignSelf: 'flex-start',
-    paddingVertical: 8,
-    marginTop: 10,
-    marginBottom: 8,
-  },
-  backLinkText: {
-    color: '#2563EB',
-    fontSize: 15,
-    fontWeight: '600',
-  },
-  scrollContainer: {
-    flexGrow: 1,
-    paddingBottom: 40,
-  },
-  title: {
-    fontSize: 26,
-    fontWeight: '700',
-    color: '#0F172A',
-    marginBottom: 4,
-  },
-  subtitle: {
-    fontSize: 14,
-    color: '#475569',
-    lineHeight: 20,
-    marginBottom: 24,
-  },
-  deckList: {
-    gap: 16,
-  },
-  deckCard: {
-    backgroundColor: '#FFFFFF',
-    borderRadius: 20,
-    padding: 20,
-    borderWidth: 1,
-    borderColor: '#E5E7EB',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.03,
-    shadowRadius: 6,
-    elevation: 2,
-  },
-  deckCardLocked: {
-    backgroundColor: '#F8FAFC',
-    borderColor: '#E2E8F0',
-    opacity: 0.85,
-  },
-  cardHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 12,
-  },
-  deckEmoji: {
-    fontSize: 36,
-  },
-  lockBadge: {
-    backgroundColor: '#EFF6FF',
-    paddingHorizontal: 8,
-    paddingVertical: 4,
-    borderRadius: 8,
-    borderWidth: 1,
-    borderColor: '#DBEAFE',
-  },
-  lockBadgeText: {
-    fontSize: 11,
-    fontWeight: '700',
-    color: '#2563EB',
-  },
-  deckTitle: {
-    fontSize: 18,
-    fontWeight: '700',
-    color: '#0F172A',
-    marginBottom: 4,
-  },
-  deckDesc: {
-    fontSize: 13,
-    color: '#475569',
-    lineHeight: 18,
-    marginBottom: 4,
-  },
-  milestoneSection: {
-    marginTop: 12,
-    borderTopWidth: 1,
-    borderTopColor: '#F1F5F9',
-    paddingTop: 12,
-  },
-  barContainer: {
-    height: 6,
-    backgroundColor: '#E2E8F0',
-    borderRadius: 3,
-    marginBottom: 6,
-    overflow: 'hidden',
-  },
-  bar: {
-    height: '100%',
-    backgroundColor: '#2563EB',
-    borderRadius: 3,
-  },
-  milestoneText: {
-    fontSize: 11,
-    fontWeight: '600',
-    color: '#64748B',
-  },
-});

@@ -2,18 +2,19 @@ import React, { useState } from 'react';
 import {
   View,
   Text,
-  TextInput,
-  TouchableOpacity,
-  StyleSheet,
-  ActivityIndicator,
   Alert,
   ScrollView,
   KeyboardAvoidingView,
   Platform,
+  TouchableOpacity,
 } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useDiscoverySessionByToken, useSubmitGuestAnswer } from '../../lib/queries/discovery';
 import { useAuthStore } from '../../lib/store/authStore';
+import { Button } from '../../components/Button';
+import { Input } from '../../components/Input';
+import { Card } from '../../components/Card';
+import { Skeleton } from '../../components/Skeleton';
 
 export default function GuestRevealScreen() {
   const router = useRouter();
@@ -59,23 +60,44 @@ export default function GuestRevealScreen() {
 
   if (isLoading) {
     return (
-      <View style={styles.loadingContainer}>
-        <ActivityIndicator size="large" color="#2563EB" />
-        <Text style={styles.loadingText}>Loading shared moment...</Text>
+      <View className="flex-1 bg-background px-4 pt-16 pb-6">
+        {/* Header Skeleton */}
+        <View className="items-center mb-6">
+          <Skeleton width={120} height={32} className="mb-2" />
+          <Skeleton width={80} height={16} className="mb-2" />
+          <Skeleton width={200} height={14} />
+        </View>
+
+        {/* Question card Skeleton */}
+        <View className="bg-white rounded-2xl p-6 border border-neutral-border shadow-sm mb-6 items-center">
+          <Skeleton width="90%" height={24} className="mb-2" />
+          <Skeleton width="60%" height={24} />
+        </View>
+
+        {/* Form Skeleton */}
+        <View className="bg-white rounded-2xl p-5 border border-neutral-border shadow-sm">
+          <Skeleton width={120} height={20} className="mb-4 self-center" />
+          
+          <Skeleton width={80} height={14} className="mb-2" />
+          <Skeleton width="100%" height={44} className="mb-4 rounded-xl" />
+
+          <Skeleton width={80} height={14} className="mb-2" />
+          <Skeleton width="100%" height={100} className="mb-5 rounded-xl" />
+
+          <Skeleton width="100%" height={48} className="rounded-xl" />
+        </View>
       </View>
     );
   }
 
   if (error || !session) {
     return (
-      <View style={styles.errorContainer}>
-        <Text style={styles.emoji}>🧐</Text>
-        <Text style={styles.errorText}>
+      <View className="flex-1 bg-background justify-center items-center px-6">
+        <Text className="text-5xl mb-4">🧐</Text>
+        <Text className="text-base text-text-secondary text-center leading-relaxed mb-6">
           {error?.message || 'This shared moment link is invalid or has expired.'}
         </Text>
-        <TouchableOpacity style={styles.primaryButton} onPress={() => router.replace('/')} activeOpacity={0.8}>
-          <Text style={styles.buttonText}>Go to Home</Text>
-        </TouchableOpacity>
+        <Button title="Go to Home" onPress={() => router.replace('/')} className="w-full" />
       </View>
     );
   }
@@ -84,295 +106,86 @@ export default function GuestRevealScreen() {
 
   return (
     <KeyboardAvoidingView
-      style={styles.keyboardContainer}
+      className="flex-1 bg-background"
       behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
     >
-      <ScrollView contentContainerStyle={styles.scrollContainer}>
+      <ScrollView contentContainerStyle={{ flexGrow: 1, paddingHorizontal: 16, paddingTop: 50, paddingBottom: 24 }}>
         {/* Header */}
-        <View style={styles.header}>
-          <Text style={styles.appName}>Moments</Text>
-          <Text style={styles.appSubtitle}>for Two</Text>
-          <Text style={styles.tagline}>
+        <View className="items-center mb-6">
+          <Text className="text-3xl font-bold text-primary-600 tracking-tight">Moments</Text>
+          <Text className="text-base font-normal text-secondary mt-0.5">for Two</Text>
+          <Text className="text-xs text-text-muted mt-3 text-center">
             {isCompleted ? 'All answers revealed!' : 'Answer to reveal responses.'}
           </Text>
         </View>
 
         {/* Question card */}
-        <View style={styles.promptCard}>
-          <Text style={styles.quoteChar}>“</Text>
-          <Text style={styles.promptText}>{session.cards?.text || 'Loading prompt...'}</Text>
-        </View>
+        <Card className="p-6 mb-6 items-center relative">
+          <Text className="text-7xl font-bold text-blue-50/70 absolute top-[-10px] left-4">“</Text>
+          <Text className="text-base font-semibold text-slate-800 text-center leading-relaxed mt-5">
+            {session.cards?.text || 'Loading prompt...'}
+          </Text>
+        </Card>
 
         {/* Reveal State */}
         {isCompleted ? (
-          <View style={styles.answersContainer}>
+          <View className="flex-1 gap-4">
             {/* Creator's Answer bubble */}
-            <View style={[styles.bubble, styles.creatorBubble]}>
-              <View style={styles.bubbleHeader}>
-                <Text style={styles.avatarEmoji}>👤</Text>
-                <Text style={styles.bubbleAuthor}>Partner</Text>
+            <View className="bg-white border border-slate-200 rounded-2xl p-4 self-start max-w-[85%] shadow-sm">
+              <View className="flex-row items-center mb-1.5">
+                <Text className="text-sm mr-1.5">👤</Text>
+                <Text className="text-xs font-bold text-text-secondary">Partner</Text>
               </View>
-              <Text style={styles.bubbleText}>{session.creator_answer}</Text>
+              <Text className="text-sm text-text-primary leading-normal">{session.creator_answer}</Text>
             </View>
 
             {/* Guest's Answer bubble */}
-            <View style={[styles.bubble, styles.guestBubble]}>
-              <View style={styles.bubbleHeader}>
-                <Text style={styles.avatarEmoji}>👋</Text>
-                <Text style={styles.bubbleAuthor}>{session.guest_name || 'Guest'}</Text>
+            <View className="bg-blue-50 border border-blue-100 rounded-2xl p-4 self-end max-w-[85%] shadow-sm">
+              <View className="flex-row items-center mb-1.5">
+                <Text className="text-sm mr-1.5">👋</Text>
+                <Text className="text-xs font-bold text-text-secondary">{session.guest_name || 'Guest'}</Text>
               </View>
-              <Text style={styles.bubbleText}>{session.guest_answer}</Text>
+              <Text className="text-sm text-text-primary leading-normal">{session.guest_answer}</Text>
             </View>
 
-            <TouchableOpacity style={styles.primaryButton} onPress={handleActionClick} activeOpacity={0.8}>
-              <Text style={styles.buttonText}>
-                {user ? 'Create Your Own card' : 'Sign Up to Start Sharing'}
-              </Text>
-            </TouchableOpacity>
+            <Button
+              title={user ? 'Create Your Own Card' : 'Sign Up to Start Sharing'}
+              onPress={handleActionClick}
+              className="w-full mt-4"
+            />
           </View>
         ) : (
           /* Form Input State */
-          <View style={styles.form}>
-            <Text style={styles.formTitle}>Your Response</Text>
+          <Card className="p-5">
+            <Text className="text-lg font-semibold text-text-primary text-center mb-4">Your Response</Text>
 
-            <Text style={styles.inputLabel}>Your Name</Text>
-            <TextInput
-              style={styles.inputName}
+            <Input
+              label="Your Name"
               placeholder="Enter your name"
-              placeholderTextColor="#94A3B8"
               value={guestName}
               onChangeText={setGuestName}
             />
 
-            <Text style={styles.inputLabel}>Your Answer</Text>
-            <TextInput
-              style={styles.inputAnswer}
+            <Input
+              label="Your Answer"
               placeholder="Your honest answer..."
-              placeholderTextColor="#94A3B8"
               multiline
               numberOfLines={4}
               value={guestAnswer}
               onChangeText={setGuestAnswer}
+              className="h-28 text-left py-3.5"
             />
 
-            <TouchableOpacity
-              style={[
-                styles.primaryButton,
-                (!guestName.trim() || !guestAnswer.trim()) && styles.buttonDisabled,
-              ]}
+            <Button
+              title="Submit & Reveal Answers"
               onPress={handleSubmit}
               disabled={!guestName.trim() || !guestAnswer.trim() || submitAnswer.isPending}
-              activeOpacity={0.8}
-            >
-              {submitAnswer.isPending ? (
-                <ActivityIndicator color="#FFFFFF" size="small" />
-              ) : (
-                <Text style={styles.buttonText}>Submit & Reveal Answers</Text>
-              )}
-            </TouchableOpacity>
-          </View>
+              loading={submitAnswer.isPending}
+              className="w-full mt-2"
+            />
+          </Card>
         )}
       </ScrollView>
     </KeyboardAvoidingView>
   );
 }
-
-const styles = StyleSheet.create({
-  keyboardContainer: {
-    flex: 1,
-    backgroundColor: '#F8FAFC',
-  },
-  scrollContainer: {
-    flexGrow: 1,
-    paddingHorizontal: 16,
-    paddingTop: 50,
-    paddingBottom: 24,
-  },
-  loadingContainer: {
-    flex: 1,
-    backgroundColor: '#F8FAFC',
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  loadingText: {
-    marginTop: 12,
-    color: '#475569',
-    fontSize: 16,
-  },
-  errorContainer: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    paddingHorizontal: 24,
-  },
-  emoji: {
-    fontSize: 52,
-    marginBottom: 16,
-  },
-  errorText: {
-    fontSize: 16,
-    color: '#475569',
-    textAlign: 'center',
-    lineHeight: 24,
-    marginBottom: 24,
-  },
-  header: {
-    alignItems: 'center',
-    marginBottom: 24,
-  },
-  appName: {
-    fontSize: 32,
-    fontWeight: '700',
-    color: '#2563EB',
-    letterSpacing: -0.5,
-  },
-  appSubtitle: {
-    fontSize: 16,
-    fontWeight: '400',
-    color: '#3B82F6',
-    marginTop: 2,
-  },
-  tagline: {
-    fontSize: 13,
-    color: '#94A3B8',
-    marginTop: 12,
-    textAlign: 'center',
-  },
-  promptCard: {
-    backgroundColor: '#FFFFFF',
-    borderRadius: 20,
-    padding: 24,
-    borderWidth: 1,
-    borderColor: '#E5E7EB',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.03,
-    shadowRadius: 6,
-    elevation: 2,
-    marginBottom: 24,
-    position: 'relative',
-  },
-  quoteChar: {
-    fontSize: 72,
-    fontWeight: '700',
-    color: '#EFF6FF',
-    position: 'absolute',
-    top: -10,
-    left: 16,
-  },
-  promptText: {
-    fontSize: 17,
-    fontWeight: '600',
-    color: '#1E293B',
-    lineHeight: 25,
-    marginTop: 20,
-    textAlign: 'center',
-  },
-  answersContainer: {
-    flex: 1,
-    gap: 16,
-  },
-  bubble: {
-    borderRadius: 16,
-    padding: 16,
-    borderWidth: 1,
-    maxWidth: '85%',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.02,
-    shadowRadius: 3,
-  },
-  creatorBubble: {
-    backgroundColor: '#FFFFFF',
-    borderColor: '#E2E8F0',
-    alignSelf: 'flex-start',
-  },
-  guestBubble: {
-    backgroundColor: '#EFF6FF',
-    borderColor: '#DBEAFE',
-    alignSelf: 'flex-end',
-  },
-  bubbleHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: 6,
-  },
-  avatarEmoji: {
-    fontSize: 14,
-    marginRight: 6,
-  },
-  bubbleAuthor: {
-    fontSize: 12,
-    fontWeight: '700',
-    color: '#475569',
-  },
-  bubbleText: {
-    fontSize: 15,
-    color: '#0F172A',
-    lineHeight: 22,
-  },
-  form: {
-    backgroundColor: '#FFFFFF',
-    borderRadius: 16,
-    padding: 20,
-    borderWidth: 1,
-    borderColor: '#E5E7EB',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.02,
-    shadowRadius: 4,
-    elevation: 2,
-  },
-  formTitle: {
-    fontSize: 18,
-    fontWeight: '600',
-    color: '#0F172A',
-    marginBottom: 16,
-    textAlign: 'center',
-  },
-  inputLabel: {
-    fontSize: 13,
-    fontWeight: '600',
-    color: '#475569',
-    marginBottom: 6,
-  },
-  inputName: {
-    backgroundColor: '#F8FAFC',
-    borderWidth: 1,
-    borderColor: '#E2E8F0',
-    borderRadius: 12,
-    height: 44,
-    paddingHorizontal: 16,
-    fontSize: 15,
-    color: '#0F172A',
-    marginBottom: 16,
-  },
-  inputAnswer: {
-    backgroundColor: '#F8FAFC',
-    borderWidth: 1,
-    borderColor: '#E2E8F0',
-    borderRadius: 12,
-    padding: 14,
-    fontSize: 15,
-    color: '#0F172A',
-    minHeight: 100,
-    textAlignVertical: 'top',
-    marginBottom: 20,
-  },
-  primaryButton: {
-    backgroundColor: '#2563EB',
-    height: 48,
-    borderRadius: 12,
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginTop: 12,
-  },
-  buttonDisabled: {
-    backgroundColor: '#CBD5E1',
-  },
-  buttonText: {
-    color: '#FFFFFF',
-    fontSize: 16,
-    fontWeight: '600',
-  },
-});

@@ -3,8 +3,6 @@ import {
   View,
   Text,
   TouchableOpacity,
-  StyleSheet,
-  ActivityIndicator,
   ScrollView,
   SafeAreaView,
 } from 'react-native';
@@ -13,6 +11,9 @@ import Svg, { Polygon, Line, Text as SvgText } from 'react-native-svg';
 import { useAuthStore } from '../../../lib/store/authStore';
 import { useUserProfile } from '../../../lib/queries/profile';
 import { useHealthCheckins, HealthCheckin } from '../../../lib/queries/health';
+import { Button } from '../../../components/Button';
+import { Card } from '../../../components/Card';
+import { Skeleton } from '../../../components/Skeleton';
 
 // SVG Radar Chart Constants
 const WIDTH = 300;
@@ -64,10 +65,38 @@ export default function HealthDashboardScreen() {
 
   if (isLoading) {
     return (
-      <View style={styles.loadingContainer}>
-        <ActivityIndicator size="large" color="#2563EB" />
-        <Text style={styles.loadingText}>Loading health checks...</Text>
-      </View>
+      <SafeAreaView className="flex-1 bg-background">
+        <View className="flex-1 px-4">
+          <Skeleton width={80} height={20} className="mt-2.5 mb-2 py-1" />
+          <View className="mb-4">
+            <Skeleton width={180} height={28} className="mb-2" />
+            <Skeleton width={140} height={16} />
+          </View>
+
+          {/* Radar Chart Card Skeleton */}
+          <View className="bg-white rounded-[24px] p-5 border border-neutral-border shadow-sm mb-5 items-center justify-center h-[260px]">
+            <Skeleton width={180} height={180} variant="circle" />
+            <View className="flex-row gap-4 mt-4">
+              <Skeleton width={60} height={14} />
+              <Skeleton width={60} height={14} />
+            </View>
+          </View>
+
+          {/* Breakdown Skeleton */}
+          <View className="bg-white rounded-2xl p-5 border border-neutral-border shadow-sm mb-5">
+            <Skeleton width={150} height={20} className="mb-4" />
+            {[1, 2, 3].map((i) => (
+              <View key={i} className="flex-row justify-between py-3 border-b border-slate-100 items-center">
+                <View className="gap-1.5 flex-1">
+                  <Skeleton width={80} height={14} className="mb-1" />
+                  <Skeleton width={120} height={10} />
+                </View>
+                <Skeleton width={70} height={20} className="rounded-lg" />
+              </View>
+            ))}
+          </View>
+        </View>
+      </SafeAreaView>
     );
   }
 
@@ -82,22 +111,22 @@ export default function HealthDashboardScreen() {
   const partnerName = profile?.partner_id ? 'Your Partner' : 'Partner';
 
   return (
-    <SafeAreaView style={styles.safeArea}>
-      <View style={styles.container}>
+    <SafeAreaView className="flex-1 bg-background">
+      <View className="flex-1 px-4">
         {/* Header */}
-        <View style={styles.header}>
-          <TouchableOpacity style={styles.backLink} onPress={() => router.replace('/')}>
-            <Text style={styles.backLinkText}>← Dashboard</Text>
+        <View className="pt-2.5 mb-5">
+          <TouchableOpacity className="self-start py-1 mb-1.5" onPress={() => router.replace('/')}>
+            <Text className="text-primary-600 text-sm font-semibold">← Dashboard</Text>
           </TouchableOpacity>
-          <Text style={styles.title}>Relationship Health</Text>
-          <Text style={styles.subtitle}>Our weekly emotional alignment check</Text>
+          <Text className="text-2xl font-bold text-text-primary">Relationship Health</Text>
+          <Text className="text-sm text-text-secondary mt-0.5">Our weekly emotional alignment check</Text>
         </View>
 
-        <ScrollView contentContainerStyle={styles.scrollContainer} showsVerticalScrollIndicator={false}>
+        <ScrollView contentContainerStyle={{ flexGrow: 1, paddingBottom: 40 }} showsVerticalScrollIndicator={false}>
           {showRadarChart && myLatest && partnerLatest ? (
             /* Radar Comparison View */
-            <View style={styles.radarSection}>
-              <View style={styles.radarCard}>
+            <View className="gap-4">
+              <View className="bg-white rounded-[24px] p-4 border border-neutral-border shadow-sm items-center">
                 <Svg width={WIDTH} height={HEIGHT}>
                   {/* Concentric pentagonal grid lines (levels 2, 4, 6, 8, 10) */}
                   {[2, 4, 6, 8, 10].map((level) => {
@@ -158,50 +187,48 @@ export default function HealthDashboardScreen() {
                 </Svg>
 
                 {/* Legend Row */}
-                <View style={styles.legendRow}>
-                  <View style={styles.legendItem}>
-                    <View style={[styles.legendDot, { backgroundColor: '#2563EB' }]} />
-                    <Text style={styles.legendText}>You</Text>
+                <View className="flex-row gap-4 mt-2.5">
+                  <View className="flex-row items-center">
+                    <View className="w-2.5 h-2.5 rounded-full mr-1.5 bg-primary-600" />
+                    <Text className="text-xs font-semibold text-text-secondary">You</Text>
                   </View>
-                  <View style={styles.legendItem}>
-                    <View style={[styles.legendDot, { backgroundColor: '#D4537E' }]} />
-                    <Text style={styles.legendText}>{partnerName}</Text>
+                  <View className="flex-row items-center">
+                    <View className="w-2.5 h-2.5 rounded-full mr-1.5 bg-[#D4537E]" />
+                    <Text className="text-xs font-semibold text-text-secondary">{partnerName}</Text>
                   </View>
                 </View>
               </View>
 
               {/* Dimension Details Table */}
-              <View style={styles.comparisonList}>
-                <Text style={styles.comparisonTitle}>Dimension Breakdown</Text>
+              <Card className="p-4 gap-3">
+                <Text className="text-base font-bold text-text-primary mb-1">Dimension Breakdown</Text>
                 {DIMENSION_KEYS.map((key, i) => {
                   const myVal = myLatest[key] || 0;
                   const partnerVal = partnerLatest[key] || 0;
                   const diff = Math.abs(myVal - partnerVal);
 
                   return (
-                    <View key={key} style={styles.comparisonRow}>
-                      <View style={styles.comparisonMeta}>
-                        <Text style={styles.dimensionName}>
+                    <View key={key} className="flex-row justify-between items-center py-2.5 border-b border-slate-100 last:border-b-0">
+                      <View className="flex-1">
+                        <Text className="text-sm font-bold text-slate-700 mb-0.5">
                           {DIMENSION_LABELS[i]}
                         </Text>
-                        <Text style={styles.comparisonText}>
-                          You: <Text style={styles.myValText}>{myVal}</Text> • {partnerName}:{' '}
-                          <Text style={styles.partnerValText}>{partnerVal}</Text>
+                        <Text className="text-xs text-text-muted">
+                          You: <Text className="font-semibold text-primary-600">{myVal}</Text> • {partnerName}:{' '}
+                          <Text className="font-semibold text-[#D4537E]">{partnerVal}</Text>
                         </Text>
                       </View>
                       
                       {/* Alignment badge */}
                       <View
-                        style={[
-                          styles.alignmentBadge,
-                          diff <= 1 ? styles.badgeAlign : styles.badgeGap,
-                        ]}
+                        className={`px-2.5 py-1 rounded-full ${
+                          diff <= 1 ? 'bg-emerald-50' : 'bg-amber-50'
+                        }`}
                       >
                         <Text
-                          style={[
-                            styles.alignmentBadgeText,
-                            diff <= 1 ? styles.textAlign : styles.textGap,
-                          ]}
+                          className={`text-[10px] font-bold ${
+                            diff <= 1 ? 'text-emerald-600' : 'text-amber-600'
+                          }`}
                         >
                           {diff <= 1 ? '✨ In-sync' : '💬 Talk'}
                         </Text>
@@ -209,76 +236,71 @@ export default function HealthDashboardScreen() {
                     </View>
                   );
                 })}
-              </View>
+              </Card>
 
               {/* Action Button to complete another week check-in */}
-              <TouchableOpacity
-                style={styles.primaryButtonOutlined}
+              <Button
+                title="New Weekly Assessment"
                 onPress={() => router.push('/health/checkin')}
-                activeOpacity={0.8}
-              >
-                <Text style={styles.buttonTextOutlined}>New Weekly Assessment</Text>
-              </TouchableOpacity>
+                variant="secondary"
+                className="w-full mt-2"
+              />
             </View>
           ) : (
             /* Single check-in / empty states */
-            <View style={styles.emptyStateContainer}>
-              <Text style={styles.bigHeartEmoji}>❤️</Text>
+            <View className="flex-1 justify-center items-center pt-8 pb-10 px-4">
+              <Text className="text-5xl mb-4">❤️</Text>
 
               {hasMyCheckin && !hasPartnerCheckin ? (
                 /* I completed, waiting for partner */
-                <View style={styles.waitingContent}>
-                  <Text style={styles.waitingTitle}>Waiting for {partnerName}...</Text>
-                  <Text style={styles.waitingSubtitle}>
+                <View className="items-center w-full">
+                  <Text className="text-xl font-bold text-text-primary text-center mb-2">Waiting for {partnerName}...</Text>
+                  <Text className="text-sm text-text-secondary text-center leading-relaxed mb-6 px-4">
                     You completed your weekly assessment! Once your partner completes theirs, your relationship alignment radar will be revealed.
                   </Text>
 
                   {/* My Scores Summary preview list */}
-                  <View style={styles.myRatingsSummary}>
-                    <Text style={styles.ratingsSummaryTitle}>Your Ratings Summary</Text>
+                  <Card className="p-4 w-full gap-3">
+                    <Text className="text-sm font-bold text-slate-700 mb-1">Your Ratings Summary</Text>
                     {DIMENSION_KEYS.map((key, i) => {
                       const score = myLatest[key] || 0;
                       return (
-                        <View key={key} style={styles.summaryBarRow}>
-                          <Text style={styles.summaryBarLabel}>{DIMENSION_LABELS[i]}</Text>
-                          <View style={styles.barOuter}>
-                            <View style={[styles.barInner, { width: `${score * 10}%` }]} />
+                        <View key={key} className="flex-row items-center justify-between gap-2">
+                          <Text className="text-[10px] font-semibold text-text-muted w-14">{DIMENSION_LABELS[i]}</Text>
+                          <View className="flex-1 h-2 bg-slate-200 rounded-full overflow-hidden">
+                            <View style={{ width: `${score * 10}%` }} className="h-full bg-primary-600 rounded-full" />
                           </View>
-                          <Text style={styles.summaryBarScore}>{score}/10</Text>
+                          <Text className="text-[10px] font-bold text-slate-700 w-10 text-right">{score}/10</Text>
                         </View>
                       );
                     })}
-                  </View>
+                  </Card>
                 </View>
               ) : !hasMyCheckin && hasPartnerCheckin ? (
                 /* Partner completed, waiting for me */
-                <View style={styles.waitingContent}>
-                  <Text style={styles.waitingTitle}>{partnerName} is Waiting!</Text>
-                  <Text style={styles.waitingSubtitle}>
+                <View className="items-center w-full">
+                  <Text className="text-xl font-bold text-text-primary text-center mb-2">{partnerName} is Waiting!</Text>
+                  <Text className="text-sm text-text-secondary text-center leading-relaxed mb-6 px-4">
                     Your partner has completed their weekly relationship health check-in. Complete yours now to unlock the comparison chart!
                   </Text>
-                  <TouchableOpacity
-                    style={styles.primaryButton}
+                  <Button
+                    title="Start My Assessment"
                     onPress={() => router.push('/health/checkin')}
-                    activeOpacity={0.8}
-                  >
-                    <Text style={styles.buttonText}>Start My Assessment</Text>
-                  </TouchableOpacity>
+                    className="w-full"
+                  />
                 </View>
               ) : (
                 /* Neither completed check-ins */
-                <View style={styles.waitingContent}>
-                  <Text style={styles.waitingTitle}>Assess Our Alignment</Text>
-                  <Text style={styles.waitingSubtitle}>
+                <View className="items-center w-full">
+                  <Text className="text-xl font-bold text-text-primary text-center mb-2">Assess Our Alignment</Text>
+                  <Text className="text-sm text-text-secondary text-center leading-relaxed mb-6 px-4">
                     Take a 5-dimension relationship assessment weekly to track your communication, trust, intimacy, sync, and peace over time.
                   </Text>
-                  <TouchableOpacity
-                    style={styles.primaryButton}
+                  <Button
+                    title="Complete My Assessment"
                     onPress={() => router.push('/health/checkin')}
-                    activeOpacity={0.8}
-                  >
-                    <Text style={styles.buttonText}>Complete My Assessment</Text>
-                  </TouchableOpacity>
+                    className="w-full"
+                  />
                 </View>
               )}
             </View>
@@ -288,268 +310,3 @@ export default function HealthDashboardScreen() {
     </SafeAreaView>
   );
 }
-
-const styles = StyleSheet.create({
-  safeArea: {
-    flex: 1,
-    backgroundColor: '#F8FAFC',
-  },
-  container: {
-    flex: 1,
-    paddingHorizontal: 16,
-  },
-  loadingContainer: {
-    flex: 1,
-    backgroundColor: '#F8FAFC',
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  loadingText: {
-    marginTop: 12,
-    color: '#475569',
-    fontSize: 16,
-  },
-  backLink: {
-    alignSelf: 'flex-start',
-    paddingVertical: 4,
-    marginTop: 10,
-    marginBottom: 6,
-  },
-  backLinkText: {
-    color: '#2563EB',
-    fontSize: 14,
-    fontWeight: '600',
-  },
-  header: {
-    marginBottom: 20,
-  },
-  title: {
-    fontSize: 28,
-    fontWeight: '700',
-    color: '#0F172A',
-  },
-  subtitle: {
-    fontSize: 14,
-    color: '#475569',
-    marginTop: 2,
-  },
-  scrollContainer: {
-    flexGrow: 1,
-    paddingBottom: 40,
-  },
-  radarSection: {
-    gap: 16,
-  },
-  radarCard: {
-    backgroundColor: '#FFFFFF',
-    borderRadius: 24,
-    padding: 16,
-    borderWidth: 1,
-    borderColor: '#E5E7EB',
-    alignItems: 'center',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.03,
-    shadowRadius: 6,
-    elevation: 2,
-  },
-  legendRow: {
-    flexDirection: 'row',
-    gap: 16,
-    marginTop: 10,
-  },
-  legendItem: {
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-  legendDot: {
-    width: 10,
-    height: 10,
-    borderRadius: 5,
-    marginRight: 6,
-  },
-  legendText: {
-    fontSize: 12,
-    fontWeight: '600',
-    color: '#475569',
-  },
-  comparisonList: {
-    backgroundColor: '#FFFFFF',
-    borderRadius: 20,
-    padding: 16,
-    borderWidth: 1,
-    borderColor: '#E5E7EB',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.02,
-    shadowRadius: 4,
-    elevation: 2,
-    gap: 12,
-  },
-  comparisonTitle: {
-    fontSize: 16,
-    fontWeight: '700',
-    color: '#0F172A',
-    marginBottom: 4,
-  },
-  comparisonRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    paddingVertical: 10,
-    borderBottomWidth: 1,
-    borderBottomColor: '#F1F5F9',
-  },
-  comparisonMeta: {
-    flex: 1,
-  },
-  dimensionName: {
-    fontSize: 14,
-    fontWeight: '700',
-    color: '#334155',
-    marginBottom: 2,
-  },
-  comparisonText: {
-    fontSize: 12,
-    color: '#64748B',
-  },
-  myValText: {
-    fontWeight: '600',
-    color: '#2563EB',
-  },
-  partnerValText: {
-    fontWeight: '600',
-    color: '#D4537E',
-  },
-  alignmentBadge: {
-    paddingHorizontal: 10,
-    paddingVertical: 4,
-    borderRadius: 12,
-  },
-  badgeAlign: {
-    backgroundColor: '#F0FDF4',
-  },
-  badgeGap: {
-    backgroundColor: '#FFFBEB',
-  },
-  alignmentBadgeText: {
-    fontSize: 11,
-    fontWeight: '700',
-  },
-  textAlign: {
-    color: '#16A34A',
-  },
-  textGap: {
-    color: '#D97706',
-  },
-  primaryButtonOutlined: {
-    backgroundColor: '#EFF6FF',
-    height: 48,
-    borderRadius: 12,
-    alignItems: 'center',
-    justifyContent: 'center',
-    borderWidth: 1,
-    borderColor: '#DBEAFE',
-    marginTop: 8,
-  },
-  buttonTextOutlined: {
-    color: '#2563EB',
-    fontSize: 16,
-    fontWeight: '600',
-  },
-  emptyStateContainer: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    paddingTop: 32,
-    paddingBottom: 40,
-  },
-  bigHeartEmoji: {
-    fontSize: 64,
-    marginBottom: 16,
-  },
-  waitingContent: {
-    alignItems: 'center',
-    width: '100%',
-  },
-  waitingTitle: {
-    fontSize: 22,
-    fontWeight: '700',
-    color: '#0F172A',
-    marginBottom: 8,
-    textAlign: 'center',
-  },
-  waitingSubtitle: {
-    fontSize: 14,
-    color: '#475569',
-    textAlign: 'center',
-    lineHeight: 20,
-    marginBottom: 24,
-    paddingHorizontal: 24,
-  },
-  primaryButton: {
-    backgroundColor: '#2563EB',
-    height: 48,
-    borderRadius: 12,
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingHorizontal: 24,
-    width: '100%',
-  },
-  buttonText: {
-    color: '#FFFFFF',
-    fontSize: 16,
-    fontWeight: '600',
-  },
-  myRatingsSummary: {
-    backgroundColor: '#FFFFFF',
-    borderRadius: 20,
-    padding: 16,
-    width: '100%',
-    borderWidth: 1,
-    borderColor: '#E5E7EB',
-    gap: 12,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.02,
-    shadowRadius: 4,
-    elevation: 2,
-  },
-  ratingsSummaryTitle: {
-    fontSize: 14,
-    fontWeight: '700',
-    color: '#334155',
-    marginBottom: 4,
-  },
-  summaryBarRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    gap: 8,
-  },
-  summaryBarLabel: {
-    fontSize: 11,
-    fontWeight: '600',
-    color: '#64748B',
-    width: 60,
-  },
-  barOuter: {
-    flex: 1,
-    height: 8,
-    backgroundColor: '#E2E8F0',
-    borderRadius: 4,
-    overflow: 'hidden',
-  },
-  barInner: {
-    height: '100%',
-    backgroundColor: '#2563EB',
-    borderRadius: 4,
-  },
-  summaryBarScore: {
-    fontSize: 11,
-    fontWeight: '700',
-    color: '#334155',
-    width: 40,
-    textAlign: 'right',
-  },
-});

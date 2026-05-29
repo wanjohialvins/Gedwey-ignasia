@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
-import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
+import { View, Text, TouchableOpacity } from 'react-native';
 import { useRouter, useLocalSearchParams } from 'expo-router';
+import { Button } from '../../../components/Button';
 
 const MOODS = [
   { key: 'happy', emoji: '😊', label: 'Happy' },
@@ -25,29 +26,36 @@ export default function MoodScreen() {
   };
 
   return (
-    <View style={styles.container}>
-      <TouchableOpacity style={styles.backLink} onPress={() => router.back()}>
-        <Text style={styles.backLinkText}>← Back</Text>
+    <View className="flex-1 bg-background px-4 pt-16 pb-6 justify-between">
+      <TouchableOpacity className="self-start py-1 mb-2" onPress={() => router.back()}>
+        <Text className="text-primary-600 text-sm font-semibold">← Back</Text>
       </TouchableOpacity>
 
-      <View style={styles.content}>
-        <Text style={styles.title}>How are you feeling?</Text>
-        <Text style={styles.subtitle}>
+      <View className="flex-1 justify-center">
+        <Text className="text-3xl font-bold text-text-primary text-center mb-2">How are you feeling?</Text>
+        <Text className="text-sm text-text-secondary text-center px-4 leading-relaxed mb-8">
           Share your current mood before diving into today's question.
         </Text>
 
-        <View style={styles.moodGrid}>
+        <View className="flex-row flex-wrap justify-center gap-3">
           {MOODS.map((mood) => {
             const isSelected = selectedMood === mood.key;
             return (
               <TouchableOpacity
                 key={mood.key}
-                style={[styles.moodItem, isSelected && styles.moodItemSelected]}
+                style={{ borderWidth: isSelected ? 2 : 1 }}
+                className={`w-[80px] h-[80px] bg-white rounded-2xl items-center justify-center shadow-sm ${
+                  isSelected ? 'border-primary-600 bg-primary-100/50' : 'border-neutral-border'
+                }`}
                 onPress={() => setSelectedMood(mood.key)}
                 activeOpacity={0.8}
               >
-                <Text style={styles.moodEmoji}>{mood.emoji}</Text>
-                <Text style={[styles.moodLabel, isSelected && styles.moodLabelSelected]}>
+                <Text className="text-3xl mb-1">{mood.emoji}</Text>
+                <Text 
+                  className={`text-[10px] font-semibold ${
+                    isSelected ? 'text-primary-600' : 'text-text-secondary'
+                  }`}
+                >
                   {mood.label}
                 </Text>
               </TouchableOpacity>
@@ -56,107 +64,11 @@ export default function MoodScreen() {
         </View>
       </View>
 
-      <TouchableOpacity
-        style={[styles.primaryButton, !selectedMood && styles.buttonDisabled]}
+      <Button
+        title="Continue"
         onPress={handleContinue}
         disabled={!selectedMood}
-        activeOpacity={0.8}
-      >
-        <Text style={styles.buttonText}>Continue</Text>
-      </TouchableOpacity>
+      />
     </View>
   );
 }
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#F8FAFC',
-    paddingHorizontal: 16,
-    paddingTop: 50,
-    paddingBottom: 24,
-  },
-  backLink: {
-    alignSelf: 'flex-start',
-    paddingVertical: 4,
-    marginBottom: 8,
-  },
-  backLinkText: {
-    color: '#2563EB',
-    fontSize: 15,
-    fontWeight: '600',
-  },
-  content: {
-    flex: 1,
-    justifyContent: 'center',
-  },
-  title: {
-    fontSize: 26,
-    fontWeight: '700',
-    color: '#0F172A',
-    textAlign: 'center',
-    marginBottom: 8,
-  },
-  subtitle: {
-    fontSize: 14,
-    color: '#475569',
-    textAlign: 'center',
-    lineHeight: 20,
-    marginBottom: 32,
-    paddingHorizontal: 16,
-  },
-  moodGrid: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    justifyContent: 'center',
-    gap: 12,
-  },
-  moodItem: {
-    width: 80,
-    height: 80,
-    backgroundColor: '#FFFFFF',
-    borderRadius: 16,
-    borderWidth: 1,
-    borderColor: '#E5E7EB',
-    alignItems: 'center',
-    justifyContent: 'center',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.02,
-    shadowRadius: 3,
-    elevation: 1,
-  },
-  moodItemSelected: {
-    borderColor: '#2563EB',
-    backgroundColor: '#EFF6FF',
-    borderWidth: 2,
-  },
-  moodEmoji: {
-    fontSize: 28,
-    marginBottom: 4,
-  },
-  moodLabel: {
-    fontSize: 11,
-    color: '#475569',
-    fontWeight: '500',
-  },
-  moodLabelSelected: {
-    color: '#2563EB',
-    fontWeight: '700',
-  },
-  primaryButton: {
-    backgroundColor: '#2563EB',
-    height: 48,
-    borderRadius: 12,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  buttonDisabled: {
-    backgroundColor: '#CBD5E1',
-  },
-  buttonText: {
-    color: '#FFFFFF',
-    fontSize: 16,
-    fontWeight: '600',
-  },
-});

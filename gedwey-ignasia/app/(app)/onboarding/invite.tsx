@@ -2,10 +2,7 @@ import React, { useState, useEffect } from 'react';
 import {
   View,
   Text,
-  TextInput,
   TouchableOpacity,
-  StyleSheet,
-  ActivityIndicator,
   Alert,
   Clipboard,
   KeyboardAvoidingView,
@@ -15,6 +12,10 @@ import {
 import { useRouter } from 'expo-router';
 import { useUserProfile, useUpdateProfile, usePairPartner } from '../../../lib/queries/profile';
 import { useAuthStore } from '../../../lib/store/authStore';
+import { Button } from '../../../components/Button';
+import { Input } from '../../../components/Input';
+import { Card } from '../../../components/Card';
+import { Skeleton } from '../../../components/Skeleton';
 
 // Function to generate a random 6-character uppercase alphanumeric code
 const generateInviteCode = (): string => {
@@ -101,229 +102,100 @@ export default function InviteScreen() {
 
   if (isLoading || isGenerating) {
     return (
-      <View style={styles.loadingContainer}>
-        <ActivityIndicator size="large" color="#2563EB" />
-        <Text style={styles.loadingText}>Setting up your invite code...</Text>
+      <View className="flex-1 bg-background px-4 pt-16 pb-6 justify-between">
+        <View className="mb-6 items-center">
+          <Skeleton width={200} height={28} className="mb-3" />
+          <Skeleton width={280} height={16} className="mb-1" />
+          <Skeleton width={240} height={16} />
+        </View>
+        <View className="flex-1 justify-center gap-6 my-4">
+          <View className="bg-white rounded-2xl p-5 border border-neutral-border shadow-sm items-center">
+            <Skeleton width={120} height={16} className="mb-3" />
+            <Skeleton width="100%" height={60} className="mb-3" />
+            <Skeleton width="80%" height={14} />
+          </View>
+          <View className="bg-white rounded-2xl p-5 border border-neutral-border shadow-sm items-center">
+            <Skeleton width={140} height={16} className="mb-3" />
+            <Skeleton width="100%" height={48} className="mb-3" />
+            <Skeleton width="100%" height={48} />
+          </View>
+        </View>
+        <View className="flex-row justify-between items-center mt-2">
+          <Skeleton width={60} height={24} />
+          <Skeleton width={100} height={24} />
+        </View>
       </View>
     );
   }
 
   return (
     <KeyboardAvoidingView
-      style={styles.keyboardContainer}
+      className="flex-1 bg-background"
       behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
     >
-      <ScrollView contentContainerStyle={styles.scrollContainer}>
-        <View style={styles.header}>
-          <Text style={styles.title}>Connect with Partner</Text>
-          <Text style={styles.subtitle}>
+      <ScrollView contentContainerStyle={{ flexGrow: 1, paddingHorizontal: 16, paddingTop: 64, paddingBottom: 24, justifyContent: 'space-between' }}>
+        <View className="mb-6">
+          <Text className="text-3xl font-bold text-text-primary text-center mb-2">Connect with Partner</Text>
+          <Text className="text-sm text-text-secondary text-center px-4 leading-relaxed">
             Share moments, compare daily moods, and grow closer by pairing your accounts.
           </Text>
         </View>
 
         {/* Your Code Section */}
-        <View style={styles.card}>
-          <Text style={styles.cardHeader}>Your Invite Code</Text>
+        <Card className="p-5 mb-5 items-center">
+          <Text className="text-base font-semibold text-text-primary mb-3">Your Invite Code</Text>
           <TouchableOpacity
-            style={styles.codeContainer}
+            className="w-full bg-primary-100 border border-primary-100 py-3.5 rounded-xl items-center mb-3 active:bg-blue-200"
             onPress={handleCopyCode}
             activeOpacity={0.7}
           >
-            <Text style={styles.codeText}>{profile?.invite_code || '------'}</Text>
-            <Text style={styles.copyLabel}>Tap to Copy</Text>
+            <Text className="text-3xl font-bold text-primary-600 tracking-[4px]">{profile?.invite_code || '------'}</Text>
+            <Text className="text-2xs text-primary-600 font-medium mt-1">Tap to Copy</Text>
           </TouchableOpacity>
-          <Text style={styles.cardDesc}>
+          <Text className="text-xs text-text-secondary text-center leading-relaxed px-4">
             Give this code to your partner so they can enter it on their device.
           </Text>
-        </View>
+        </Card>
 
         {/* Partner Code Section */}
-        <View style={styles.card}>
-          <Text style={styles.cardHeader}>Enter Partner Code</Text>
-          <TextInput
-            style={styles.input}
+        <Card className="p-5 mb-5">
+          <Text className="text-base font-semibold text-text-primary text-center mb-3">Enter Partner Code</Text>
+          <Input
             placeholder="e.g. X87G2K"
-            placeholderTextColor="#94A3B8"
             autoCapitalize="characters"
             autoCorrect={false}
             maxLength={6}
             value={partnerCode}
             onChangeText={setPartnerCode}
+            className="text-center font-bold text-lg tracking-[2px] bg-background"
           />
-          <TouchableOpacity
-            style={[styles.primaryButton, pairPartner.isPending && styles.buttonDisabled]}
+          <Button
+            title="Pair & Connect"
             onPress={handlePair}
             disabled={pairPartner.isPending}
-            activeOpacity={0.8}
-          >
-            {pairPartner.isPending ? (
-              <ActivityIndicator color="#FFFFFF" size="small" />
-            ) : (
-              <Text style={styles.buttonText}>Pair & Connect</Text>
-            )}
-          </TouchableOpacity>
-        </View>
+            loading={pairPartner.isPending}
+            className="w-full"
+          />
+        </Card>
 
         {/* Skip / Back Actions */}
-        <View style={styles.footerActions}>
+        <View className="flex-row justify-between items-center mt-2 px-2">
           <TouchableOpacity
-            style={styles.backButton}
+            className="py-3"
             onPress={() => router.back()}
             disabled={pairPartner.isPending}
           >
-            <Text style={styles.backButtonText}>Back</Text>
+            <Text className="text-text-secondary text-sm font-semibold">Back</Text>
           </TouchableOpacity>
           <TouchableOpacity
-            style={styles.skipButton}
+            className="py-3"
             onPress={handleSkip}
             disabled={pairPartner.isPending}
           >
-            <Text style={styles.skipButtonText}>Skip for now</Text>
+            <Text className="text-primary-600 text-sm font-semibold">Skip for now</Text>
           </TouchableOpacity>
         </View>
       </ScrollView>
     </KeyboardAvoidingView>
   );
 }
-
-const styles = StyleSheet.create({
-  keyboardContainer: {
-    flex: 1,
-    backgroundColor: '#F8FAFC',
-  },
-  scrollContainer: {
-    flexGrow: 1,
-    paddingHorizontal: 16,
-    paddingTop: 64,
-    paddingBottom: 24,
-    justifyContent: 'space-between',
-  },
-  loadingContainer: {
-    flex: 1,
-    backgroundColor: '#F8FAFC',
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  loadingText: {
-    marginTop: 12,
-    color: '#475569',
-    fontSize: 16,
-  },
-  header: {
-    marginBottom: 24,
-  },
-  title: {
-    fontSize: 28,
-    fontWeight: '700',
-    color: '#0F172A',
-    textAlign: 'center',
-    marginBottom: 8,
-  },
-  subtitle: {
-    fontSize: 14,
-    color: '#475569',
-    textAlign: 'center',
-    lineHeight: 20,
-    paddingHorizontal: 16,
-  },
-  card: {
-    backgroundColor: '#FFFFFF',
-    borderRadius: 16,
-    padding: 20,
-    marginBottom: 20,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.02,
-    shadowRadius: 4,
-    elevation: 2,
-    borderWidth: 1,
-    borderColor: '#E5E7EB',
-  },
-  cardHeader: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: '#0F172A',
-    marginBottom: 12,
-    textAlign: 'center',
-  },
-  codeContainer: {
-    backgroundColor: '#EFF6FF',
-    borderRadius: 12,
-    paddingVertical: 14,
-    borderWidth: 1,
-    borderColor: '#DBEAFE',
-    alignItems: 'center',
-    marginBottom: 12,
-  },
-  codeText: {
-    fontSize: 28,
-    fontWeight: '700',
-    color: '#2563EB',
-    letterSpacing: 4,
-  },
-  copyLabel: {
-    fontSize: 11,
-    color: '#3B82F6',
-    marginTop: 4,
-    fontWeight: '500',
-  },
-  cardDesc: {
-    fontSize: 13,
-    color: '#64748B',
-    textAlign: 'center',
-    lineHeight: 18,
-  },
-  input: {
-    height: 48,
-    borderWidth: 1,
-    borderColor: '#E5E7EB',
-    borderRadius: 12,
-    paddingHorizontal: 16,
-    fontSize: 18,
-    color: '#0F172A',
-    backgroundColor: '#F8FAFC',
-    textAlign: 'center',
-    fontWeight: '600',
-    letterSpacing: 2,
-    marginBottom: 12,
-  },
-  primaryButton: {
-    backgroundColor: '#2563EB',
-    height: 48,
-    borderRadius: 12,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  buttonDisabled: {
-    opacity: 0.6,
-  },
-  buttonText: {
-    color: '#FFFFFF',
-    fontSize: 16,
-    fontWeight: '600',
-  },
-  footerActions: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginTop: 8,
-  },
-  backButton: {
-    paddingVertical: 12,
-    paddingHorizontal: 16,
-  },
-  backButtonText: {
-    color: '#475569',
-    fontSize: 15,
-    fontWeight: '600',
-  },
-  skipButton: {
-    paddingVertical: 12,
-    paddingHorizontal: 16,
-  },
-  skipButtonText: {
-    color: '#2563EB',
-    fontSize: 15,
-    fontWeight: '600',
-  },
-});

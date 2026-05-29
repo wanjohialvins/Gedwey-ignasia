@@ -3,16 +3,16 @@ import {
   View,
   Text,
   TouchableOpacity,
-  StyleSheet,
-  ActivityIndicator,
-  Alert,
   ScrollView,
   SafeAreaView,
+  Alert,
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useAuthStore } from '../../../lib/store/authStore';
 import { useUserProfile } from '../../../lib/queries/profile';
 import { useCreateHealthCheckin } from '../../../lib/queries/health';
+import { Button } from '../../../components/Button';
+import { Card } from '../../../components/Card';
 
 interface DimensionSpec {
   key: 'communication' | 'intimacy' | 'trust' | 'connection' | 'conflict';
@@ -42,7 +42,7 @@ const DIMENSIONS: DimensionSpec[] = [
   {
     key: 'intimacy',
     title: 'Intimacy',
-    desc: 'How close do we feel physically, affectionately, and emotionally?',
+    desc: 'How close do we feel physically, emotionally, and affectionately?',
     labels: {
       1: 'Completely cold',
       2: 'Distant bounds',
@@ -170,40 +170,48 @@ export default function HealthCheckinScreen() {
   const isPending = createCheckin.isPending;
 
   return (
-    <SafeAreaView style={styles.safeArea}>
-      <View style={styles.container}>
-        <TouchableOpacity style={styles.backLink} onPress={() => router.back()}>
-          <Text style={styles.backLinkText}>← Back</Text>
+    <SafeAreaView className="flex-1 bg-background">
+      <View className="flex-1 px-4">
+        <TouchableOpacity className="self-start py-2 mt-2 mb-2" onPress={() => router.back()}>
+          <Text className="text-primary-600 text-sm font-semibold">← Back</Text>
         </TouchableOpacity>
 
-        <ScrollView contentContainerStyle={styles.scrollContainer} showsVerticalScrollIndicator={false}>
-          <Text style={styles.title}>Weekly Health Check-in</Text>
-          <Text style={styles.subtitle}>
+        <ScrollView contentContainerStyle={{ flexGrow: 1, paddingBottom: 40 }} showsVerticalScrollIndicator={false}>
+          <Text className="text-2xl font-bold text-text-primary">Weekly Health Check-in</Text>
+          <Text className="text-sm text-text-secondary mt-1 mb-6 leading-relaxed">
             Reflect on your connection this week. Rate each dimension honestly from 1 to 10.
           </Text>
 
-          <View style={styles.formContainer}>
+          <View className="gap-5">
             {DIMENSIONS.map((dim) => {
               const currentScore = ratings[dim.key];
               const scoreLabel = dim.labels[currentScore] || 'Tap a number to rate';
 
               return (
-                <View key={dim.key} style={styles.dimensionSection}>
-                  <Text style={styles.dimTitle}>{dim.title}</Text>
-                  <Text style={styles.dimDesc}>{dim.desc}</Text>
+                <Card key={dim.key} className="p-4">
+                  <Text className="text-base font-bold text-text-primary mb-1">{dim.title}</Text>
+                  <Text className="text-xs text-text-secondary leading-relaxed mb-4">{dim.desc}</Text>
 
                   {/* Rating Selector circle grids */}
-                  <View style={styles.ratingGrid}>
+                  <View className="flex-row justify-between flex-wrap gap-2.5 mb-3">
                     {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map((score) => {
                       const isSelected = currentScore === score;
                       return (
                         <TouchableOpacity
                           key={score}
-                          style={[styles.scoreCircle, isSelected && styles.scoreCircleSelected]}
+                          className={`w-8 h-8 rounded-full justify-center items-center border active:bg-slate-200 ${
+                            isSelected 
+                              ? 'bg-primary-600 border-primary-600' 
+                              : 'bg-slate-100 border-slate-200'
+                          }`}
                           onPress={() => handleSelectScore(dim.key, score)}
                           activeOpacity={0.7}
                         >
-                          <Text style={[styles.scoreText, isSelected && styles.scoreTextSelected]}>
+                          <Text 
+                            className={`text-xs font-semibold ${
+                              isSelected ? 'text-white' : 'text-slate-600'
+                            }`}
+                          >
                             {score}
                           </Text>
                         </TouchableOpacity>
@@ -212,159 +220,26 @@ export default function HealthCheckinScreen() {
                   </View>
 
                   {/* Description label for current selection */}
-                  <View style={styles.scoreLabelRow}>
-                    <Text style={styles.scoreLabelText}>
+                  <View className="bg-slate-50 rounded-lg py-2.5 px-3 items-center">
+                    <Text className="text-[11px] text-text-secondary font-medium text-center">
                       {currentScore > 0 ? `Rating: ${currentScore}/10 — ` : ''}
-                      <Text style={styles.scoreValueLabel}>{scoreLabel}</Text>
+                      <Text className="font-bold text-primary-600">{scoreLabel}</Text>
                     </Text>
                   </View>
-                </View>
+                </Card>
               );
             })}
 
-            <TouchableOpacity
-              style={[
-                styles.primaryButton,
-                (Object.values(ratings).includes(0) || isPending) && styles.buttonDisabled,
-              ]}
+            <Button
+              title="Submit Weekly Check-in"
               onPress={handleSubmit}
               disabled={Object.values(ratings).includes(0) || isPending}
-              activeOpacity={0.8}
-            >
-              {isPending ? (
-                <ActivityIndicator color="#FFFFFF" size="small" />
-              ) : (
-                <Text style={styles.buttonText}>Submit Weekly Check-in</Text>
-              )}
-            </TouchableOpacity>
+              loading={isPending}
+              className="w-full mt-2"
+            />
           </View>
         </ScrollView>
       </View>
     </SafeAreaView>
   );
 }
-
-const styles = StyleSheet.create({
-  safeArea: {
-    flex: 1,
-    backgroundColor: '#F8FAFC',
-  },
-  container: {
-    flex: 1,
-    paddingHorizontal: 16,
-  },
-  scrollContainer: {
-    flexGrow: 1,
-    paddingBottom: 40,
-  },
-  backLink: {
-    alignSelf: 'flex-start',
-    paddingVertical: 8,
-    marginTop: 10,
-    marginBottom: 8,
-  },
-  backLinkText: {
-    color: '#2563EB',
-    fontSize: 15,
-    fontWeight: '600',
-  },
-  title: {
-    fontSize: 26,
-    fontWeight: '700',
-    color: '#0F172A',
-  },
-  subtitle: {
-    fontSize: 14,
-    color: '#475569',
-    marginTop: 2,
-    marginBottom: 24,
-    lineHeight: 20,
-  },
-  formContainer: {
-    gap: 20,
-  },
-  dimensionSection: {
-    backgroundColor: '#FFFFFF',
-    borderRadius: 20,
-    padding: 16,
-    borderWidth: 1,
-    borderColor: '#E5E7EB',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.02,
-    shadowRadius: 4,
-    elevation: 2,
-  },
-  dimTitle: {
-    fontSize: 16,
-    fontWeight: '700',
-    color: '#0F172A',
-    marginBottom: 4,
-  },
-  dimDesc: {
-    fontSize: 13,
-    color: '#475569',
-    lineHeight: 18,
-    marginBottom: 16,
-  },
-  ratingGrid: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    flexWrap: 'wrap',
-    gap: 6,
-    marginBottom: 12,
-  },
-  scoreCircle: {
-    width: 32,
-    height: 32,
-    borderRadius: 16,
-    backgroundColor: '#F1F5F9',
-    justifyContent: 'center',
-    alignItems: 'center',
-    borderWidth: 1,
-    borderColor: '#E2E8F0',
-  },
-  scoreCircleSelected: {
-    backgroundColor: '#2563EB',
-    borderColor: '#2563EB',
-  },
-  scoreText: {
-    fontSize: 13,
-    fontWeight: '600',
-    color: '#475569',
-  },
-  scoreTextSelected: {
-    color: '#FFFFFF',
-  },
-  scoreLabelRow: {
-    backgroundColor: '#F8FAFC',
-    borderRadius: 8,
-    padding: 10,
-    alignItems: 'center',
-  },
-  scoreLabelText: {
-    fontSize: 12,
-    color: '#475569',
-    fontWeight: '500',
-  },
-  scoreValueLabel: {
-    fontWeight: '700',
-    color: '#2563EB',
-  },
-  primaryButton: {
-    backgroundColor: '#2563EB',
-    height: 48,
-    borderRadius: 12,
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginTop: 12,
-  },
-  buttonDisabled: {
-    backgroundColor: '#CBD5E1',
-  },
-  buttonText: {
-    color: '#FFFFFF',
-    fontSize: 16,
-    fontWeight: '600',
-  },
-});

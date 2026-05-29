@@ -2,15 +2,16 @@ import React, { useState } from 'react';
 import {
   View,
   Text,
-  TextInput,
-  TouchableOpacity,
   KeyboardAvoidingView,
   Platform,
   Alert,
-  StyleSheet,
+  TouchableOpacity,
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import { supabase } from '../../lib/supabase';
+import { Button } from '../../components/Button';
+import { Input } from '../../components/Input';
+import { Card } from '../../components/Card';
 
 export default function SignUpScreen() {
   const router = useRouter();
@@ -66,34 +67,32 @@ export default function SignUpScreen() {
 
   return (
     <KeyboardAvoidingView
-      style={styles.container}
+      className="flex-1 bg-background"
       behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
     >
-      <View style={styles.inner}>
+      <View className="flex-1 justify-center px-4">
         {/* Header */}
-        <View style={styles.header}>
-          <Text style={styles.appName}>Moments</Text>
-          <Text style={styles.appSubtitle}>for Two</Text>
-          <Text style={styles.tagline}>Start your journey of intentional connection.</Text>
+        <View className="items-center mb-8">
+          <Text className="text-4xl font-bold text-primary-600 tracking-tight">Moments</Text>
+          <Text className="text-lg font-normal text-secondary mt-0.5">for Two</Text>
+          <Text className="text-sm text-text-muted mt-3 text-center px-8">
+            Start your journey of intentional connection.
+          </Text>
         </View>
 
-        {/* Form */}
-        <View style={styles.form}>
-          <Text style={styles.formTitle}>Create Account</Text>
+        {/* Form Card */}
+        <Card className="p-6">
+          <Text className="text-2xl font-semibold text-text-primary mb-6">Create Account</Text>
 
-          <TextInput
-            style={[styles.input, displayName ? styles.inputFocused : null]}
+          <Input
             placeholder="Display name"
-            placeholderTextColor="#94A3B8"
             autoCapitalize="words"
             value={displayName}
             onChangeText={setDisplayName}
           />
 
-          <TextInput
-            style={[styles.input, email ? styles.inputFocused : null]}
+          <Input
             placeholder="Email address"
-            placeholderTextColor="#94A3B8"
             keyboardType="email-address"
             autoCapitalize="none"
             autoCorrect={false}
@@ -101,140 +100,39 @@ export default function SignUpScreen() {
             onChangeText={setEmail}
           />
 
-          <TextInput
-            style={[styles.input, password ? styles.inputFocused : null]}
+          <Input
             placeholder="Password"
-            placeholderTextColor="#94A3B8"
             secureTextEntry
             autoCapitalize="none"
             value={password}
             onChangeText={setPassword}
           />
 
-          <TextInput
-            style={[styles.input, confirmPassword ? styles.inputFocused : null]}
+          <Input
             placeholder="Confirm password"
-            placeholderTextColor="#94A3B8"
             secureTextEntry
             autoCapitalize="none"
             value={confirmPassword}
             onChangeText={setConfirmPassword}
           />
 
-          <TouchableOpacity
-            style={[styles.primaryButton, loading && styles.buttonDisabled]}
+          {/* Sign Up Button */}
+          <Button
+            title={loading ? 'Creating account...' : 'Create Account'}
             onPress={handleSignUp}
-            disabled={loading}
-            activeOpacity={0.8}
-          >
-            <Text style={styles.primaryButtonText}>
-              {loading ? 'Creating account...' : 'Create Account'}
-            </Text>
-          </TouchableOpacity>
-        </View>
+            loading={loading}
+            className="mt-3"
+          />
+        </Card>
 
         {/* Footer */}
-        <View style={styles.footer}>
-          <Text style={styles.footerText}>Already have an account?</Text>
+        <View className="flex-row justify-center mt-6">
+          <Text className="text-sm text-text-secondary">Already have an account?</Text>
           <TouchableOpacity onPress={() => router.push('/(auth)/sign-in')}>
-            <Text style={styles.footerLink}> Sign In</Text>
+            <Text className="text-sm text-primary-600 font-semibold"> Sign In</Text>
           </TouchableOpacity>
         </View>
       </View>
     </KeyboardAvoidingView>
   );
 }
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#F8FAFC',
-  },
-  inner: {
-    flex: 1,
-    justifyContent: 'center',
-    paddingHorizontal: 16,
-  },
-  header: {
-    alignItems: 'center',
-    marginBottom: 32,
-  },
-  appName: {
-    fontSize: 36,
-    fontWeight: '700',
-    color: '#2563EB',
-    letterSpacing: -0.5,
-  },
-  appSubtitle: {
-    fontSize: 18,
-    fontWeight: '400',
-    color: '#3B82F6',
-    marginTop: 2,
-  },
-  tagline: {
-    fontSize: 13,
-    color: '#94A3B8',
-    marginTop: 12,
-    textAlign: 'center',
-  },
-  form: {
-    backgroundColor: '#FFFFFF',
-    borderRadius: 16,
-    padding: 24,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.05,
-    shadowRadius: 8,
-    elevation: 2,
-  },
-  formTitle: {
-    fontSize: 22,
-    fontWeight: '600',
-    color: '#0F172A',
-    marginBottom: 24,
-  },
-  input: {
-    height: 48,
-    borderWidth: 1,
-    borderColor: '#E5E7EB',
-    borderRadius: 12,
-    paddingHorizontal: 16,
-    fontSize: 16,
-    color: '#0F172A',
-    backgroundColor: '#FFFFFF',
-    marginBottom: 12,
-  },
-  inputFocused: {
-    borderColor: '#3B82F6',
-  },
-  primaryButton: {
-    backgroundColor: '#2563EB',
-    height: 48,
-    borderRadius: 12,
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginTop: 12,
-  },
-  primaryButtonText: {
-    color: '#FFFFFF',
-    fontSize: 16,
-    fontWeight: '600',
-  },
-  buttonDisabled: {
-    opacity: 0.6,
-  },
-  footer: {
-    flexDirection: 'row',
-    justifyContent: 'center',
-    marginTop: 24,
-  },
-  footerText: {
-    fontSize: 14,
-    color: '#475569',
-  },
-  footerLink: {
-    fontSize: 14,
-    color: '#2563EB',
-    fontWeight: '600',
-  },
-});
