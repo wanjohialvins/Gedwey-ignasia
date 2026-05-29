@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, TouchableOpacity, Alert, ScrollView, Dimensions } from 'react-native';
+import { View, Text, TouchableOpacity, Alert, ScrollView } from 'react-native';
 import { useRouter } from 'expo-router';
 import Animated, { useSharedValue, useAnimatedStyle, withSpring, withTiming } from 'react-native-reanimated';
 import { supabase } from '../../lib/supabase';
@@ -7,9 +7,11 @@ import { useAuthStore } from '../../lib/store/authStore';
 import { useUserProfile, useCouple } from '../../lib/queries/profile';
 import { useSessionHistory, useActiveSession } from '../../lib/queries/sessions';
 import { useTimeCapsules } from '../../lib/queries/capsules';
+import { sendPushNotification } from '../../lib/notifications';
 import { Button } from '../../components/Button';
 import { Card } from '../../components/Card';
 import { Skeleton } from '../../components/Skeleton';
+import NudgeOverlay from '../../components/NudgeOverlay';
 
 export default function HomeScreen() {
   const { user } = useAuthStore();
@@ -111,6 +113,44 @@ export default function HomeScreen() {
     return moodEmojis[mood.toLowerCase()] || mood;
   };
 
+  // Nudge broadcasting helper
+  const handleSendNudge = async () => {
+    if (!isPaired || !profile) return;
+    
+    try {
+      const channelId = `nudges:${profile.couple_id}`;
+      const channel = supabase.channel(channelId);
+      
+      // Subscribe and broadcast Nudge event immediately
+      channel.subscribe(async (status) => {
+        if (status === 'SUBSCRIBED') {
+          await channel.send({
+            type: 'broadcast',
+            event: 'nudge',
+            payload: {
+              sender: profile.display_name || 'Your Partner',
+              senderId: user?.id,
+            },
+          });
+          console.log('[Dashboard] Nudge broadcast successful');
+        }
+      });
+
+      // Dispatch push notification to partner
+      if (partnerProfile?.expo_push_token) {
+        sendPushNotification(
+          partnerProfile.expo_push_token,
+          'Thinking of You 💓',
+          `${profile.display_name || 'Your partner'} sent you a gentle nudge!`
+        );
+      }
+      
+      Alert.alert('Nudge Sent! 💌', 'You sent a loving nudge to your partner.');
+    } catch (err) {
+      console.error('Failed to send nudge:', err);
+    }
+  };
+
   const handleSignOut = async () => {
     try {
       setIsDrawerOpen(false);
@@ -186,6 +226,9 @@ export default function HomeScreen() {
 
   return (
     <View className="flex-1 bg-background">
+      {/* Real-time Fading Nudge Animated Heart Overlay */}
+      <NudgeOverlay />
+
       <ScrollView className="flex-1 px-4 pt-14 pb-8" showsVerticalScrollIndicator={false}>
         {/* Customized Premium Header with Menu Trigger */}
         <View className="flex-row items-center justify-between mb-6">
@@ -352,7 +395,7 @@ export default function HomeScreen() {
           <Text className="text-lg font-bold text-text-primary mb-1">Time Capsules</Text>
           <Text className="text-xs text-text-secondary leading-normal">
             {isPaired
-              ? 'Lock messages & photos to open together in the future'
+              ? 'Lock memories & photos to open together in the future'
               : 'Pair with your partner to lock memories'}
           </Text>
         </TouchableOpacity>
@@ -425,6 +468,17 @@ export default function HomeScreen() {
         <View style={{ height: 40 }} />
       </ScrollView>
 
+      {/* Floating Intimate Heart Nudge Trigger Button */}
+      {isPaired && (
+        <TouchableOpacity
+          className="absolute bottom-6 right-6 bg-pink-500 w-14 h-14 rounded-full justify-center items-center shadow-lg active:bg-pink-400 z-40"
+          onPress={handleSendNudge}
+          activeOpacity={0.8}
+        >
+          <Text className="text-white text-2xl">💓</Text>
+        </TouchableOpacity>
+      )}
+
       {/* Premium Sliding Reanimated Sidebar Drawer */}
       {drawerMounted && (
         <View className="absolute inset-0 z-50 flex-row">
@@ -450,9 +504,16 @@ export default function HomeScreen() {
                   <Text className="text-sm font-bold text-text-secondary">×</Text>
                 </TouchableOpacity>
               </View>
-              <Text className="text-xs text-primary-600 font-semibold mt-1">
-                {isPaired ? `🔥 ${coupleDetails?.streak || 0} Day Streak` : 'Unpaired'}
-              </Text>
+              <View className="mt-1 flex-col gap-0.5">
+                <Text className="text-xs text-primary-600 font-semibold">
+                  {isPaired ? `🔥 ${coupleDetails?.streak || 0} Day Streak` : 'Unpaired'}
+                </Text>
+                {isPaired && (
+                  <Text className="text-3xs text-text-secondary">
+                    {getAnniversaryText(coupleDetails?.created_at)}
+                  </Text>
+                )}
+              </View>
             </View>
 
             {/* Profile split quick-view */}
@@ -512,32 +573,134 @@ export default function HomeScreen() {
             </View>
 
             {/* Menu Items Link */}
-            <View className="mt-2 gap-2 flex-1">
-              <TouchableOpacity
-                onPress={() => navigateFromDrawer('/')}
-                className="py-3 px-4 rounded-xl hover:bg-slate-50 flex-row items-center gap-3 active:bg-slate-100"
-              >
-                <Text className="text-base">🏠</Text>
-                <Text className="text-sm font-semibold text-text-primary">Dashboard</Text>
-              </TouchableOpacity>
-              <TouchableOpacity
-                onPress={() => navigateFromDrawer('/settings')}
-                className="py-3 px-4 rounded-xl hover:bg-slate-50 flex-row items-center gap-3 active:bg-slate-100"
-              >
-                <Text className="text-base">⚙️</Text>
-                <Text className="text-sm font-semibold text-text-primary">App Settings</Text>
-              </TouchableOpacity>
-              
-              {isPaired && isJournalUnlocked && (
+            <ScrollView className="mt-2 flex-1" showsVerticalScrollIndicator={false}>
+              <View className="gap-1 pb-4">
                 <TouchableOpacity
-                  onPress={() => navigateFromDrawer('/journal')}
-                  className="py-3 px-4 rounded-xl hover:bg-slate-50 flex-row items-center gap-3 active:bg-slate-100"
+                  onPress={() => navigateFromDrawer('/')}
+                  className="py-2.5 px-3.5 rounded-xl flex-row items-center justify-between active:bg-slate-100"
                 >
-                  <Text className="text-base">📓</Text>
-                  <Text className="text-sm font-semibold text-text-primary">Shared Journal</Text>
+                  <View className="flex-row items-center gap-3">
+                    <Text className="text-base">🏠</Text>
+                    <Text className="text-sm font-semibold text-text-primary">Dashboard</Text>
+                  </View>
                 </TouchableOpacity>
-              )}
-            </View>
+
+                <TouchableOpacity
+                  onPress={() => navigateFromDrawer('/settings')}
+                  className="py-2.5 px-3.5 rounded-xl flex-row items-center justify-between active:bg-slate-100"
+                >
+                  <View className="flex-row items-center gap-3">
+                    <Text className="text-base">⚙️</Text>
+                    <Text className="text-sm font-semibold text-text-primary">App Settings</Text>
+                  </View>
+                </TouchableOpacity>
+
+                {/* Discovery Mode */}
+                <TouchableOpacity
+                  onPress={() => navigateFromDrawer('/discovery')}
+                  className="py-2.5 px-3.5 rounded-xl flex-row items-center justify-between active:bg-slate-100"
+                >
+                  <View className="flex-row items-center gap-3">
+                    <Text className="text-base">✨</Text>
+                    <Text className="text-sm font-semibold text-text-primary">Discovery Mode</Text>
+                  </View>
+                </TouchableOpacity>
+
+                {/* Couple Sessions */}
+                <TouchableOpacity
+                  onPress={() => {
+                    if (isPaired) {
+                      navigateFromDrawer('/session/start');
+                    } else {
+                      Alert.alert(
+                        'Pairing Required 🔒',
+                        'You need to pair with a partner to start shared couple sessions. Go to App Settings to share your invite code.'
+                      );
+                    }
+                  }}
+                  className={`py-2.5 px-3.5 rounded-xl flex-row items-center justify-between active:bg-slate-100 ${
+                    !isPaired ? 'opacity-60' : ''
+                  }`}
+                >
+                  <View className="flex-row items-center gap-3">
+                    <Text className="text-base">🎴</Text>
+                    <Text className="text-sm font-semibold text-text-primary">Couple Sessions</Text>
+                  </View>
+                  {!isPaired && <Text className="text-[10px] text-text-muted">🔒</Text>}
+                </TouchableOpacity>
+
+                {/* Shared Journal */}
+                <TouchableOpacity
+                  onPress={() => {
+                    if (!isPaired) {
+                      Alert.alert('Pairing Required 🔒', 'You need to be paired with a partner to access the Shared Journal.');
+                    } else if (!isJournalUnlocked) {
+                      Alert.alert(
+                        'Journal Locked 🔒',
+                        `Complete 5 sessions to unlock your shared space. Currently completed: ${completedSessionsCount}/5 sessions.`
+                      );
+                    } else {
+                      navigateFromDrawer('/journal');
+                    }
+                  }}
+                  className={`py-2.5 px-3.5 rounded-xl flex-row items-center justify-between active:bg-slate-100 ${
+                    (!isPaired || !isJournalUnlocked) ? 'opacity-60' : ''
+                  }`}
+                >
+                  <View className="flex-row items-center gap-3">
+                    <Text className="text-base">📓</Text>
+                    <Text className="text-sm font-semibold text-text-primary">Shared Journal</Text>
+                  </View>
+                  {(!isPaired || !isJournalUnlocked) && <Text className="text-[10px] text-text-muted">🔒</Text>}
+                </TouchableOpacity>
+
+                {/* Time Capsules */}
+                <TouchableOpacity
+                  onPress={() => {
+                    if (isPaired) {
+                      navigateFromDrawer('/capsule');
+                    } else {
+                      Alert.alert('Pairing Required 🔒', 'You need to pair with a partner to access Time Capsules.');
+                    }
+                  }}
+                  className={`py-2.5 px-3.5 rounded-xl flex-row items-center justify-between active:bg-slate-100 ${
+                    !isPaired ? 'opacity-60' : ''
+                  }`}
+                >
+                  <View className="flex-row items-center gap-3">
+                    <Text className="text-base">⏳</Text>
+                    <Text className="text-sm font-semibold text-text-primary">Time Capsules</Text>
+                  </View>
+                  {!isPaired && <Text className="text-[10px] text-text-muted">🔒</Text>}
+                </TouchableOpacity>
+
+                {/* Relationship Health */}
+                <TouchableOpacity
+                  onPress={() => {
+                    const isHealthUnlocked = completedSessionsCount >= 10;
+                    if (!isPaired) {
+                      Alert.alert('Pairing Required 🔒', 'You need to be paired with a partner to access Relationship Health.');
+                    } else if (!isHealthUnlocked) {
+                      Alert.alert(
+                        'Milestone Locked 🔒',
+                        `Complete 10 shared sessions to unlock Relationship Health Check-ins. Progress: ${completedSessionsCount}/10 sessions.`
+                      );
+                    } else {
+                      navigateFromDrawer('/health');
+                    }
+                  }}
+                  className={`py-2.5 px-3.5 rounded-xl flex-row items-center justify-between active:bg-slate-100 ${
+                    (!isPaired || completedSessionsCount < 10) ? 'opacity-60' : ''
+                  }`}
+                >
+                  <View className="flex-row items-center gap-3">
+                    <Text className="text-base">❤️</Text>
+                    <Text className="text-sm font-semibold text-text-primary">Relationship Health</Text>
+                  </View>
+                  {(!isPaired || completedSessionsCount < 10) && <Text className="text-[10px] text-text-muted">🔒</Text>}
+                </TouchableOpacity>
+              </View>
+            </ScrollView>
 
             {/* Bottom Footer Actions */}
             <View className="border-t border-slate-100 pt-4 mt-auto">

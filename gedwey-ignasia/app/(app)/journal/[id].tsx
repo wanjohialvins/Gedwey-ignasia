@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   View,
   Text,
@@ -9,6 +9,7 @@ import {
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import { useJournalEntry } from '../../../lib/queries/journal';
 import { Button } from '../../../components/Button';
+import { Card } from '../../../components/Card';
 import { Skeleton } from '../../../components/Skeleton';
 
 export default function JournalDetailScreen() {
@@ -76,6 +77,56 @@ export default function JournalDetailScreen() {
 
   const creatorName = entry.profiles?.display_name || 'Partner';
 
+  // Parse mock voice note metadata
+  const voiceMatch = entry.content.match(/\[voice:(\d+:\d+)\]/);
+  const displayContent = entry.content.replace(/\[voice:\d+:\d+\]/g, '').trim();
+
+  // Deterministic random rotation based on entry ID hash
+  const getRotationAngle = (idStr: string) => {
+    let hash = 0;
+    for (let i = 0; i < idStr.length; i++) {
+      hash = idStr.charCodeAt(i) + ((hash << 5) - hash);
+    }
+    const angle = (hash % 4) - 2; // Returns -2, -1, 0, or 1
+    return `${angle}deg`;
+  };
+
+  // Mock voice note player state
+  const [isPlaying, setIsPlaying] = useState(false);
+  const [playProgress, setPlayProgress] = useState(0);
+  const [timerText, setTimerText] = useState('00:00');
+
+  useEffect(() => {
+    let interval: NodeJS.Timeout;
+    if (isPlaying && voiceMatch) {
+      const [maxMin, maxSec] = voiceMatch[1].split(':').map(Number);
+      const totalSeconds = maxMin * 60 + maxSec;
+      
+      interval = setInterval(() => {
+        setPlayProgress((prev: number) => {
+          const next = prev + (1 / totalSeconds);
+          if (next >= 1) {
+            setIsPlaying(false);
+            setTimerText(`00:${maxSec < 10 ? '0' : ''}${maxSec}`);
+            return 1;
+          }
+          const currentSeconds = Math.floor(next * totalSeconds);
+          setTimerText(`00:${currentSeconds < 10 ? '0' : ''}${currentSeconds}`);
+          return next;
+        });
+      }, 1000);
+    }
+    return () => clearInterval(interval);
+  }, [isPlaying, voiceMatch]);
+
+  const handlePlayToggle = () => {
+    if (!isPlaying && playProgress >= 1) {
+      setPlayProgress(0);
+      setTimerText('00:00');
+    }
+    setIsPlaying(!isPlaying);
+  };
+
   return (
     <SafeAreaView className="flex-1 bg-background">
       <View className="flex-1 px-4">
@@ -96,8 +147,52 @@ export default function JournalDetailScreen() {
           {/* Divider */}
           <View className="h-[1px] bg-slate-200 w-full mb-5" />
 
+          {/* Polaroid Scrapbook Grid Section */}
+          {entry.image_url && (
+            <View className="items-center mb-6">
+              <View 
+                style={{ 
+                  transform: [{ rotate: getRotationAngle(entry.id) }] 
+                }}
+                className="bg-white border border-slate-200 p-3 pb-10 shadow-lg rounded-sm w-[90%] max-w-[320px]"
+              >
+                <View className="w-full h-64 bg-slate-100 items-center justify-center overflow-hidden rounded-sm">
+                  {/* Since image URL might be standard mock text, render a beautiful visual card placeholder */}
+                  <Text className="text-7xl mb-4">📸</Text>
+                  <Text className="text-xs font-bold text-slate-500 uppercase tracking-widest">Our Captured Moment</Text>
+                </View>
+              </View>
+            </View>
+          )}
+
+          {/* Custom Interactive Voice Player Widget */}
+          {voiceMatch && (
+            <Card className="p-4 mb-6 border border-pink-100 bg-pink-50/15">
+              <Text className="text-xs font-bold text-pink-600 mb-2">🎙️ Voice Capsule</Text>
+              <View className="flex-row items-center gap-3">
+                <TouchableOpacity
+                  onPress={handlePlayToggle}
+                  className="w-12 h-12 bg-pink-500 rounded-full justify-center items-center active:bg-pink-400"
+                >
+                  <Text className="text-white text-lg font-bold">
+                    {isPlaying ? '⏸️' : '▶️'}
+                  </Text>
+                </TouchableOpacity>
+                <View className="flex-1">
+                  <View className="h-1.5 bg-slate-200 rounded-full overflow-hidden mb-1">
+                    <View style={{ width: `${playProgress * 100}%` }} className="h-full bg-pink-500 rounded-full" />
+                  </View>
+                  <View className="flex-row justify-between">
+                    <Text className="text-[10px] text-text-secondary">{timerText}</Text>
+                    <Text className="text-[10px] text-text-secondary">{voiceMatch[1]}</Text>
+                  </View>
+                </View>
+              </View>
+            </Card>
+          )}
+
           {/* Content Body */}
-          <Text className="text-sm text-text-secondary leading-6 text-left">{entry.content}</Text>
+          <Text className="text-sm text-text-secondary leading-6 text-left">{displayContent}</Text>
         </ScrollView>
       </View>
     </SafeAreaView>

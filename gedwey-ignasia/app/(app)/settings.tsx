@@ -45,6 +45,11 @@ export default function SettingsScreen() {
   const [partnerNotif, setPartnerNotif] = useState(true);
   const [capsuleNotif, setCapsuleNotif] = useState(true);
 
+  // Premium Roadmap States
+  const [selectedTheme, setSelectedTheme] = useState('blue');
+  const [soundscapeEnabled, setSoundscapeEnabled] = useState(false);
+  const [selectedSound, setSelectedSound] = useState('acoustic');
+
   const [isSavingProfile, setIsSavingProfile] = useState(false);
   const [isPairing, setIsPairing] = useState(false);
   const [isUnpairing, setIsUnpairing] = useState(false);
@@ -351,6 +356,94 @@ export default function SettingsScreen() {
             thumbColor={capsuleNotif ? '#2563EB' : '#F1F5F9'}
           />
         </View>
+      </Card>
+
+      {/* Premium Visual Theme Selector Card */}
+      <Card className="p-5 mb-5">
+        <Text className="text-base font-semibold text-text-primary mb-4">Custom Color Themes</Text>
+        <Text className="text-xs text-text-secondary leading-normal mb-3">
+          Select an active color palette to personalize the app gradients and highlights.
+        </Text>
+        <View className="flex-row gap-2 mt-1">
+          {[
+            { id: 'blue', name: 'Default Blue', color: 'bg-blue-500' },
+            { id: 'rose', name: 'Sunset Rose', color: 'bg-rose-500' },
+            { id: 'lilac', name: 'Lilac Dream', color: 'bg-violet-500' },
+          ].map((theme) => (
+            <TouchableOpacity
+              key={theme.id}
+              onPress={() => setSelectedTheme(theme.id)}
+              className={`flex-1 p-3 rounded-2xl border flex-col items-center gap-1.5 ${
+                selectedTheme === theme.id
+                  ? 'border-primary-600 bg-blue-50/15'
+                  : 'border-neutral-border bg-white'
+              }`}
+            >
+              <View className={`w-8 h-8 rounded-full ${theme.color} shadow-sm`} />
+              <Text
+                className={`text-[10px] font-bold text-center ${
+                  selectedTheme === theme.id ? 'text-primary-600' : 'text-text-secondary'
+                }`}
+              >
+                {theme.name}
+              </Text>
+            </TouchableOpacity>
+          ))}
+        </View>
+      </Card>
+
+      {/* Reflective Soundscapes Loops Player Card */}
+      <Card className="p-5 mb-5 border border-primary-100 bg-blue-50/10">
+        <Text className="text-base font-semibold text-text-primary mb-4">🎵 Reflective Soundscapes</Text>
+        <View className="flex-row justify-between items-center mb-3">
+          <View className="flex-1 pr-4">
+            <Text className="text-sm font-semibold text-text-primary">Enable Lo-fi Loop</Text>
+            <Text className="text-2xs text-text-secondary mt-0.5">Plays a calming acoustic loop during writing sessions</Text>
+          </View>
+          <Switch
+            value={soundscapeEnabled}
+            onValueChange={setSoundscapeEnabled}
+            trackColor={{ false: '#E2E8F0', true: '#BFDBFE' }}
+            thumbColor={soundscapeEnabled ? '#2563EB' : '#F1F5F9'}
+          />
+        </View>
+
+        {soundscapeEnabled && (
+          <View className="border-t border-slate-100/50 pt-3">
+            <Text className="text-2xs font-semibold text-text-secondary mb-2">Ambient Tracks</Text>
+            <View className="flex-row gap-2">
+              {[
+                { id: 'acoustic', name: 'Lo-fi Guitar' },
+                { id: 'rain', name: 'Summer Rain' },
+                { id: 'fireplace', name: 'Cozy Crackle' },
+              ].map((track) => (
+                <TouchableOpacity
+                  key={track.id}
+                  onPress={() => setSelectedSound(track.id)}
+                  className={`flex-1 py-2 rounded-xl border items-center ${
+                    selectedSound === track.id
+                      ? 'bg-primary-100 border-primary-600'
+                      : 'bg-white border-neutral-border'
+                  }`}
+                >
+                  <Text
+                    className={`text-[9px] font-bold ${
+                      selectedSound === track.id ? 'text-primary-600' : 'text-text-secondary'
+                    }`}
+                  >
+                    {track.name}
+                  </Text>
+                </TouchableOpacity>
+              ))}
+            </View>
+            <View className="flex-row items-center justify-center bg-white border border-slate-150 rounded-xl p-3 mt-3 gap-3">
+              <Text className="text-base">🔊</Text>
+              <Text className="text-3xs font-semibold text-text-secondary animate-pulse">
+                Playing: {selectedSound === 'acoustic' ? 'Lo-fi Acoustic Chords' : selectedSound === 'rain' ? 'Summer Rain Loop' : 'Cozy Fireplace Crackle'}...
+              </Text>
+            </View>
+          </View>
+        )}
       </Card>
 
       {/* Danger Zone Section */}

@@ -1,4 +1,4 @@
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '../supabase';
 
 export interface Card {
@@ -27,6 +27,30 @@ export const useCards = (category?: 'discovery' | 'intimacy' | 'fun' | 'relation
       }
 
       return data as Card[];
+    },
+  });
+};
+
+// Create a custom card
+export const useCreateCard = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation<Card, Error, Omit<Card, 'id' | 'created_at'>>({
+    mutationFn: async (newCard) => {
+      const { data, error } = await supabase
+        .from('cards')
+        .insert(newCard)
+        .select()
+        .single();
+
+      if (error) {
+        throw new Error(error.message);
+      }
+
+      return data as Card;
+    },
+    onSuccess: (data) => {
+      queryClient.invalidateQueries({ queryKey: ['cards', data.category] });
     },
   });
 };

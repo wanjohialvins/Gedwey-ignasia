@@ -7,7 +7,7 @@ import {
   SafeAreaView,
 } from 'react-native';
 import { useRouter } from 'expo-router';
-import Svg, { Polygon, Line, Text as SvgText } from 'react-native-svg';
+import Svg, { Polygon, Line, Text as SvgText, Path, Circle } from 'react-native-svg';
 import { useAuthStore } from '../../../lib/store/authStore';
 import { useUserProfile } from '../../../lib/queries/profile';
 import { useHealthCheckins, HealthCheckin } from '../../../lib/queries/health';
@@ -110,6 +110,53 @@ export default function HealthDashboardScreen() {
 
   const partnerName = profile?.partner_id ? 'Your Partner' : 'Partner';
 
+  // 1. Calculate historical trend lines
+  const myHistory = checkins
+    ? [...checkins]
+        .filter((c) => c.user_id === user?.id)
+        .sort((a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime())
+    : [];
+  const partnerHistory = checkins
+    ? [...checkins]
+        .filter((c) => c.user_id !== user?.id)
+        .sort((a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime())
+    : [];
+
+  const getPoints = (historyList: HealthCheckin[]) => {
+    const list = historyList.slice(-5); // Plot the last 5 weeks
+    if (list.length === 0) return [];
+    
+    const spacing = list.length > 1 ? 240 / (list.length - 1) : 240;
+    return list.map((c, idx) => {
+      const avg =
+        (c.communication + c.intimacy + c.trust + c.connection + c.conflict) / 5;
+      const x = 30 + idx * spacing;
+      // Map Y coordinates: Y increases downwards in SVG
+      const y = 120 - (avg / 10) * 90 - 10;
+      return { x, y, score: avg };
+    });
+  };
+
+  const myPoints = getPoints(myHistory);
+  const partnerPoints = getPoints(partnerHistory);
+
+  const getBezierPath = (points: { x: number; y: number }[]) => {
+    if (points.length === 0) return '';
+    if (points.length === 1) return `M ${points[0].x} ${points[0].y}`;
+    
+    let path = `M ${points[0].x} ${points[0].y}`;
+    for (let i = 0; i < points.length - 1; i++) {
+      const curr = points[i];
+      const next = points[i + 1];
+      const cpX1 = curr.x + (next.x - curr.x) / 3;
+      const cpY1 = curr.y;
+      const cpX2 = curr.x + (2 * (next.x - curr.x)) / 3;
+      const cpY2 = next.y;
+      path += ` C ${cpX1} ${cpY1}, ${cpX2} ${cpY2}, ${next.x} ${next.y}`;
+    }
+    return path;
+  };
+
   return (
     <SafeAreaView className="flex-1 bg-background">
       <View className="flex-1 px-4">
@@ -198,6 +245,67 @@ export default function HealthDashboardScreen() {
                   </View>
                 </View>
               </View>
+
+              {/* Premium SVG cubic Bezier Weekly Trends Chart */}
+              {checkins && checkins.length >= 2 && (
+                <Card className="p-5 mb-1.5 items-center">
+                  <Text className="text-base font-bold text-text-primary mb-1.5 self-start">Weekly Alignment Trends</Text>
+                  <Text className="text-xs text-text-secondary mb-4 self-start leading-normal">
+                    Comparing your overall relationship sync scores weekly side-by-side.
+                  </Text>
+                  
+                  <Svg width={300} height={140}>
+                    {/* Grid lines */}
+                    {[2, 4, 6, 8, 10].map((level) => {
+                      const y = 120 - (level / 10) * 90 - 10;
+                      return (
+                        <React.Fragment key={level}>
+                          <Line x1={25} y1={y} x2={280} y2={y} stroke="#F1F5F9" strokeWidth="1" />
+                          <SvgText x={5} y={y + 3} fill="#94A3B8" fontSize="8">{level}</SvgText>
+                        </React.Fragment>
+                      );
+                    })}
+
+                    {/* Plots */}
+                    {partnerPoints.length > 1 && (
+                      <Path
+                        d={getBezierPath(partnerPoints)}
+                        fill="none"
+                        stroke="#D4537E"
+                        strokeWidth="3"
+                      />
+                    )}
+                    {myPoints.length > 1 && (
+                      <Path
+                        d={getBezierPath(myPoints)}
+                        fill="none"
+                        stroke="#2563EB"
+                        strokeWidth="3.5"
+                      />
+                    )}
+
+                    {/* Circles on dots */}
+                    {partnerPoints.map((pt, i) => (
+                      <Circle key={`partner-${i}`} cx={pt.x} cy={pt.y} r={4.5} fill="#D4537E" stroke="#FFFFFF" strokeWidth="1.5" />
+                    ))}
+                    {myPoints.map((pt, i) => (
+                      <Circle key={`my-${i}`} cx={pt.x} cy={pt.y} r={5} fill="#2563EB" stroke="#FFFFFF" strokeWidth="1.5" />
+                    ))}
+                  </Svg>
+                  
+                  {/* Legend Row */}
+                  <View className="flex-row gap-4 mt-3">
+                    <View className="flex-row items-center">
+                      <View className="w-2.5 h-2.5 rounded-full mr-1.5 bg-primary-600" />
+                      <Text className="text-2xs font-semibold text-text-secondary">You (Avg: {myPoints.length > 0 ? (myPoints.reduce((s, p) => s + p.score, 0) / myPoints.length).toFixed(1) : 0})</Text>
+                    </View>
+                    <View className="flex-row items-center">
+                      <View className="w-2.5 h-2.5 rounded-full mr-1.5 bg-[#D4537E]" />
+                      <Text className="text-2xs font-semibold text-text-secondary">{partnerName} (Avg: {partnerPoints.length > 0 ? (partnerPoints.reduce((s, p) => s + p.score, 0) / partnerPoints.length).toFixed(1) : 0})</Text>
+                    </View>
+                  </View>
+                </Card>
+              )}
 
               {/* Dimension Details Table */}
               <Card className="p-4 gap-3">

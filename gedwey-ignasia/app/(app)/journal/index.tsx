@@ -102,23 +102,49 @@ export default function JournalListScreen() {
 
     const creatorName = item.profiles?.display_name || 'Partner';
 
+    // Parse mock voice notes
+    const voiceMatch = item.content.match(/\[voice:(\d+:\d+)\]/);
+    const displayContent = item.content.replace(/\[voice:\d+:\d+\]/g, '').trim();
+
     return (
       <TouchableOpacity
         onPress={() => router.push(`/journal/${item.id}`)}
         activeOpacity={0.7}
-        className="mb-3"
+        className="mb-4"
       >
-        <Card className="p-4">
-          <View className="flex-row justify-between mb-2">
+        <Card className="p-4 flex-col gap-3">
+          <View className="flex-row justify-between items-center">
             <Text className="text-xs font-semibold text-primary-600">{formattedDate}</Text>
             <Text className="text-xs text-text-muted">By {creatorName}</Text>
           </View>
-          <Text className="text-base font-bold text-text-primary mb-1.5" numberOfLines={1}>
-            {item.title}
-          </Text>
-          <Text className="text-xs text-text-secondary leading-normal" numberOfLines={2}>
-            {item.content}
-          </Text>
+          
+          <View className="flex-row gap-3">
+            {/* Polaroid style thumbnail if image is present */}
+            {item.image_url && (
+              <View className="w-16 h-18 bg-white border border-slate-200 p-1 pb-4 shadow-sm rounded-sm">
+                <View className="w-full h-11 bg-slate-100 overflow-hidden">
+                  <Text className="text-center text-xs mt-3">📸</Text>
+                </View>
+              </View>
+            )}
+
+            <View className="flex-1">
+              <Text className="text-base font-bold text-text-primary mb-1" numberOfLines={1}>
+                {item.title}
+              </Text>
+              <Text className="text-xs text-text-secondary leading-normal" numberOfLines={2}>
+                {displayContent}
+              </Text>
+            </View>
+          </View>
+
+          {/* Voice Capsule Badge indicator */}
+          {voiceMatch && (
+            <View className="flex-row self-start bg-pink-50 border border-pink-100 rounded-lg px-2 py-1 items-center gap-1 mt-1">
+              <Text className="text-[10px]">🎙️</Text>
+              <Text className="text-3xs font-bold text-pink-600">Voice Capsule ({voiceMatch[1]})</Text>
+            </View>
+          )}
         </Card>
       </TouchableOpacity>
     );

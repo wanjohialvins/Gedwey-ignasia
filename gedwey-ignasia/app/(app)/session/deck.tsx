@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import {
   View,
   Text,
@@ -11,8 +11,11 @@ import { useRouter } from 'expo-router';
 import { useAuthStore } from '../../../lib/store/authStore';
 import { useUserProfile } from '../../../lib/queries/profile';
 import { useSessionHistory } from '../../../lib/queries/sessions';
+import { useCreateCard } from '../../../lib/queries/cards';
 import { Card } from '../../../components/Card';
 import { Skeleton } from '../../../components/Skeleton';
+import { Input } from '../../../components/Input';
+import { Button } from '../../../components/Button';
 
 interface DeckItem {
   key: 'fun' | 'discovery' | 'intimacy' | 'relationship_health';
@@ -60,10 +63,59 @@ export default function DeckSelectorScreen() {
   // Fetch profiles and session history to determine completed milestones
   const { data: profile, isLoading: profileLoading } = useUserProfile(user?.id ?? '');
   const coupleId = profile?.couple_id ?? '';
-
   const { data: sessionHistory, isLoading: historyLoading } = useSessionHistory(coupleId);
 
+  // Custom Prompt Creation States
+  const createCard = useCreateCard();
+  const [customText, setCustomText] = useState('');
+  const [customCategory, setCustomCategory] = useState<'fun' | 'discovery' | 'intimacy' | 'relationship_health'>('discovery');
+  const [isSubmittingCard, setIsSubmittingCard] = useState(false);
+
   const isLoading = profileLoading || historyLoading;
+
+  const handleSelectDeck = (deck: DeckItem) => {
+    const completedSessionsCount = sessionHistory?.length ?? 0;
+    const isUnlocked = completedSessionsCount >= deck.requiredSessions;
+    
+    if (!isUnlocked) {
+      Alert.alert(
+        'Deck Locked 🔒',
+        `This deck is locked. You need to complete ${deck.requiredSessions} sessions to unlock it. Currently completed: ${completedSessionsCount}/${deck.requiredSessions} sessions.`
+      );
+      return;
+    }
+
+    // Go to mood choice and pass deck category
+    router.push(`/session/mood?deck=${deck.key}`);
+  };
+
+  const handleCreatePrompt = async () => {
+    if (!customText.trim()) {
+      Alert.alert('Validation Error', 'Please type your custom question text.');
+      return;
+    }
+
+    setIsSubmittingCard(true);
+    try {
+      await createCard.mutateAsync({
+        text: customText.trim(),
+        category: customCategory,
+        min_relationship_stage: null,
+      });
+      Alert.alert(
+        'Prompt Created! ✍️',
+        `Your custom prompt has been successfully added to the "${customCategory.replace('_', ' ')}" deck.`
+      );
+      setCustomText('');
+    } catch (err: any) {
+      Alert.alert(
+        'Creation Failed',
+        err.message || 'Could not insert custom card. Please check if RLS insert policy is enabled.'
+      );
+    } finally {
+      setIsSubmittingCard(false);
+    }
+  };
 
   if (isLoading) {
     return (
@@ -96,21 +148,6 @@ export default function DeckSelectorScreen() {
 
   const completedSessionsCount = sessionHistory?.length ?? 0;
 
-  const handleSelectDeck = (deck: DeckItem) => {
-    const isUnlocked = completedSessionsCount >= deck.requiredSessions;
-    
-    if (!isUnlocked) {
-      Alert.alert(
-        'Deck Locked 🔒',
-        `This deck is locked. You need to complete ${deck.requiredSessions} sessions to unlock it. Currently completed: ${completedSessionsCount}/${deck.requiredSessions} sessions.`
-      );
-      return;
-    }
-
-    // Go to mood choice and pass deck category
-    router.push(`/session/mood?deck=${deck.key}`);
-  };
-
   return (
     <SafeAreaView className="flex-1 bg-background">
       <View className="flex-1 px-4">
@@ -124,7 +161,7 @@ export default function DeckSelectorScreen() {
             Select a themed prompt for today's shared couple connection.
           </Text>
 
-          <View className="gap-4">
+          <View className="gap-4 mb-8">
             {DECKS.map((deck) => {
               const isUnlocked = completedSessionsCount >= deck.requiredSessions;
               const progress = Math.min((completedSessionsCount / deck.requiredSessions) * 100, 100);
@@ -164,6 +201,51 @@ export default function DeckSelectorScreen() {
               );
             })}
           </View>
+
+          {/* Premium Custom Card Creation Widget */}
+          <Card className="p-5 border border-primary-100 bg-blue-50/5">
+            <Text className="text-base font-bold text-text-primary mb-3">✍️ Write a Custom Prompt</Text>
+            <Text className="text-xs text-text-secondary leading-normal mb-4">
+              Add your own custom question cards to the pool. They will be immediately integrated into the active decks!
+            </Text>
+            
+            <Input
+              label="Your Question"
+              placeholder="e.g. What is a habit of mine you secretly adore?"
+              value={customText}
+              onChangeText={setCustomText}
+            />
+
+            <Text className="text-xs font-semibold text-text-secondary mt-3 mb-1.5">Deck Category</Text>
+            <View className="flex-row flex-wrap gap-2 mb-4">
+              {['discovery', 'fun', 'intimacy', 'relationship_health'].map((cat) => (
+                <TouchableOpacity
+                  key={cat}
+                  onPress={() => setCustomCategory(cat as any)}
+                  className={`px-3 py-2 rounded-xl border capitalize ${
+                    customCategory === cat
+                      ? 'bg-primary-100 border-primary-600'
+                      : 'bg-white border-neutral-border'
+                  }`}
+                >
+                  <Text
+                    className={`text-[10px] font-bold ${
+                      customCategory === cat ? 'text-primary-600' : 'text-text-secondary'
+                    }`}
+                  >
+                    {cat.replace('_', ' ')}
+                  </Text>
+                </TouchableOpacity>
+              ))}
+            </View>
+
+            <Button
+              title="Add Custom Prompt"
+              onPress={handleCreatePrompt}
+              loading={isSubmittingCard}
+              className="w-full"
+            />
+          </Card>
         </ScrollView>
       </View>
     </SafeAreaView>
