@@ -1,10 +1,21 @@
 import "../global.css";
 import React, { useEffect } from 'react';
+import { View, LogBox } from 'react-native';
 import { Stack, useRouter, useSegments } from 'expo-router';
+
+LogBox.ignoreLogs([
+  'expo-notifications: Android Push notifications',
+  '`expo-notifications` functionality is not fully supported in Expo Go',
+  '[expo-av]: Expo AV has been deprecated',
+  '[Reanimated] Reduced motion setting is enabled',
+  'AuthApiError: Invalid Refresh Token: Refresh Token Not Found',
+]);
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { supabase } from '../lib/supabase';
 import { useAuthStore } from '../lib/store/authStore';
-import { View, Text } from 'react-native';
+import { GedweyLoader } from '../components/GedweyLoader';
+import { OfflineBanner } from '../components/OfflineBanner';
+import { prefetchGameCards } from '../lib/queries/gameCards';
 
 const queryClient = new QueryClient();
 
@@ -29,7 +40,14 @@ function InitialLayout() {
     
     // Get initial session
     supabase.auth.getSession()
-      .then(({ data: { session } }) => {
+      .then(({ data: { session }, error }) => {
+        if (error) {
+          console.warn('[InitialLayout] getSession error:', error);
+          if (error.message?.includes('Refresh Token') || error.status === 400) {
+            // Auto-heal by signing out invalid cached sessions
+            supabase.auth.signOut().catch(() => {});
+          }
+        }
         console.log('[InitialLayout] getSession completed, session found:', !!session);
         setSession(session);
         setLoading(false);
@@ -71,20 +89,23 @@ function InitialLayout() {
     }
   }, [session, loading, segments, router]);
 
+  useEffect(() => {
+    prefetchGameCards().catch(() => {});
+  }, []);
+
   // Loading state matching design rules (No default spinner, but since it's initial bootstrap,
   // we'll show a clean background matching design colors)
   if (loading) {
-    return (
-      <View style={{ flex: 1, backgroundColor: '#F8FAFC', justifyContent: 'center', alignItems: 'center' }}>
-        <Text style={{ color: '#2563EB', fontSize: 16, fontWeight: '600' }}>Connecting to Moments...</Text>
-      </View>
-    );
+    return <GedweyLoader subtitle="connecting your session..." />;
   }
 
   return (
-    <Stack screenOptions={{ headerShown: false }}>
-      <Stack.Screen name="(auth)" />
-      <Stack.Screen name="(app)" />
-    </Stack>
+    <View style={{ flex: 1 }}>
+      <OfflineBanner />
+      <Stack screenOptions={{ headerShown: false }}>
+        <Stack.Screen name="(auth)" />
+        <Stack.Screen name="(app)" />
+      </Stack>
+    </View>
   );
 }
