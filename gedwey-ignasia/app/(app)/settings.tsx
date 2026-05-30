@@ -6,9 +6,12 @@ import {
   Alert,
   Switch,
   TouchableOpacity,
+  Image,
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import * as Clipboard from 'expo-clipboard';
+import * as ImagePicker from 'expo-image-picker';
+import { uriToBlob } from '../../lib/fileUtils';
 import { supabase } from '../../lib/supabase';
 import { useAuthStore } from '../../lib/store/authStore';
 import {
@@ -21,6 +24,14 @@ import { Button } from '../../components/Button';
 import { Input } from '../../components/Input';
 import { Card } from '../../components/Card';
 import { Skeleton } from '../../components/Skeleton';
+import { BottomNav } from '../../components/BottomNav';
+import { DevBadge } from '../../components/DevBadge';
+import { ScreenShell } from '../../components/ScreenShell';
+import { AppIcon } from '../../components/AppIcon';
+import { NAV_ICONS } from '../../lib/navigationIcons';
+import { getUserPreferences } from '../../lib/notificationPrefs';
+import { playSoundscape, stopSoundscape } from '../../lib/soundscapePlayer';
+import { SOUNDSCAPE_TRACKS } from '../../lib/soundscapes';
 
 export default function SettingsScreen() {
   const router = useRouter();
@@ -39,14 +50,19 @@ export default function SettingsScreen() {
 
   // 3. Component States
   const [displayName, setDisplayName] = useState('');
+  const [bio, setBio] = useState('');
+  const [loveLanguage, setLoveLanguage] = useState('');
   const [partnerCode, setPartnerCode] = useState('');
   const [stage, setStage] = useState('');
+  const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
+  const [themePreference, setThemePreference] = useState<'default' | 'dark' | 'soft'>('default');
+  const [matureModeEnabled, setMatureModeEnabled] = useState(false);
   const [sessionNotif, setSessionNotif] = useState(true);
   const [partnerNotif, setPartnerNotif] = useState(true);
   const [capsuleNotif, setCapsuleNotif] = useState(true);
 
   // Premium Roadmap States
-  const [selectedTheme, setSelectedTheme] = useState('blue');
+  const [selectedTheme, setSelectedTheme] = useState<'default' | 'dark' | 'soft'>('default');
   const [soundscapeEnabled, setSoundscapeEnabled] = useState(false);
   const [selectedSound, setSelectedSound] = useState('acoustic');
 
@@ -63,9 +79,33 @@ export default function SettingsScreen() {
   useEffect(() => {
     if (profile) {
       setDisplayName(profile.display_name || '');
+      setBio(profile.bio || '');
+      setLoveLanguage(profile.love_language || '');
       setStage(profile.relationship_stage || 'discovery');
+      setAvatarUrl(profile.avatar_url || null);
+      setThemePreference(profile.theme_preference || 'default');
+      setSelectedTheme(profile.theme_preference || 'default');
+      setMatureModeEnabled(!!profile.mature_mode_enabled);
+
+      const prefs = getUserPreferences(profile);
+      setSessionNotif(prefs.sessionNotif !== false);
+      setPartnerNotif(prefs.partnerNotif !== false);
+      setCapsuleNotif(prefs.capsuleNotif !== false);
+      setSoundscapeEnabled(!!prefs.soundscapeEnabled);
+      setSelectedSound(prefs.selectedSound || 'acoustic');
     }
   }, [profile]);
+
+  useEffect(() => {
+    if (soundscapeEnabled) {
+      playSoundscape(selectedSound).catch(() => {});
+    } else {
+      stopSoundscape().catch(() => {});
+    }
+    return () => {
+      stopSoundscape().catch(() => {});
+    };
+  }, [soundscapeEnabled, selectedSound]);
 
   const handleSaveProfile = async () => {
     if (!displayName.trim()) {
@@ -79,13 +119,61 @@ export default function SettingsScreen() {
       await updateProfile.mutateAsync({
         id: user.id,
         display_name: displayName.trim(),
+        bio: bio.trim() || null,
+        love_language: loveLanguage || null,
         relationship_stage: stage,
+        avatar_url: avatarUrl,
+        theme_preference: selectedTheme,
+        mature_mode_enabled: matureModeEnabled,
+        mature_mode_age_verified: matureModeEnabled,
+        preferences: {
+          sessionNotif,
+          partnerNotif,
+          capsuleNotif,
+          soundscapeEnabled,
+          selectedSound,
+        },
       });
       Alert.alert('Profile Saved', 'Your profile details have been successfully updated.');
     } catch (err: any) {
       Alert.alert('Update Failed', err.message || 'Could not save profile.');
     } finally {
       setIsSavingProfile(false);
+    }
+  };
+
+  const handlePickAvatar = async () => {
+    if (!user) return;
+    const permission = await ImagePicker.requestMediaLibraryPermissionsAsync();
+    if (!permission.granted) {
+      Alert.alert('Photo Access Needed', 'Enable photo library access to upload a profile picture.');
+      return;
+    }
+
+    const result = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: ['images'],
+      allowsEditing: true,
+      aspect: [1, 1],
+      quality: 0.85,
+    });
+
+    if (result.canceled) return;
+
+    try {
+      const asset = result.assets[0];
+      const blob = await uriToBlob(asset.uri);
+      const path = `${user.id}/avatar-${Date.now()}.jpg`;
+      const { error } = await supabase.storage.from('profile-images').upload(path, blob, {
+        contentType: 'image/jpeg',
+        upsert: true,
+      });
+      if (error) throw error;
+      const { data } = supabase.storage.from('profile-images').getPublicUrl(path);
+      setAvatarUrl(data.publicUrl);
+      await updateProfile.mutateAsync({ id: user.id, avatar_url: data.publicUrl });
+      Alert.alert('Profile Picture Updated', 'Your new photo is saved.');
+    } catch (err: any) {
+      Alert.alert('Upload Failed', err.message || 'Could not upload profile picture.');
     }
   };
 
@@ -253,7 +341,8 @@ export default function SettingsScreen() {
   }
 
   return (
-    <ScrollView className="flex-1 bg-background" contentContainerStyle={{ paddingHorizontal: 16, paddingTop: 60, paddingBottom: 40 }}>
+    <ScreenShell className="flex-1">
+    <ScrollView className="flex-1" contentContainerStyle={{ paddingHorizontal: 16, paddingTop: 60, paddingBottom: 112 }}>
       {/* Header */}
       <View className="flex-row justify-between items-center mb-6">
         <TouchableOpacity
@@ -262,19 +351,66 @@ export default function SettingsScreen() {
         >
           <Text className="text-sm font-semibold text-primary-600">← Back</Text>
         </TouchableOpacity>
-        <Text className="text-xl font-bold text-text-primary">App Settings</Text>
+        <View className="flex-row items-center gap-2">
+          <AppIcon name={NAV_ICONS.profileActive} size={22} color="#4F46E5" />
+          <Text className="text-xl font-bold text-text-primary">Profile</Text>
+          <DevBadge />
+        </View>
         <View style={{ width: 60 }} />
       </View>
 
       {/* Profile Section */}
       <Card className="p-5 mb-5">
         <Text className="text-base font-semibold text-text-primary mb-4">Profile Settings</Text>
+        <View className="items-center mb-4">
+          <TouchableOpacity onPress={handlePickAvatar} className="items-center">
+            {avatarUrl ? (
+              <Image source={{ uri: avatarUrl }} className="w-24 h-24 rounded-full mb-2" />
+            ) : (
+              <View className="w-24 h-24 rounded-full bg-primary-100 items-center justify-center mb-2">
+                <Text className="text-2xl font-bold text-primary-600">
+                  {(displayName || user?.email || 'G').slice(0, 1).toUpperCase()}
+                </Text>
+              </View>
+            )}
+            <Text className="text-xs font-bold text-primary-600">Upload profile picture</Text>
+          </TouchableOpacity>
+        </View>
         <Input
           label="Your Display Name"
           value={displayName}
           onChangeText={setDisplayName}
           placeholder="Enter display name"
         />
+
+        <Input
+          label="About Me (optional)"
+          value={bio}
+          onChangeText={setBio}
+          placeholder="A short bio — max 150 characters"
+          maxLength={150}
+        />
+
+        <Text className="text-xs font-semibold text-text-secondary mt-3 mb-1">Love Language</Text>
+        <View className="flex-row flex-wrap gap-2 mb-4">
+          {[
+            'Words of Affirmation',
+            'Acts of Service',
+            'Receiving Gifts',
+            'Quality Time',
+            'Physical Touch',
+          ].map((option) => (
+            <TouchableOpacity
+              key={option}
+              onPress={() => setLoveLanguage(option)}
+              className={`px-3 py-2 rounded-xl border ${loveLanguage === option ? 'bg-primary-100 border-primary-600' : 'bg-white border-neutral-border'}`}
+            >
+              <Text className={`text-[10px] font-semibold ${loveLanguage === option ? 'text-primary-600' : 'text-text-secondary'}`}>
+                {option}
+              </Text>
+            </TouchableOpacity>
+          ))}
+        </View>
 
         <Text className="text-xs font-semibold text-text-secondary mt-3 mb-1">Relationship Stage</Text>
         <View className="flex-row gap-2 mt-1 mb-4">
@@ -298,6 +434,21 @@ export default function SettingsScreen() {
             </TouchableOpacity>
           ))}
         </View>
+
+        {isPaired && partnerProfile ? (
+          <View className="mb-4">
+            <Text className="text-xs font-semibold text-text-secondary mb-2">Partner Profile</Text>
+            <View className="bg-slate-50 border border-slate-100 rounded-xl p-4">
+              <Text className="text-sm font-bold text-text-primary capitalize">{partnerProfile.display_name || 'Partner'}</Text>
+              {partnerProfile.love_language ? (
+                <Text className="text-xs text-primary-600 mt-1">{partnerProfile.love_language}</Text>
+              ) : null}
+              {partnerProfile.bio ? (
+                <Text className="text-xs text-text-secondary mt-2 leading-normal">{partnerProfile.bio}</Text>
+              ) : null}
+            </View>
+          </View>
+        ) : null}
 
         <Button
           title="Save Details"
@@ -481,13 +632,16 @@ export default function SettingsScreen() {
         </Text>
         <View className="flex-row gap-2 mt-1">
           {[
-            { id: 'blue', name: 'Default Blue', color: 'bg-blue-500' },
-            { id: 'rose', name: 'Sunset Rose', color: 'bg-rose-500' },
-            { id: 'lilac', name: 'Lilac Dream', color: 'bg-violet-500' },
+            { id: 'default', name: 'Blue/White', color: 'bg-blue-500' },
+            { id: 'dark', name: 'Dark Mode', color: 'bg-slate-900' },
+            { id: 'soft', name: 'Soft Blue', color: 'bg-sky-300' },
           ].map((theme) => (
             <TouchableOpacity
               key={theme.id}
-              onPress={() => setSelectedTheme(theme.id)}
+              onPress={() => {
+                setSelectedTheme(theme.id as 'default' | 'dark' | 'soft');
+                setThemePreference(theme.id as 'default' | 'dark' | 'soft');
+              }}
               className={`flex-1 p-3 rounded-2xl border flex-col items-center gap-1.5 ${
                 selectedTheme === theme.id
                   ? 'border-primary-600 bg-blue-50/15'
@@ -504,6 +658,33 @@ export default function SettingsScreen() {
               </Text>
             </TouchableOpacity>
           ))}
+        </View>
+      </Card>
+
+      <Card className="p-5 mb-5 border border-blue-100 bg-blue-50/20">
+        <Text className="text-base font-semibold text-text-primary mb-4">Controlled Mature Mode</Text>
+        <View className="flex-row justify-between items-center">
+          <View className="flex-1 pr-4">
+            <Text className="text-sm font-medium text-text-primary">Enable intimacy prompts</Text>
+            <Text className="text-2xs text-text-secondary mt-0.5">Optional, 18+, and focused on respectful relationship-building.</Text>
+          </View>
+          <Switch
+            value={matureModeEnabled}
+            onValueChange={(value) => {
+              if (value) {
+                Alert.alert('Age Confirmation', 'Only enable this if you are 18 or older.', [
+                  { text: 'Cancel', style: 'cancel' },
+                  { text: 'I am 18+', onPress: () => {
+                    setMatureModeEnabled(true);
+                  }},
+                ]);
+              } else {
+                setMatureModeEnabled(false);
+              }
+            }}
+            trackColor={{ false: '#E2E8F0', true: '#BFDBFE' }}
+            thumbColor={matureModeEnabled ? '#2563EB' : '#F1F5F9'}
+          />
         </View>
       </Card>
 
@@ -527,11 +708,7 @@ export default function SettingsScreen() {
           <View className="border-t border-slate-100/50 pt-3">
             <Text className="text-2xs font-semibold text-text-secondary mb-2">Ambient Tracks</Text>
             <View className="flex-row gap-2">
-              {[
-                { id: 'acoustic', name: 'Lo-fi Guitar' },
-                { id: 'rain', name: 'Summer Rain' },
-                { id: 'fireplace', name: 'Cozy Crackle' },
-              ].map((track) => (
+              {SOUNDSCAPE_TRACKS.map((track) => (
                 <TouchableOpacity
                   key={track.id}
                   onPress={() => setSelectedSound(track.id)}
@@ -553,8 +730,10 @@ export default function SettingsScreen() {
             </View>
             <View className="flex-row items-center justify-center bg-white border border-slate-150 rounded-xl p-3 mt-3 gap-3">
               <Text className="text-base">🔊</Text>
-              <Text className="text-3xs font-semibold text-text-secondary animate-pulse">
-                Playing: {selectedSound === 'acoustic' ? 'Lo-fi Acoustic Chords' : selectedSound === 'rain' ? 'Summer Rain Loop' : 'Cozy Fireplace Crackle'}...
+              <Text className="text-3xs font-semibold text-primary-600">
+                {soundscapeEnabled
+                  ? `Playing: ${SOUNDSCAPE_TRACKS.find((t) => t.id === selectedSound)?.name ?? 'Ambient loop'}`
+                  : 'Enable the switch above to preview ambient audio'}
               </Text>
             </View>
           </View>
@@ -581,5 +760,7 @@ export default function SettingsScreen() {
         </View>
       </Card>
     </ScrollView>
+    <BottomNav />
+    </ScreenShell>
   );
 }
