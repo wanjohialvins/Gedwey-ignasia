@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { View, Text, TextInput, TextInputProps, TouchableOpacity } from 'react-native';
 import { AppIcon } from './AppIcon';
+import { useTheme } from '../lib/hooks/useTheme';
 
 type Props = TextInputProps & {
   label?: string;
@@ -17,11 +18,13 @@ export const Input = ({
   secureTextEntry,
   onFocus,
   onBlur,
+  style,
   ...props
 }: Props) => {
   const [isFocused, setIsFocused] = useState(false);
   const [passwordVisible, setPasswordVisible] = useState(false);
   const isSecure = secureTextEntry && !passwordVisible;
+  const { theme } = useTheme();
 
   const handleFocus = (e: any) => {
     setIsFocused(true);
@@ -37,16 +40,16 @@ export const Input = ({
     }
   };
 
-  const borderStyle = error
-    ? 'border-red-500'
+  const borderColor = error
+    ? '#EF4444'
     : isFocused
-    ? 'border-primary-500'
-    : 'border-neutral-border';
+    ? theme.accent
+    : theme.border;
 
   return (
     <View className={`mb-4 ${containerClassName}`}>
       {label ? (
-        <Text className="text-sm font-medium text-text-secondary mb-1.5">
+        <Text className="text-sm font-medium mb-1.5" style={{ color: theme.textSecondary }}>
           {label}
         </Text>
       ) : null}
@@ -56,8 +59,16 @@ export const Input = ({
           onFocus={handleFocus}
           onBlur={handleBlur}
           secureTextEntry={isSecure}
-          className={`h-12 border px-4 rounded-xl text-base text-text-primary bg-white ${borderStyle} ${showPasswordToggle ? 'pr-12' : ''}`}
-          placeholderTextColor="#94A3B8"
+          className={`h-12 border px-4 rounded-xl text-base ${showPasswordToggle ? 'pr-12' : ''}`}
+          style={[
+            {
+              backgroundColor: theme.surface,
+              borderColor,
+              color: theme.textPrimary,
+            },
+            style,
+          ]}
+          placeholderTextColor={theme.textTertiary}
           {...props}
         />
         {showPasswordToggle && secureTextEntry ? (
@@ -66,7 +77,7 @@ export const Input = ({
             className="absolute right-3 top-0 bottom-0 justify-center"
             hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
           >
-            <AppIcon name={passwordVisible ? 'eye-off-outline' : 'eye-outline'} size={20} color="#64748B" />
+            <AppIcon name={passwordVisible ? 'eye-off-outline' : 'eye-outline'} size={20} color={theme.textSecondary} />
           </TouchableOpacity>
         ) : null}
       </View>
@@ -79,3 +90,4 @@ export const Input = ({
     </View>
   );
 };
+

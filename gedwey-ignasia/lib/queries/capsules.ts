@@ -1,5 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '../supabase';
+import { isNetworkError, markOffline, markOnline } from '../networkStatus';
+import { enqueueMutation } from '../offlineQueue';
 
 export interface TimeCapsule {
   id: string;
@@ -70,23 +72,39 @@ export const useCreateTimeCapsule = () => {
     { coupleId: string; creatorId: string; title: string; content: string; imageUrl?: string; openDate: string }
   >({
     mutationFn: async ({ coupleId, creatorId, title, content, imageUrl, openDate }) => {
-      const { data, error } = await supabase
-        .from('time_capsules')
-        .insert({
-          couple_id: coupleId,
-          creator_id: creatorId,
-          title,
-          content,
-          image_url: imageUrl || null,
-          open_date: openDate,
-        })
-        .select('*, profiles:creator_id(display_name)')
-        .single();
+      try {
+        const { data, error } = await supabase
+          .from('time_capsules')
+          .insert({
+            couple_id: coupleId,
+            creator_id: creatorId,
+            title,
+            content,
+            image_url: imageUrl || null,
+            open_date: openDate,
+          })
+          .select('*, profiles:creator_id(display_name)')
+          .single();
 
-      if (error) {
-        throw new Error(error.message);
+        if (error) throw new Error(error.message);
+        markOnline();
+        return data as TimeCapsule;
+      } catch (err) {
+        const message = err instanceof Error ? err.message : String(err);
+        if (isNetworkError(message)) {
+          markOffline();
+          await enqueueMutation('time_capsules', 'insert', {
+            couple_id: coupleId,
+            creator_id: creatorId,
+            title,
+            content,
+            image_url: imageUrl || null,
+            open_date: openDate,
+          });
+          return { id: `temp-${Date.now()}`, created_at: new Date().toISOString(), couple_id: coupleId, creator_id: creatorId, title, content, image_url: imageUrl || null, open_date: openDate, is_opened: false } as TimeCapsule;
+        }
+        throw err instanceof Error ? err : new Error(message);
       }
-      return data as TimeCapsule;
     },
     onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ['timeCapsules', data.couple_id] });

@@ -1,5 +1,6 @@
 import { Audio } from 'expo-av';
 import { getSoundscape } from './soundscapes';
+import { getCachedAudioUri } from './audioCache';
 
 let ambientSound: Audio.Sound | null = null;
 let currentTrackId: string | null = null;
@@ -19,8 +20,10 @@ export async function playSoundscape(trackId: string): Promise<void> {
     shouldDuckAndroid: true,
   });
 
+  const resolvedUri = await getCachedAudioUri(track.url);
+
   const { sound } = await Audio.Sound.createAsync(
-    { uri: track.url },
+    { uri: resolvedUri },
     { shouldPlay: true, isLooping: true, volume: 0.35 }
   );
 

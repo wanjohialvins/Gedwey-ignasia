@@ -2,6 +2,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '../supabase';
 import { CACHE_KEYS, getCache, setCache } from '../offlineCache';
 import { isNetworkError, markOffline, markOnline } from '../networkStatus';
+import { enqueueMutation } from '../offlineQueue';
 
 export interface Profile {
   id: string;
@@ -63,17 +64,29 @@ export const useUpdateProfile = () => {
 
   return useMutation<Profile, Error, Partial<Profile> & { id: string }>({
     mutationFn: async ({ id, ...fields }) => {
-      const { data, error } = await supabase
-        .from('profiles')
-        .update(fields)
-        .eq('id', id)
-        .select()
-        .single();
+      try {
+        const { data, error } = await supabase
+          .from('profiles')
+          .update(fields)
+          .eq('id', id)
+          .select()
+          .single();
 
-      if (error) {
-        throw new Error(error.message);
+        if (error) throw new Error(error.message);
+        markOnline();
+        await setCache(CACHE_KEYS.profile(id), data as Profile);
+        return data as Profile;
+      } catch (err) {
+        const message = err instanceof Error ? err.message : String(err);
+        if (isNetworkError(message)) {
+          markOffline();
+          await enqueueMutation('profiles', 'update', { id, ...fields });
+          // Return optimistic result so UI stays current
+          const cached = await getCache<Profile>(CACHE_KEYS.profile(id));
+          if (cached) return { ...cached, ...fields } as Profile;
+        }
+        throw err instanceof Error ? err : new Error(message);
       }
-      return data as Profile;
     },
     onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ['profile', data.id] });

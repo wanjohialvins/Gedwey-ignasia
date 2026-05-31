@@ -9,6 +9,8 @@ import { NAV_ICONS, type IconName } from '../../lib/navigationIcons';
 import { useAuthStore } from '../../lib/store/authStore';
 import { useUserProfile } from '../../lib/queries/profile';
 import { useActivityLogs } from '../../lib/queries/engagement';
+import { useTheme } from '../../lib/hooks/useTheme';
+import { ThemedText } from '../../components/ThemedText';
 
 const ACTIVITY_ICONS: Record<string, { icon: IconName; color: string; iconColor: string }> = {
   session: { icon: NAV_ICONS.session, color: 'bg-violet-100', iconColor: '#7C3AED' },
@@ -18,6 +20,8 @@ const ACTIVITY_ICONS: Record<string, { icon: IconName; color: string; iconColor:
   music: { icon: NAV_ICONS.music, color: 'bg-indigo-100', iconColor: '#4F46E5' },
   profile: { icon: NAV_ICONS.profile, color: 'bg-slate-100', iconColor: '#64748B' },
   voice: { icon: 'mic-outline', color: 'bg-fuchsia-100', iconColor: '#C026D3' },
+  cycle: { icon: NAV_ICONS.health, color: 'bg-rose-100', iconColor: '#E11D48' },
+  health: { icon: NAV_ICONS.health, color: 'bg-rose-100', iconColor: '#E11D48' },
 };
 
 const formatDayLabel = (dateString: string) => {
@@ -33,6 +37,8 @@ const formatDayLabel = (dateString: string) => {
 export default function HistoryScreen() {
   const router = useRouter();
   const { user } = useAuthStore();
+  const { theme } = useTheme();
+  
   const { data: profile } = useUserProfile(user?.id ?? '');
   const { data: partnerProfile } = useUserProfile(profile?.partner_id ?? '');
   const [filter, setFilter] = useState('all');
@@ -43,6 +49,38 @@ export default function HistoryScreen() {
     if (!userId) return 'Unknown';
     if (userId === user?.id) return profile?.display_name || 'You';
     return partnerProfile?.display_name || 'Partner';
+  };
+
+  const handleItemPress = (activityType: string, metadata: any) => {
+    switch (activityType) {
+      case 'session':
+        router.push('/session/reveal');
+        break;
+      case 'game':
+        router.push('/games');
+        break;
+      case 'todo':
+        router.push({ pathname: '/lists', params: { tab: 'todo' } } as any);
+        break;
+      case 'bucket':
+        router.push({ pathname: '/lists', params: { tab: 'bucket' } } as any);
+        break;
+      case 'music':
+        router.push('/music');
+        break;
+      case 'journal':
+        router.push('/journal');
+        break;
+      case 'capsule':
+        router.push('/capsule');
+        break;
+      case 'cycle':
+      case 'health':
+        router.push('/health');
+        break;
+      default:
+        break;
+    }
   };
 
   const grouped = useMemo(() => {
@@ -60,13 +98,17 @@ export default function HistoryScreen() {
     <ScreenShell className="flex-1">
       <ScrollView contentContainerStyle={{ paddingHorizontal: 16, paddingTop: 56, paddingBottom: 112 }}>
         <View className="flex-row items-center justify-between mb-5">
-          <TouchableOpacity onPress={() => router.back()} className="bg-indigo-100 px-3 py-2 rounded-xl flex-row items-center gap-1">
-            <AppIcon name="arrow-back" size={16} color="#4F46E5" />
-            <Text className="text-sm font-bold text-indigo-600">Back</Text>
+          <TouchableOpacity 
+            onPress={() => router.back()} 
+            style={{ backgroundColor: theme.accentLight }}
+            className="px-3 py-2 rounded-xl flex-row items-center gap-1 active:opacity-80"
+          >
+            <AppIcon name="arrow-back" size={16} color={theme.accent} />
+            <Text style={{ color: theme.accent }} className="text-sm font-bold">Back</Text>
           </TouchableOpacity>
           <View className="flex-row items-center gap-2">
-            <AppIcon name={NAV_ICONS.history} size={22} color="#4F46E5" />
-            <Text className="text-xl font-bold text-text-primary">History</Text>
+            <AppIcon name="notifications-outline" size={22} color={theme.accent} />
+            <ThemedText className="text-xl font-bold">Notifications</ThemedText>
           </View>
           <View className="w-[58px]" />
         </View>
@@ -76,47 +118,69 @@ export default function HistoryScreen() {
             <TouchableOpacity
               key={item}
               onPress={() => setFilter(item)}
-              className={`px-4 py-2 rounded-xl border mr-2 ${filter === item ? 'bg-indigo-600 border-indigo-600' : 'bg-white border-neutral-border'}`}
+              style={{
+                backgroundColor: filter === item ? theme.accent : theme.surface,
+                borderColor: filter === item ? theme.accent : theme.border,
+              }}
+              className="px-4 py-2 rounded-xl border mr-2 active:opacity-80"
             >
-              <Text className={`text-xs font-bold capitalize ${filter === item ? 'text-white' : 'text-text-secondary'}`}>{item}</Text>
+              <Text 
+                style={{ color: filter === item ? '#fff' : theme.textSecondary }}
+                className="text-xs font-bold capitalize"
+              >
+                {item}
+              </Text>
             </TouchableOpacity>
           ))}
         </ScrollView>
 
         {!profile?.couple_id ? (
           <Card className="p-5">
-            <Text className="text-base font-bold text-text-primary mb-1">Pair to start logging</Text>
-            <Text className="text-sm text-text-secondary leading-normal">Your shared timeline appears after you connect with a partner.</Text>
+            <ThemedText className="text-base font-bold mb-1">Pair to start logging</ThemedText>
+            <ThemedText type="secondary" className="text-sm leading-normal">
+              Your shared timeline appears after you connect with a partner.
+            </ThemedText>
           </Card>
         ) : Object.keys(grouped).length ? (
           Object.entries(grouped).map(([hour, items]) => (
             <View key={hour} className="mb-5">
-              <Text className="text-xs font-bold text-indigo-600 uppercase tracking-widest mb-2">{hour}</Text>
+              <Text style={{ color: theme.accent }} className="text-xs font-bold uppercase tracking-widest mb-2">{hour}</Text>
               {items.map((item) => {
                 const meta = ACTIVITY_ICONS[item.activity_type] || ACTIVITY_ICONS.profile;
                 return (
-                  <Card key={item.id} className="p-4 mb-2">
-                    <View className="flex-row items-start gap-3">
-                      <View className={`w-9 h-9 rounded-full items-center justify-center ${meta.color}`}>
-                        <AppIcon name={meta.icon} size={18} color={meta.iconColor} />
+                  <TouchableOpacity
+                    key={item.id}
+                    onPress={() => handleItemPress(item.activity_type, item.metadata)}
+                    className="active:opacity-80 mb-2"
+                  >
+                    <Card className="p-4">
+                      <View className="flex-row items-start gap-3">
+                        <View className={`w-9 h-9 rounded-full items-center justify-center ${meta.color}`}>
+                          <AppIcon name={meta.icon} size={18} color={meta.iconColor} />
+                        </View>
+                        <View className="flex-1">
+                          <ThemedText className="text-sm font-bold">{item.title}</ThemedText>
+                          <ThemedText type="secondary" className="text-xs mt-1 capitalize">
+                            {item.activity_type} · by {nameForUser(item.user_id, item)}
+                          </ThemedText>
+                        </View>
+                        <View style={{ alignSelf: 'center' }}>
+                          <AppIcon name={NAV_ICONS.chevron} size={14} color={theme.textTertiary} />
+                        </View>
                       </View>
-                      <View className="flex-1">
-                        <Text className="text-sm font-bold text-text-primary">{item.title}</Text>
-                        <Text className="text-xs text-text-secondary mt-1 capitalize">
-                          {item.activity_type} · added by {nameForUser(item.user_id, item)}
-                        </Text>
-                      </View>
-                    </View>
-                  </Card>
+                    </Card>
+                  </TouchableOpacity>
                 );
               })}
             </View>
           ))
         ) : (
           <Card className="p-5 items-center">
-            <AppIcon name={NAV_ICONS.history} size={32} color="#94A3B8" />
-            <Text className="text-base font-bold text-text-primary mb-1 mt-3">No logs yet</Text>
-            <Text className="text-sm text-text-secondary leading-normal text-center">Games, lists, sessions, and music will appear here.</Text>
+            <AppIcon name="notifications-outline" size={32} color={theme.textTertiary} />
+            <ThemedText className="text-base font-bold mb-1 mt-3">No activity logs yet</ThemedText>
+            <ThemedText type="secondary" className="text-sm leading-normal text-center">
+              Games, lists, sessions, and music will appear here.
+            </ThemedText>
           </Card>
         )}
       </ScrollView>

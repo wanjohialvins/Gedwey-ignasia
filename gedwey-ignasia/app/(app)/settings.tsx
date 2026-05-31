@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import {
   View,
   Text,
@@ -64,6 +64,7 @@ export default function SettingsScreen() {
   const [selectedSound, setSelectedSound] = useState('acoustic');
 
   const [isSavingProfile, setIsSavingProfile] = useState(false);
+  const [autoSaveStatus, setAutoSaveStatus] = useState<'idle' | 'saving' | 'saved'>('idle');
   const [isPairing, setIsPairing] = useState(false);
   const [isUnpairing, setIsUnpairing] = useState(false);
 
@@ -103,14 +104,13 @@ export default function SettingsScreen() {
     };
   }, [soundscapeEnabled, selectedSound]);
 
-  const handleSaveProfile = async () => {
-    if (!displayName.trim()) {
-      Alert.alert('Validation Error', 'Display name cannot be empty.');
-      return;
-    }
-    if (!user) return;
+  // Autosave debounce mechanism
+  const autoSaveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const initialLoadRef = useRef(true); // skip autosave on first render
 
-    setIsSavingProfile(true);
+  const doAutoSave = useCallback(async () => {
+    if (!user || !displayName.trim() || initialLoadRef.current) return;
+    setAutoSaveStatus('saving');
     try {
       await updateProfile.mutateAsync({
         id: user.id,
@@ -130,12 +130,41 @@ export default function SettingsScreen() {
           selectedSound,
         },
       });
-      Alert.alert('Profile Saved', 'Your profile details have been successfully updated.');
+      setAutoSaveStatus('saved');
+      setTimeout(() => setAutoSaveStatus('idle'), 2000);
     } catch (err: any) {
-      Alert.alert('Update Failed', err.message || 'Could not save profile.');
-    } finally {
-      setIsSavingProfile(false);
+      console.error('[Settings] Autosave failed:', err.message);
+      setAutoSaveStatus('idle');
     }
+  }, [user, displayName, bio, loveLanguage, stage, avatarUrl, selectedTheme, matureModeEnabled, sessionNotif, partnerNotif, capsuleNotif, soundscapeEnabled, selectedSound, updateProfile]);
+
+  // Debounced autosave: trigger 1.5s after any settings field change
+  useEffect(() => {
+    if (initialLoadRef.current) return;
+    if (autoSaveTimerRef.current) clearTimeout(autoSaveTimerRef.current);
+    autoSaveTimerRef.current = setTimeout(() => {
+      doAutoSave();
+    }, 1500);
+    return () => {
+      if (autoSaveTimerRef.current) clearTimeout(autoSaveTimerRef.current);
+    };
+  }, [displayName, bio, loveLanguage, stage, selectedTheme, matureModeEnabled, sessionNotif, partnerNotif, capsuleNotif, soundscapeEnabled, selectedSound]);
+
+  // After initial profile data loads, mark initial load complete with a small delay
+  useEffect(() => {
+    if (profile && initialLoadRef.current) {
+      const t = setTimeout(() => { initialLoadRef.current = false; }, 800);
+      return () => clearTimeout(t);
+    }
+  }, [profile]);
+
+  const handleSaveProfile = async () => {
+    if (!displayName.trim()) {
+      Alert.alert('Validation Error', 'Display name cannot be empty.');
+      return;
+    }
+    if (!user) return;
+    await doAutoSave();
   };
 
   const handlePickAvatar = async () => {
@@ -447,12 +476,26 @@ export default function SettingsScreen() {
           </View>
         ) : null}
 
-        <Button
-          title="Save Details"
-          onPress={handleSaveProfile}
-          loading={isSavingProfile}
-          className="mt-2 w-full"
-        />
+        <View className="flex-row items-center justify-between mt-2">
+          <View className="flex-row items-center gap-2">
+            {autoSaveStatus === 'saving' && (
+              <Text className="text-xs text-text-secondary italic">Saving...</Text>
+            )}
+            {autoSaveStatus === 'saved' && (
+              <Text className="text-xs text-emerald-600 font-semibold">✓ Saved</Text>
+            )}
+            {autoSaveStatus === 'idle' && (
+              <Text className="text-2xs text-text-secondary">Changes save automatically</Text>
+            )}
+          </View>
+          <Button
+            title="Save Now"
+            onPress={handleSaveProfile}
+            loading={isSavingProfile}
+            variant="secondary"
+            className="px-4"
+          />
+        </View>
       </Card>
 
       {/* Connection & Pairing Section */}

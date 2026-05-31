@@ -1,5 +1,6 @@
 import React from 'react';
 import { TouchableOpacity, Text, ActivityIndicator } from 'react-native';
+import { useTheme } from '../lib/hooks/useTheme';
 
 type Props = {
   title: string;
@@ -8,6 +9,7 @@ type Props = {
   loading?: boolean;
   disabled?: boolean;
   className?: string;
+  style?: any;
 };
 
 export const Button = ({
@@ -17,17 +19,26 @@ export const Button = ({
   loading = false,
   disabled = false,
   className = '',
+  style,
 }: Props) => {
   const isPrimary = variant === 'primary';
+  const { theme } = useTheme();
   
   const baseStyle = 'h-12 px-4 py-3 rounded-xl flex-row items-center justify-center';
-  const variantStyle = isPrimary
-    ? 'bg-primary-600 active:bg-primary-500'
-    : 'bg-primary-100 active:bg-blue-200';
   
-  const textStyle = isPrimary
-    ? 'text-white font-semibold text-base'
-    : 'text-primary-600 font-semibold text-base';
+  const customStyle = isPrimary
+    ? {
+        backgroundColor: theme.accent,
+      }
+    : {
+        backgroundColor: theme.accentLight,
+      };
+      
+  const textStyle = {
+    color: isPrimary ? '#FFFFFF' : theme.accent,
+    fontWeight: '600' as const,
+    fontSize: 16,
+  };
     
   const disabledStyle = (disabled || loading) ? 'opacity-60' : '';
 
@@ -35,17 +46,19 @@ export const Button = ({
     <TouchableOpacity
       onPress={onPress}
       disabled={disabled || loading}
-      className={`${baseStyle} ${variantStyle} ${disabledStyle} ${className}`}
+      className={`${baseStyle} ${disabledStyle} ${className}`}
+      style={[customStyle, style]}
       activeOpacity={0.8}
     >
       {loading ? (
         <ActivityIndicator 
-          color={isPrimary ? '#FFFFFF' : '#2563EB'} 
+          color={isPrimary ? '#FFFFFF' : theme.accent} 
           size="small" 
           className="mr-2"
         />
       ) : null}
-      <Text className={textStyle}>{title}</Text>
+      <Text style={textStyle}>{title}</Text>
     </TouchableOpacity>
   );
 };
+

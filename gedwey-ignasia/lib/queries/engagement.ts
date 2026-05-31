@@ -2,6 +2,8 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '../supabase';
 import { CACHE_KEYS, getCache, setCache } from '../offlineCache';
 import { isNetworkError, markOffline, markOnline } from '../networkStatus';
+import { enqueueMutation } from '../offlineQueue';
+import { sendPushNotification } from '../notifications';
 
 export type ActivityLog = {
   id: string;
@@ -66,6 +68,44 @@ export const useLogActivity = () => {
         });
         if (error) throw new Error(error.message);
         markOnline();
+
+        // Automatically trigger push notification to the partner
+        if (coupleId && userId) {
+          const { data: partnerProfiles, error: partnerErr } = await supabase
+            .from('profiles')
+            .select('expo_push_token, notification_prefs, display_name')
+            .eq('couple_id', coupleId)
+            .neq('id', userId)
+            .limit(1);
+
+          if (!partnerErr && partnerProfiles && partnerProfiles.length > 0) {
+            const partner = partnerProfiles[0];
+            const partnerToken = partner.expo_push_token;
+            
+            // Check if partner wants partner notifications (default is true or check preferences)
+            const notifPrefs = partner.notification_prefs as Record<string, boolean> | null;
+            const wantsNotif = notifPrefs?.partnerActivity !== false;
+
+            if (partnerToken && wantsNotif && !partnerToken.includes('MockToken')) {
+              const { data: myProfile } = await supabase
+                .from('profiles')
+                .select('display_name')
+                .eq('id', userId)
+                .single();
+
+              const myName = myProfile?.display_name || 'Your partner';
+              const notifTitle = `New Partner Activity 💖`;
+              const notifBody = `${myName} did an activity: ${title}`;
+
+              await sendPushNotification(partnerToken, notifTitle, notifBody, {
+                type: 'activity',
+                activity_type: activityType,
+                title,
+                sender_name: myName,
+              });
+            }
+          }
+        }
       } catch (err) {
         const message = err instanceof Error ? err.message : String(err);
         if (isNetworkError(message)) {
@@ -118,13 +158,24 @@ export const useCreateSharedItem = () => {
 
   return useMutation<SharedItem, Error, { coupleId: string; userId: string; itemType: 'todo' | 'bucket'; title: string; notes?: string }>({
     mutationFn: async ({ coupleId, userId, itemType, title, notes }) => {
-      const { data, error } = await supabase
-        .from('shared_items')
-        .insert({ couple_id: coupleId, creator_id: userId, item_type: itemType, title, notes })
-        .select()
-        .single();
-      if (error) throw new Error(error.message);
-      return data as SharedItem;
+      try {
+        const { data, error } = await supabase
+          .from('shared_items')
+          .insert({ couple_id: coupleId, creator_id: userId, item_type: itemType, title, notes })
+          .select()
+          .single();
+        if (error) throw new Error(error.message);
+        markOnline();
+        return data as SharedItem;
+      } catch (err) {
+        const message = err instanceof Error ? err.message : String(err);
+        if (isNetworkError(message)) {
+          markOffline();
+          await enqueueMutation('shared_items', 'insert', { couple_id: coupleId, creator_id: userId, item_type: itemType, title, notes });
+          return { id: `temp-${Date.now()}`, created_at: new Date().toISOString(), updated_at: new Date().toISOString(), couple_id: coupleId, creator_id: userId, item_type: itemType, title, notes: notes || null, completed: false, completed_at: null } as SharedItem;
+        }
+        throw err instanceof Error ? err : new Error(message);
+      }
     },
     onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ['sharedItems', data.couple_id, data.item_type] });
@@ -137,18 +188,30 @@ export const useToggleSharedItem = () => {
 
   return useMutation<SharedItem, Error, SharedItem>({
     mutationFn: async (item) => {
-      const completed = !item.completed;
-      const { data, error } = await supabase
-        .from('shared_items')
-        .update({
-          completed,
-          completed_at: completed ? new Date().toISOString() : null,
-        })
-        .eq('id', item.id)
-        .select()
-        .single();
-      if (error) throw new Error(error.message);
-      return data as SharedItem;
+      try {
+        const completed = !item.completed;
+        const { data, error } = await supabase
+          .from('shared_items')
+          .update({
+            completed,
+            completed_at: completed ? new Date().toISOString() : null,
+          })
+          .eq('id', item.id)
+          .select()
+          .single();
+        if (error) throw new Error(error.message);
+        markOnline();
+        return data as SharedItem;
+      } catch (err) {
+        const message = err instanceof Error ? err.message : String(err);
+        if (isNetworkError(message)) {
+          markOffline();
+          const completed = !item.completed;
+          await enqueueMutation('shared_items', 'update', { id: item.id, completed, completed_at: completed ? new Date().toISOString() : null });
+          return { ...item, completed, completed_at: completed ? new Date().toISOString() : null } as SharedItem;
+        }
+        throw err instanceof Error ? err : new Error(message);
+      }
     },
     onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ['sharedItems', data.couple_id, data.item_type] });

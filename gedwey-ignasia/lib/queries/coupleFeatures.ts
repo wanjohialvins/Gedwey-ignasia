@@ -1,5 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '../supabase';
+import { isNetworkError, markOffline, markOnline } from '../networkStatus';
+import { enqueueMutation } from '../offlineQueue';
 
 export type ImportantDate = {
   id: string;
@@ -38,19 +40,36 @@ export const useCreateImportantDate = () => {
     { coupleId: string; userId: string; title: string; eventDate: string; notes?: string }
   >({
     mutationFn: async (p) => {
-      const { data, error } = await supabase
-        .from('important_dates')
-        .insert({
-          couple_id: p.coupleId,
-          created_by: p.userId,
-          title: p.title,
-          event_date: p.eventDate,
-          notes: p.notes || null,
-        })
-        .select('*, profiles:created_by(display_name)')
-        .single();
-      if (error) throw new Error(error.message);
-      return data as ImportantDate;
+      try {
+        const { data, error } = await supabase
+          .from('important_dates')
+          .insert({
+            couple_id: p.coupleId,
+            created_by: p.userId,
+            title: p.title,
+            event_date: p.eventDate,
+            notes: p.notes || null,
+          })
+          .select('*, profiles:created_by(display_name)')
+          .single();
+        if (error) throw new Error(error.message);
+        markOnline();
+        return data as ImportantDate;
+      } catch (err) {
+        const message = err instanceof Error ? err.message : String(err);
+        if (isNetworkError(message)) {
+          markOffline();
+          await enqueueMutation('important_dates', 'insert', {
+            couple_id: p.coupleId,
+            created_by: p.userId,
+            title: p.title,
+            event_date: p.eventDate,
+            notes: p.notes || null,
+          });
+          return { id: `temp-${Date.now()}`, created_at: new Date().toISOString(), couple_id: p.coupleId, created_by: p.userId, title: p.title, event_date: p.eventDate, repeats_yearly: false, notes: p.notes || null } as ImportantDate;
+        }
+        throw err instanceof Error ? err : new Error(message);
+      }
     },
     onSuccess: (d) => qc.invalidateQueries({ queryKey: ['importantDates', d.couple_id] }),
   });
@@ -129,10 +148,32 @@ export const useUpsertCycleLog = () => {
     }
   >({
     mutationFn: async (p) => {
-      const { data, error } = await supabase
-        .from('cycle_logs')
-        .upsert(
-          {
+      try {
+        const { data, error } = await supabase
+          .from('cycle_logs')
+          .upsert(
+            {
+              couple_id: p.coupleId,
+              user_id: p.userId,
+              log_date: p.logDate,
+              flow_strength: p.flowStrength || null,
+              mood: p.mood || null,
+              symptoms: p.symptoms || null,
+              notes: p.notes || null,
+              predicted_next: p.predictedNext || null,
+            },
+            { onConflict: 'couple_id,log_date' }
+          )
+          .select('*, profiles:user_id(display_name)')
+          .single();
+        if (error) throw new Error(error.message);
+        markOnline();
+        return data as CycleLog;
+      } catch (err) {
+        const message = err instanceof Error ? err.message : String(err);
+        if (isNetworkError(message)) {
+          markOffline();
+          await enqueueMutation('cycle_logs', 'upsert', {
             couple_id: p.coupleId,
             user_id: p.userId,
             log_date: p.logDate,
@@ -141,13 +182,11 @@ export const useUpsertCycleLog = () => {
             symptoms: p.symptoms || null,
             notes: p.notes || null,
             predicted_next: p.predictedNext || null,
-          },
-          { onConflict: 'couple_id,log_date' }
-        )
-        .select('*, profiles:user_id(display_name)')
-        .single();
-      if (error) throw new Error(error.message);
-      return data as CycleLog;
+          });
+          return { id: `temp-${Date.now()}`, couple_id: p.coupleId, user_id: p.userId, log_date: p.logDate, flow_strength: p.flowStrength || null, mood: p.mood || null, symptoms: p.symptoms || null, notes: p.notes || null, predicted_next: p.predictedNext || null } as CycleLog;
+        }
+        throw err instanceof Error ? err : new Error(message);
+      }
     },
     onSuccess: (d) => qc.invalidateQueries({ queryKey: ['cycleLogs', d.couple_id] }),
   });

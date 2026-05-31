@@ -37,10 +37,6 @@ export const MusicPlayer = ({ moodId, customUrl = '', onNowPlaying }: Props) => 
   }, [title, onNowPlaying]);
 
   const handlePlayMood = async () => {
-    if (!isOnline) {
-      Alert.alert('You are offline', 'Connect to the internet to stream music.');
-      return;
-    }
     try {
       await playMood(moodId);
     } catch (err) {
@@ -78,8 +74,8 @@ export const MusicPlayer = ({ moodId, customUrl = '', onNowPlaying }: Props) => 
   return (
     <View>
       {!isOnline ? (
-        <View className="bg-amber-50 border border-amber-200 rounded-xl px-3 py-2 mb-3">
-          <Text className="text-xs text-amber-900 text-center">Offline — streaming requires an internet connection</Text>
+        <View className="bg-emerald-50 border border-emerald-200 rounded-xl px-3 py-2 mb-3">
+          <Text className="text-xs text-emerald-950 text-center">Offline Mode — playing from local cache</Text>
         </View>
       ) : null}
       <View className="bg-white border border-indigo-100 rounded-2xl p-5 shadow-sm mb-4">

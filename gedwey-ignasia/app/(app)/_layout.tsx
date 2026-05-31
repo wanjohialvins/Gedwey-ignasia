@@ -1,14 +1,18 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useRef } from 'react';
 import { Stack, useRouter, useSegments } from 'expo-router';
-import { View, Text } from 'react-native';
+import { View, Text, AppState } from 'react-native';
 import * as Notifications from 'expo-notifications';
 import { ThemeProvider } from '../../lib/hooks/useTheme';
 import { useUserProfile, useUpdateProfile } from '../../lib/queries/profile';
 import { useAuthStore } from '../../lib/store/authStore';
 import { registerForPushNotificationsAsync } from '../../lib/notifications';
+import { syncOfflineQueue } from '../../lib/offlineQueue';
+import { markOnline } from '../../lib/networkStatus';
 import { GedweyLoader } from '../../components/GedweyLoader';
 import { GlobalMusicFAB } from '../../components/GlobalMusicFAB';
 import { initMusicStoreSync } from '../../lib/store/musicStore';
+import { Audio } from 'expo-av';
+import { getCachedAudioUri } from '../../lib/audioCache';
 
 export default function AppLayout() {
   const { user } = useAuthStore();
@@ -21,6 +25,25 @@ export default function AppLayout() {
 
   useEffect(() => {
     initMusicStoreSync();
+  }, []);
+
+  // Periodic offline queue sync (every 30s) + app resume trigger
+  useEffect(() => {
+    const interval = setInterval(() => {
+      syncOfflineQueue().catch(err => console.warn('[AppLayout] Periodic sync error:', err));
+    }, 30_000);
+
+    const appStateSub = AppState.addEventListener('change', (state) => {
+      if (state === 'active') {
+        markOnline();
+        syncOfflineQueue().catch(err => console.warn('[AppLayout] Resume sync error:', err));
+      }
+    });
+
+    return () => {
+      clearInterval(interval);
+      appStateSub.remove();
+    };
   }, []);
 
   // 1. Setup notification permissions & retrieve/save push token
@@ -45,7 +68,7 @@ export default function AppLayout() {
     setupNotifications();
   }, [profile?.id, profile?.expo_push_token, user?.id]);
 
-  // 2. Route when user taps a notification
+  // 2. Route when user taps a notification + play raindrop sound on foreground alerts
   useEffect(() => {
     const responseSub = Notifications.addNotificationResponseReceivedListener((response) => {
       const data = response.notification.request.content.data;
@@ -62,6 +85,33 @@ export default function AppLayout() {
 
     const receivedSub = Notifications.addNotificationReceivedListener((notification) => {
       console.log('[AppLayout] Notification received in foreground:', notification.request.content.title);
+      
+      // Play a satisfying raindrop water drop sound for foreground partner activities
+      const playRaindropSound = async () => {
+        try {
+          const soundUrl = 'https://www.soundjay.com/misc/sounds/water-drop-1.mp3';
+          const resolved = await getCachedAudioUri(soundUrl);
+          
+          await Audio.setAudioModeAsync({
+            playsInSilentModeIOS: true,
+            staysActiveInBackground: false,
+          });
+          
+          const { sound } = await Audio.Sound.createAsync(
+            { uri: resolved },
+            { shouldPlay: true, volume: 1.0 }
+          );
+          
+          // Unload asset after play ends to prevent leaks
+          setTimeout(() => {
+            sound.unloadAsync().catch(() => {});
+          }, 3000);
+        } catch (err) {
+          console.warn('[AppLayout] Foreground sound play failed:', err);
+        }
+      };
+
+      playRaindropSound();
     });
 
     return () => {

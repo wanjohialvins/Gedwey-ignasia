@@ -16,12 +16,12 @@ export const SOUNDSCAPE_TRACKS: SoundscapeTrack[] = [
   {
     id: 'rain',
     name: 'Summer Rain',
-    url: 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-9.mp3',
+    url: 'https://www.soundjay.com/nature/sounds/rain-07.mp3',
   },
   {
     id: 'fireplace',
     name: 'Cozy Crackle',
-    url: 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-10.mp3',
+    url: 'https://www.soundjay.com/nature/sounds/fire-1.mp3',
   },
 ];
 

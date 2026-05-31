@@ -1,5 +1,6 @@
 import { Audio } from 'expo-av';
 import { getMoodTrack, getYoutubeEmbedUrl, getYoutubeVideoId, isDirectAudioUrl } from './musicTracks';
+import { getCachedAudioUri } from './audioCache';
 
 export type PlaybackSource = 'mood' | 'url' | 'youtube';
 
@@ -64,7 +65,11 @@ const playAudioUri = async (uri: string, title: string, subtitle: string, meta: 
   try {
     await unloadSound();
     await Audio.setAudioModeAsync({ playsInSilentModeIOS: true, staysActiveInBackground: false });
-    const { sound: next } = await Audio.Sound.createAsync({ uri }, { shouldPlay: true }, (status) => {
+    
+    // Resolve locally cached path if downloaded
+    const resolvedUri = await getCachedAudioUri(uri);
+    
+    const { sound: next } = await Audio.Sound.createAsync({ uri: resolvedUri }, { shouldPlay: true }, (status) => {
       if (!status.isLoaded) return;
       setState({ isPlaying: status.isPlaying });
       if (status.didJustFinish) {

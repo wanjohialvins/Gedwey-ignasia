@@ -10,7 +10,7 @@ import { useTimeCapsules } from '../../lib/queries/capsules';
 import { sendPushNotification } from '../../lib/notifications';
 import { partnerWantsNotifications } from '../../lib/notificationPrefs';
 import { isFeatureUnlocked } from '../../lib/devMode';
-import { BrandLogo } from '../../components/BrandLogo';
+
 import { BottomNav } from '../../components/BottomNav';
 import { DevBadge } from '../../components/DevBadge';
 import { AppIcon } from '../../components/AppIcon';
@@ -22,6 +22,10 @@ import { Card } from '../../components/Card';
 import { Skeleton } from '../../components/Skeleton';
 import NudgeOverlay from '../../components/NudgeOverlay';
 import { NAV_ICONS, QUICK_TILES } from '../../lib/navigationIcons';
+import { useTheme } from '../../lib/hooks/useTheme';
+import { preCacheTracks } from '../../lib/audioCache';
+import { MOOD_TRACKS } from '../../lib/musicTracks';
+
 
 export default function HomeScreen() {
   const { user } = useAuthStore();
@@ -33,6 +37,12 @@ export default function HomeScreen() {
   const { data: sessionHistory, isLoading: isHistoryLoading } = useSessionHistory(profile?.couple_id ?? '');
   const { data: activeSession, isLoading: isActiveSessionLoading } = useActiveSession(profile?.couple_id ?? '');
   const { data: capsules, isLoading: isCapsulesLoading } = useTimeCapsules(profile?.couple_id ?? '');
+
+  // Pre-cache all nature soundscape loops on startup for smooth offline playback
+  useEffect(() => {
+    const urls = MOOD_TRACKS.map((t) => t.url);
+    preCacheTracks(urls).catch((err) => console.log('[HomeScreen] Background pre-cache failed:', err));
+  }, []);
 
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
   const [drawerMounted, setDrawerMounted] = useState(false);
@@ -253,7 +263,6 @@ export default function HomeScreen() {
             ) : null}
             <View className="flex-1">
               <View className="flex-row items-center gap-2">
-                <BrandLogo size={28} compact showName={false} />
                 <DevBadge />
               </View>
               <Text className="text-sm font-semibold text-text-secondary mt-1">Welcome</Text>
@@ -263,10 +272,11 @@ export default function HomeScreen() {
             </View>
           </View>
           <TouchableOpacity
-            className="w-10 h-10 bg-white border border-indigo-100 items-center justify-center rounded-full active:opacity-75"
-            onPress={() => router.push('/settings')}
+            className="w-10 h-10 bg-white border border-indigo-100 items-center justify-center rounded-full active:opacity-75 relative"
+            onPress={() => router.push('/history')}
           >
-            <AppIcon name={NAV_ICONS.settings} size={20} color="#4F46E5" />
+            <AppIcon name="notifications-outline" size={20} color="#4F46E5" />
+            <View className="absolute top-1.5 right-1.5 w-2 h-2 bg-orange-500 rounded-full" />
           </TouchableOpacity>
         </View>
 
