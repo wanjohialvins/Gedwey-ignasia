@@ -14,6 +14,7 @@ import * as Clipboard from 'expo-clipboard';
 import { useCards, Card as CardType } from '../../lib/queries/cards';
 import { useCreateDiscoverySession } from '../../lib/queries/discovery';
 import { useAuthStore } from '../../lib/store/authStore';
+import { useUserProfile } from '../../lib/queries/profile';
 import { Button } from '../../components/Button';
 import { Input } from '../../components/Input';
 import { Card } from '../../components/Card';
@@ -57,6 +58,7 @@ const FALLBACK_CARDS: CardType[] = [
 export default function DiscoveryHomeScreen() {
   const router = useRouter();
   const { user } = useAuthStore();
+  const { data: profile, isLoading: profileLoading } = useUserProfile(user?.id ?? '');
   const { data: cards, isLoading: cardsLoading } = useCards('discovery');
   const createSession = useCreateDiscoverySession();
 
@@ -64,6 +66,12 @@ export default function DiscoveryHomeScreen() {
   const [answer, setAnswer] = useState('');
   const [shareLink, setShareLink] = useState('');
   const [sessionToken, setSessionToken] = useState('');
+
+  useEffect(() => {
+    if (profile?.couple_id) {
+      router.replace('/');
+    }
+  }, [profile?.couple_id, router]);
 
   // Set initial random card when cards load
   useEffect(() => {
@@ -126,7 +134,7 @@ export default function DiscoveryHomeScreen() {
     }
   };
 
-  if (cardsLoading) {
+  if (cardsLoading || profileLoading || profile?.couple_id) {
     return (
       <View className="flex-1 bg-background px-4 pt-16 pb-6">
         {/* Header Skeleton */}

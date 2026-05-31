@@ -11,7 +11,7 @@ import {
 import { useRouter } from 'expo-router';
 import * as Clipboard from 'expo-clipboard';
 import * as ImagePicker from 'expo-image-picker';
-import { uriToBlob } from '../../lib/fileUtils';
+import { uriToUint8Array } from '../../lib/fileUtils';
 import { supabase } from '../../lib/supabase';
 import { useAuthStore } from '../../lib/store/authStore';
 import {
@@ -55,14 +55,11 @@ export default function SettingsScreen() {
   const [partnerCode, setPartnerCode] = useState('');
   const [stage, setStage] = useState('');
   const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
-  const [themePreference, setThemePreference] = useState<'default' | 'dark' | 'soft'>('default');
+  const [selectedTheme, setSelectedTheme] = useState<'default' | 'dark' | 'soft' | 'midnight' | 'rose' | 'forest' | 'cream' | 'slate'>('default');
   const [matureModeEnabled, setMatureModeEnabled] = useState(false);
   const [sessionNotif, setSessionNotif] = useState(true);
   const [partnerNotif, setPartnerNotif] = useState(true);
   const [capsuleNotif, setCapsuleNotif] = useState(true);
-
-  // Premium Roadmap States
-  const [selectedTheme, setSelectedTheme] = useState<'default' | 'dark' | 'soft'>('default');
   const [soundscapeEnabled, setSoundscapeEnabled] = useState(false);
   const [selectedSound, setSelectedSound] = useState('acoustic');
 
@@ -83,8 +80,7 @@ export default function SettingsScreen() {
       setLoveLanguage(profile.love_language || '');
       setStage(profile.relationship_stage || 'discovery');
       setAvatarUrl(profile.avatar_url || null);
-      setThemePreference(profile.theme_preference || 'default');
-      setSelectedTheme(profile.theme_preference || 'default');
+      setSelectedTheme((profile.theme_preference as typeof selectedTheme) || 'default');
       setMatureModeEnabled(!!profile.mature_mode_enabled);
 
       const prefs = getUserPreferences(profile);
@@ -161,9 +157,9 @@ export default function SettingsScreen() {
 
     try {
       const asset = result.assets[0];
-      const blob = await uriToBlob(asset.uri);
+      const bytes = await uriToUint8Array(asset.uri);
       const path = `${user.id}/avatar-${Date.now()}.jpg`;
-      const { error } = await supabase.storage.from('profile-images').upload(path, blob, {
+      const { error } = await supabase.storage.from('profile-images').upload(path, bytes, {
         contentType: 'image/jpeg',
         upsert: true,
       });
@@ -438,7 +434,8 @@ export default function SettingsScreen() {
         {isPaired && partnerProfile ? (
           <View className="mb-4">
             <Text className="text-xs font-semibold text-text-secondary mb-2">Partner Profile</Text>
-            <View className="bg-slate-50 border border-slate-100 rounded-xl p-4">
+            <TouchableOpacity onPress={() => router.push('/partner')} className="bg-slate-50 border border-slate-100 rounded-xl p-4">
+              <Text className="text-sm font-bold text-primary-600 mb-1">View full partner profile →</Text>
               <Text className="text-sm font-bold text-text-primary capitalize">{partnerProfile.display_name || 'Partner'}</Text>
               {partnerProfile.love_language ? (
                 <Text className="text-xs text-primary-600 mt-1">{partnerProfile.love_language}</Text>
@@ -446,7 +443,7 @@ export default function SettingsScreen() {
               {partnerProfile.bio ? (
                 <Text className="text-xs text-text-secondary mt-2 leading-normal">{partnerProfile.bio}</Text>
               ) : null}
-            </View>
+            </TouchableOpacity>
           </View>
         ) : null}
 
@@ -630,30 +627,26 @@ export default function SettingsScreen() {
         <Text className="text-xs text-text-secondary leading-normal mb-3">
           Select an active color palette to personalize the app gradients and highlights.
         </Text>
-        <View className="flex-row gap-2 mt-1">
+        <View className="flex-row flex-wrap gap-2 mt-1">
           {[
-            { id: 'default', name: 'Blue/White', color: 'bg-blue-500' },
-            { id: 'dark', name: 'Dark Mode', color: 'bg-slate-900' },
-            { id: 'soft', name: 'Soft Blue', color: 'bg-sky-300' },
+            { id: 'default', name: 'Blue', color: 'bg-blue-500' },
+            { id: 'dark', name: 'Dark', color: 'bg-slate-900' },
+            { id: 'soft', name: 'Soft', color: 'bg-sky-300' },
+            { id: 'midnight', name: 'Midnight', color: 'bg-indigo-900' },
+            { id: 'rose', name: 'Rose', color: 'bg-rose-400' },
+            { id: 'forest', name: 'Forest', color: 'bg-emerald-800' },
+            { id: 'cream', name: 'Cream', color: 'bg-amber-100' },
+            { id: 'slate', name: 'Slate', color: 'bg-slate-700' },
           ].map((theme) => (
             <TouchableOpacity
               key={theme.id}
-              onPress={() => {
-                setSelectedTheme(theme.id as 'default' | 'dark' | 'soft');
-                setThemePreference(theme.id as 'default' | 'dark' | 'soft');
-              }}
-              className={`flex-1 p-3 rounded-2xl border flex-col items-center gap-1.5 ${
-                selectedTheme === theme.id
-                  ? 'border-primary-600 bg-blue-50/15'
-                  : 'border-neutral-border bg-white'
+              onPress={() => setSelectedTheme(theme.id as typeof selectedTheme)}
+              className={`w-[23%] p-2 rounded-2xl border flex-col items-center gap-1 ${
+                selectedTheme === theme.id ? 'border-primary-600 bg-blue-50/15' : 'border-neutral-border bg-white'
               }`}
             >
-              <View className={`w-8 h-8 rounded-full ${theme.color} shadow-sm`} />
-              <Text
-                className={`text-[10px] font-bold text-center ${
-                  selectedTheme === theme.id ? 'text-primary-600' : 'text-text-secondary'
-                }`}
-              >
+              <View className={`w-7 h-7 rounded-full ${theme.color} shadow-sm`} />
+              <Text className={`text-[9px] font-bold text-center ${selectedTheme === theme.id ? 'text-primary-600' : 'text-text-secondary'}`}>
                 {theme.name}
               </Text>
             </TouchableOpacity>

@@ -2,6 +2,8 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '../supabase';
 import { Card } from './cards';
 import { sendPushNotification } from '../notifications';
+import { incrementStreak } from './streak';
+import { partnerWantsNotifications } from '../notificationPrefs';
 
 export interface CoupleSession {
   id: string;
@@ -14,6 +16,10 @@ export interface CoupleSession {
   user2_mood: string | null;
   user1_answer: string | null;
   user2_answer: string | null;
+  user1_voice_url: string | null;
+  user2_voice_url: string | null;
+  user1_voice_duration: number | null;
+  user2_voice_duration: number | null;
   completed: boolean;
   completed_at: string | null;
   cards?: Card;
@@ -102,9 +108,9 @@ export const useSubmitSessionAnswer = () => {
   return useMutation<
     CoupleSession,
     Error,
-    { sessionId: string; coupleId: string; userId: string; answer: string; mood?: string }
+    { sessionId: string; coupleId: string; userId: string; answer: string; mood?: string; voiceUrl?: string; voiceDuration?: number }
   >({
-    mutationFn: async ({ sessionId, coupleId, userId, answer, mood }) => {
+    mutationFn: async ({ sessionId, coupleId, userId, answer, mood, voiceUrl, voiceDuration }) => {
       // First fetch the session to determine which user field to update
       const { data: session, error: fetchError } = await supabase
         .from('sessions')
@@ -121,14 +127,20 @@ export const useSubmitSessionAnswer = () => {
 
       if (isUser1) {
         updatePayload.user1_answer = answer;
+        if (voiceUrl) updatePayload.user1_voice_url = voiceUrl;
+        if (voiceDuration) updatePayload.user1_voice_duration = voiceDuration;
         if (mood) updatePayload.user1_mood = mood;
       } else if (isUser2) {
         updatePayload.user2_answer = answer;
+        if (voiceUrl) updatePayload.user2_voice_url = voiceUrl;
+        if (voiceDuration) updatePayload.user2_voice_duration = voiceDuration;
         if (mood) updatePayload.user2_mood = mood;
       } else {
         // This user is user2 (joining the session)
         updatePayload.user2_id = userId;
         updatePayload.user2_answer = answer;
+        if (voiceUrl) updatePayload.user2_voice_url = voiceUrl;
+        if (voiceDuration) updatePayload.user2_voice_duration = voiceDuration;
         if (mood) updatePayload.user2_mood = mood;
       }
 
@@ -164,11 +176,11 @@ export const useSubmitSessionAnswer = () => {
         if (partnerId) {
           const { data: partnerProfile } = await supabase
             .from('profiles')
-            .select('expo_push_token')
+            .select('expo_push_token, preferences')
             .eq('id', partnerId)
             .maybeSingle();
 
-          if (partnerProfile?.expo_push_token) {
+          if (partnerProfile?.expo_push_token && partnerWantsNotifications(partnerProfile)) {
             const partnerToken = partnerProfile.expo_push_token;
             const title = 'Moments';
             const body = data.completed
@@ -191,6 +203,9 @@ export const useSubmitSessionAnswer = () => {
       queryClient.invalidateQueries({ queryKey: ['activeSession', data.couple_id] });
       if (data.completed) {
         queryClient.invalidateQueries({ queryKey: ['sessionHistory', data.couple_id] });
+        incrementStreak(data.couple_id).then(() => {
+          queryClient.invalidateQueries({ queryKey: ['couple', data.couple_id] });
+        });
       }
     },
   });

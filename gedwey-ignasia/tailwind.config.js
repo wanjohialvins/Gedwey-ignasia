@@ -10,20 +10,29 @@ module.exports = {
     extend: {
       colors: {
         primary: {
-          600: '#2563EB',
-          500: '#3B82F6',
-          100: '#DBEAFE',
+          600: '#4F46E5',
+          500: '#6366F1',
+          100: '#E0E7FF',
+        },
+        accent: {
+          blue: '#4F8EF7',
+          purple: '#7F77DD',
+          rose: '#D4537E',
+          violet: '#8B5CF6',
         },
         neutral: {
           white: '#FFFFFF',
-          background: '#F8FAFC',
-          border: '#E5E7EB',
+          background: '#F1F5F9',
+          border: '#E2E8F0',
         },
         text: {
           primary: '#0F172A',
           secondary: '#475569',
           muted: '#94A3B8',
         },
+      },
+      boxShadow: {
+        card: '0 4px 14px rgba(79, 70, 229, 0.08)',
       },
     },
   },

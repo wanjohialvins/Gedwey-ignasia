@@ -11,7 +11,8 @@ import { useRouter } from 'expo-router';
 import { useAuthStore } from '../../../lib/store/authStore';
 import { useUserProfile } from '../../../lib/queries/profile';
 import { useTimeCapsules, useOpenTimeCapsule, TimeCapsule } from '../../../lib/queries/capsules';
-import { scheduleLocalNotification } from '../../../lib/notifications';
+import { scheduleLocalNotification, NOTIFICATION_CHANNELS } from '../../../lib/notifications';
+import { userWantsCapsuleNotifications } from '../../../lib/notificationPrefs';
 import { Button } from '../../../components/Button';
 import { Card } from '../../../components/Card';
 import { Skeleton } from '../../../components/Skeleton';
@@ -48,7 +49,7 @@ export default function CapsuleListScreen() {
 
   // Schedule local notifications for future capsules on list load
   React.useEffect(() => {
-    if (!capsules || capsules.length === 0) return;
+    if (!capsules || capsules.length === 0 || !userWantsCapsuleNotifications(profile)) return;
 
     capsules.forEach((capsule) => {
       if (capsule.is_opened) return;
@@ -60,11 +61,15 @@ export default function CapsuleListScreen() {
           'Time Capsule Unlocked! ⏳',
           `Your time capsule "${capsule.title}" is ready to be opened.`,
           delaySeconds,
-          capsule.id
+          {
+            identifier: capsule.id,
+            channelId: NOTIFICATION_CHANNELS.capsules,
+            data: { type: 'capsule_ready', capsuleId: capsule.id },
+          }
         );
       }
     });
-  }, [capsules]);
+  }, [capsules, profile]);
 
   if (isLoading) {
     return (

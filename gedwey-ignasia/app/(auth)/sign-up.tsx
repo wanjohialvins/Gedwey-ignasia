@@ -12,6 +12,8 @@ import { supabase } from '../../lib/supabase';
 import { Button } from '../../components/Button';
 import { Input } from '../../components/Input';
 import { Card } from '../../components/Card';
+import { BrandLogo } from '../../components/BrandLogo';
+import { GedweyLoader } from '../../components/GedweyLoader';
 
 export default function SignUpScreen() {
   const router = useRouter();
@@ -65,6 +67,10 @@ export default function SignUpScreen() {
     }
   };
 
+  if (loading) {
+    return <GedweyLoader subtitle="creating your account..." />;
+  }
+
   return (
     <KeyboardAvoidingView
       className="flex-1 bg-background"
@@ -73,8 +79,7 @@ export default function SignUpScreen() {
       <View className="flex-1 justify-center px-4">
         {/* Header */}
         <View className="items-center mb-8">
-          <Text className="text-4xl font-bold text-primary-600 tracking-tight">Moments</Text>
-          <Text className="text-lg font-normal text-secondary mt-0.5">for Two</Text>
+          <BrandLogo size={78} />
           <Text className="text-sm text-text-muted mt-3 text-center px-8">
             Start your journey of intentional connection.
           </Text>
@@ -103,6 +108,7 @@ export default function SignUpScreen() {
           <Input
             placeholder="Password"
             secureTextEntry
+            showPasswordToggle
             autoCapitalize="none"
             value={password}
             onChangeText={setPassword}
@@ -111,6 +117,7 @@ export default function SignUpScreen() {
           <Input
             placeholder="Confirm password"
             secureTextEntry
+            showPasswordToggle
             autoCapitalize="none"
             value={confirmPassword}
             onChangeText={setConfirmPassword}

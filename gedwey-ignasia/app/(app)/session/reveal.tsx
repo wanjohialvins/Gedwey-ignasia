@@ -14,6 +14,7 @@ import { useActiveSession, useSessionHistory, CoupleSession } from '../../../lib
 import { Button } from '../../../components/Button';
 import { Card } from '../../../components/Card';
 import { Skeleton } from '../../../components/Skeleton';
+import { VoicePlaybackBubble } from '../../../components/VoicePlaybackBubble';
 
 const MOOD_MAP: Record<string, { emoji: string; label: string }> = {
   happy: { emoji: '😊', label: 'Happy' },
@@ -159,8 +160,12 @@ export default function SessionRevealScreen() {
   const isUser1 = sessionToShow.user1_id === user?.id;
   const myAnswer = isUser1 ? sessionToShow.user1_answer : sessionToShow.user2_answer;
   const myMoodKey = isUser1 ? sessionToShow.user1_mood : sessionToShow.user2_mood;
+  const myVoiceUrl = isUser1 ? sessionToShow.user1_voice_url : sessionToShow.user2_voice_url;
+  const myVoiceDuration = isUser1 ? sessionToShow.user1_voice_duration : sessionToShow.user2_voice_duration;
   const partnerAnswer = isUser1 ? sessionToShow.user2_answer : sessionToShow.user1_answer;
   const partnerMoodKey = isUser1 ? sessionToShow.user2_mood : sessionToShow.user1_mood;
+  const partnerVoiceUrl = isUser1 ? sessionToShow.user2_voice_url : sessionToShow.user1_voice_url;
+  const partnerVoiceDuration = isUser1 ? sessionToShow.user2_voice_duration : sessionToShow.user1_voice_duration;
 
   const myMood = MOOD_MAP[myMoodKey || 'neutral'] || MOOD_MAP.neutral;
   const partnerMood = MOOD_MAP[partnerMoodKey || 'neutral'] || MOOD_MAP.neutral;
@@ -213,6 +218,7 @@ export default function SessionRevealScreen() {
                   <Text className="text-2xs font-bold text-primary-600">{myMood.label}</Text>
                 </View>
                 <Text className="text-sm text-text-secondary font-medium italic leading-relaxed">{myAnswer}</Text>
+                <VoicePlaybackBubble url={myVoiceUrl} duration={myVoiceDuration} />
               </View>
             </View>
           ) : (
@@ -228,6 +234,7 @@ export default function SessionRevealScreen() {
                   </View>
                 </View>
                 <Text className="text-sm text-text-secondary leading-relaxed">{myAnswer || 'No answer submitted.'}</Text>
+                <VoicePlaybackBubble url={myVoiceUrl} duration={myVoiceDuration} />
               </Card>
 
               {/* Partner Answer Card */}
@@ -240,6 +247,7 @@ export default function SessionRevealScreen() {
                   </View>
                 </View>
                 <Text className="text-sm text-text-secondary leading-relaxed">{partnerAnswer || 'No answer submitted.'}</Text>
+                <VoicePlaybackBubble url={partnerVoiceUrl} duration={partnerVoiceDuration} />
               </Card>
 
               {/* Celebration Note */}

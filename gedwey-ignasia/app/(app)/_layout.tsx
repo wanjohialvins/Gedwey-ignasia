@@ -2,9 +2,13 @@ import React, { useEffect } from 'react';
 import { Stack, useRouter, useSegments } from 'expo-router';
 import { View, Text } from 'react-native';
 import * as Notifications from 'expo-notifications';
+import { ThemeProvider } from '../../lib/hooks/useTheme';
 import { useUserProfile, useUpdateProfile } from '../../lib/queries/profile';
 import { useAuthStore } from '../../lib/store/authStore';
 import { registerForPushNotificationsAsync } from '../../lib/notifications';
+import { GedweyLoader } from '../../components/GedweyLoader';
+import { GlobalMusicFAB } from '../../components/GlobalMusicFAB';
+import { initMusicStoreSync } from '../../lib/store/musicStore';
 
 export default function AppLayout() {
   const { user } = useAuthStore();
@@ -14,6 +18,10 @@ export default function AppLayout() {
   // Fetch user profile via React Query
   const { data: profile, isLoading, error } = useUserProfile(user?.id ?? '');
   const updateProfile = useUpdateProfile();
+
+  useEffect(() => {
+    initMusicStoreSync();
+  }, []);
 
   // 1. Setup notification permissions & retrieve/save push token
   useEffect(() => {
@@ -37,21 +45,28 @@ export default function AppLayout() {
     setupNotifications();
   }, [profile?.id, profile?.expo_push_token, user?.id]);
 
-  // 2. Add listener to route when user interacts with/taps a notification
+  // 2. Route when user taps a notification
   useEffect(() => {
-    const subscription = Notifications.addNotificationResponseReceivedListener((response) => {
+    const responseSub = Notifications.addNotificationResponseReceivedListener((response) => {
       const data = response.notification.request.content.data;
-      console.log('[AppLayout] Notification response received:', data);
+      console.log('[AppLayout] Notification tap:', data);
 
       if (data?.type === 'session_answered') {
         router.push('/session/reveal');
       } else if (data?.type === 'capsule_ready') {
         router.push('/capsule');
+      } else if (data?.type === 'session_reminder') {
+        router.push('/session/start');
       }
     });
 
+    const receivedSub = Notifications.addNotificationReceivedListener((notification) => {
+      console.log('[AppLayout] Notification received in foreground:', notification.request.content.title);
+    });
+
     return () => {
-      subscription.remove();
+      responseSub.remove();
+      receivedSub.remove();
     };
   }, [router]);
 
@@ -81,11 +96,7 @@ export default function AppLayout() {
   }, [profile, isLoading, segments, router]);
 
   if (isLoading) {
-    return (
-      <View style={{ flex: 1, backgroundColor: '#F8FAFC', justifyContent: 'center', alignItems: 'center' }}>
-        <Text style={{ color: '#2563EB', fontSize: 16, fontWeight: '600' }}>Loading profile...</Text>
-      </View>
-    );
+    return <GedweyLoader subtitle="loading your profile..." />;
   }
 
   if (error) {
@@ -100,9 +111,20 @@ export default function AppLayout() {
   }
 
   return (
-    <Stack screenOptions={{ headerShown: false }}>
-      <Stack.Screen name="index" />
-      <Stack.Screen name="settings" />
+    <ThemeProvider>
+      <View style={{ flex: 1 }}>
+        <Stack screenOptions={{ headerShown: false }}>
+        <Stack.Screen name="index" />
+        <Stack.Screen name="settings" />
+        <Stack.Screen name="games" />
+        <Stack.Screen name="history" />
+        <Stack.Screen name="answers" />
+        <Stack.Screen name="partner" />
+        <Stack.Screen name="dates" />
+        <Stack.Screen name="cycle" />
+        <Stack.Screen name="cat-care" />
+        <Stack.Screen name="lists" />
+        <Stack.Screen name="music" />
       <Stack.Screen name="onboarding/mode-select" />
       <Stack.Screen name="onboarding/stage" />
       <Stack.Screen name="onboarding/invite" />
@@ -119,6 +141,9 @@ export default function AppLayout() {
       <Stack.Screen name="capsule/[id]" />
       <Stack.Screen name="health/index" />
       <Stack.Screen name="health/checkin" />
-    </Stack>
+        </Stack>
+        <GlobalMusicFAB />
+      </View>
+    </ThemeProvider>
   );
 }

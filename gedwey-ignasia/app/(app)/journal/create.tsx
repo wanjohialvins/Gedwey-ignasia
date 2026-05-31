@@ -20,6 +20,7 @@ import Animated, {
 import { useAuthStore } from '../../../lib/store/authStore';
 import { useUserProfile } from '../../../lib/queries/profile';
 import { useCreateJournalEntry } from '../../../lib/queries/journal';
+import { useSessionSoundscape } from '../../../lib/hooks/useSessionSoundscape';
 import { Button } from '../../../components/Button';
 import { Input } from '../../../components/Input';
 import { Card } from '../../../components/Card';
@@ -37,6 +38,7 @@ export default function JournalCreateScreen() {
   
   const { data: profile } = useUserProfile(user?.id ?? '');
   const createEntry = useCreateJournalEntry();
+  useSessionSoundscape(profile);
 
   const [title, setTitle] = useState('');
   const [content, setContent] = useState('');

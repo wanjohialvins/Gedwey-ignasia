@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { Alert, Text, TouchableOpacity, View } from 'react-native';
 import { Audio } from 'expo-av';
 import { supabase } from '../lib/supabase';
-import { uriToBlob } from '../lib/fileUtils';
+import { uriToUint8Array } from '../lib/fileUtils';
 
 type Props = {
   userId?: string;
@@ -62,9 +62,9 @@ export const VoiceNoteRecorder = ({ userId, bucket = 'voice-notes', onUploaded }
     if (!localUri || !userId) return;
     setIsUploading(true);
     try {
-      const blob = await uriToBlob(localUri);
+      const bytes = await uriToUint8Array(localUri);
       const path = `${userId}/${Date.now()}.m4a`;
-      const { error } = await supabase.storage.from(bucket).upload(path, blob, {
+      const { error } = await supabase.storage.from(bucket).upload(path, bytes, {
         contentType: 'audio/m4a',
         upsert: false,
       });

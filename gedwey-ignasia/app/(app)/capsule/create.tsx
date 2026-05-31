@@ -13,7 +13,8 @@ import { useRouter } from 'expo-router';
 import { useAuthStore } from '../../../lib/store/authStore';
 import { useUserProfile } from '../../../lib/queries/profile';
 import { useCreateTimeCapsule } from '../../../lib/queries/capsules';
-import { scheduleLocalNotification } from '../../../lib/notifications';
+import { scheduleLocalNotification, NOTIFICATION_CHANNELS } from '../../../lib/notifications';
+import { userWantsCapsuleNotifications } from '../../../lib/notificationPrefs';
 import { Button } from '../../../components/Button';
 import { Input } from '../../../components/Input';
 
@@ -93,12 +94,16 @@ export default function CapsuleCreateScreen() {
 
       // Calculate delay in seconds and schedule local notification
       const delaySeconds = Math.floor((openDate.getTime() - Date.now()) / 1000);
-      if (delaySeconds > 0) {
+      if (delaySeconds > 0 && userWantsCapsuleNotifications(profile)) {
         await scheduleLocalNotification(
           'Time Capsule Unlocked! ⏳',
           `Your time capsule "${title.trim()}" is ready to be opened.`,
           delaySeconds,
-          result.id
+          {
+            identifier: result.id,
+            channelId: NOTIFICATION_CHANNELS.capsules,
+            data: { type: 'capsule_ready', capsuleId: result.id },
+          }
         );
       }
 

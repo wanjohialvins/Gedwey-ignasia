@@ -20,7 +20,18 @@ CREATE TABLE IF NOT EXISTS profiles (
   partner_id UUID REFERENCES profiles(id) ON DELETE SET NULL,
   app_mode TEXT DEFAULT 'discovery' CHECK (app_mode IN ('discovery', 'early_dating', 'couples')),
   relationship_stage TEXT,
-  invite_code TEXT UNIQUE
+  invite_code TEXT UNIQUE,
+  expo_push_token TEXT,
+  avatar_url TEXT,
+  theme_preference TEXT DEFAULT 'default' CHECK (theme_preference IN ('default', 'dark', 'soft')),
+  accent_color TEXT DEFAULT '#2563EB',
+  mature_mode_enabled BOOLEAN DEFAULT FALSE NOT NULL,
+  mature_mode_age_verified BOOLEAN DEFAULT FALSE NOT NULL,
+  dev_mode BOOLEAN DEFAULT TRUE NOT NULL,
+  bio TEXT,
+  love_language TEXT,
+  birthday DATE,
+  preferences JSONB DEFAULT '{}'::jsonb
 );
 
 -- 3. Create Cards table (prompts)
@@ -37,7 +48,7 @@ CREATE TABLE IF NOT EXISTS discovery_sessions (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   created_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL,
   card_id UUID REFERENCES cards(id) ON DELETE CASCADE NOT NULL,
-  creator_id UUID REFERENCES auth.users(id) ON DELETE CASCADE NOT NULL,
+  creator_id UUID REFERENCES profiles(id) ON DELETE CASCADE NOT NULL,
   creator_answer TEXT NOT NULL,
   guest_name TEXT,
   guest_answer TEXT,
@@ -51,12 +62,16 @@ CREATE TABLE IF NOT EXISTS sessions (
   created_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL,
   couple_id UUID REFERENCES couples(id) ON DELETE CASCADE NOT NULL,
   card_id UUID REFERENCES cards(id) ON DELETE CASCADE NOT NULL,
-  user1_id UUID REFERENCES auth.users(id) ON DELETE SET NULL NOT NULL,
-  user2_id UUID REFERENCES auth.users(id) ON DELETE SET NULL,
+  user1_id UUID REFERENCES profiles(id) ON DELETE CASCADE NOT NULL,
+  user2_id UUID REFERENCES profiles(id) ON DELETE SET NULL,
   user1_mood TEXT,
   user2_mood TEXT,
   user1_answer TEXT,
   user2_answer TEXT,
+  user1_voice_url TEXT,
+  user2_voice_url TEXT,
+  user1_voice_duration INTEGER,
+  user2_voice_duration INTEGER,
   completed BOOLEAN DEFAULT FALSE NOT NULL,
   completed_at TIMESTAMP WITH TIME ZONE
 );
@@ -67,7 +82,7 @@ CREATE TABLE IF NOT EXISTS journal_entries (
   created_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL,
   updated_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL,
   couple_id UUID REFERENCES couples(id) ON DELETE CASCADE NOT NULL,
-  creator_id UUID REFERENCES auth.users(id) ON DELETE SET NULL NOT NULL,
+  creator_id UUID REFERENCES profiles(id) ON DELETE CASCADE NOT NULL,
   title TEXT NOT NULL,
   content TEXT NOT NULL,
   image_url TEXT
@@ -78,7 +93,7 @@ CREATE TABLE IF NOT EXISTS health_checkins (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   created_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL,
   couple_id UUID REFERENCES couples(id) ON DELETE CASCADE NOT NULL,
-  user_id UUID REFERENCES auth.users(id) ON DELETE CASCADE NOT NULL,
+  user_id UUID REFERENCES profiles(id) ON DELETE CASCADE NOT NULL,
   communication INTEGER NOT NULL CHECK (communication >= 1 AND communication <= 10),
   intimacy INTEGER NOT NULL CHECK (intimacy >= 1 AND intimacy <= 10),
   trust INTEGER NOT NULL CHECK (trust >= 1 AND trust <= 10),
@@ -91,12 +106,37 @@ CREATE TABLE IF NOT EXISTS time_capsules (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   created_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL,
   couple_id UUID REFERENCES couples(id) ON DELETE CASCADE NOT NULL,
-  creator_id UUID REFERENCES auth.users(id) ON DELETE SET NULL NOT NULL,
+  creator_id UUID REFERENCES profiles(id) ON DELETE CASCADE NOT NULL,
   title TEXT NOT NULL,
   content TEXT NOT NULL,
   image_url TEXT,
   open_date TIMESTAMP WITH TIME ZONE NOT NULL,
   is_opened BOOLEAN DEFAULT FALSE NOT NULL
+);
+
+-- 9. Create Hourly Activity Logs table
+CREATE TABLE IF NOT EXISTS activity_logs (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL,
+  couple_id UUID REFERENCES couples(id) ON DELETE CASCADE NOT NULL,
+  user_id UUID REFERENCES profiles(id) ON DELETE SET NULL,
+  activity_type TEXT NOT NULL CHECK (activity_type IN ('session', 'game', 'todo', 'bucket', 'music', 'profile', 'voice')),
+  title TEXT NOT NULL,
+  metadata JSONB DEFAULT '{}'::jsonb
+);
+
+-- 10. Create Shared To-Do / Bucket List table
+CREATE TABLE IF NOT EXISTS shared_items (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL,
+  updated_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL,
+  couple_id UUID REFERENCES couples(id) ON DELETE CASCADE NOT NULL,
+  creator_id UUID REFERENCES profiles(id) ON DELETE SET NULL,
+  item_type TEXT NOT NULL CHECK (item_type IN ('todo', 'bucket')),
+  title TEXT NOT NULL,
+  notes TEXT,
+  completed BOOLEAN DEFAULT FALSE NOT NULL,
+  completed_at TIMESTAMP WITH TIME ZONE
 );
 
 -- ====================================================
@@ -112,6 +152,8 @@ ALTER TABLE sessions ENABLE ROW LEVEL SECURITY;
 ALTER TABLE journal_entries ENABLE ROW LEVEL SECURITY;
 ALTER TABLE health_checkins ENABLE ROW LEVEL SECURITY;
 ALTER TABLE time_capsules ENABLE ROW LEVEL SECURITY;
+ALTER TABLE activity_logs ENABLE ROW LEVEL SECURITY;
+ALTER TABLE shared_items ENABLE ROW LEVEL SECURITY;
 
 -- Couples policies
 CREATE POLICY "Users can view their own couple profile" ON couples
@@ -241,9 +283,61 @@ CREATE POLICY "Couple members can manage time capsules" ON time_capsules
     )
   );
 
+-- Activity Logs policies
+CREATE POLICY "Couple members can view activity logs" ON activity_logs
+  FOR SELECT USING (
+    EXISTS (
+      SELECT 1 FROM profiles
+      WHERE profiles.id = auth.uid() AND profiles.couple_id = activity_logs.couple_id
+    )
+  );
+
+CREATE POLICY "Couple members can add activity logs" ON activity_logs
+  FOR INSERT TO authenticated WITH CHECK (
+    EXISTS (
+      SELECT 1 FROM profiles
+      WHERE profiles.id = auth.uid() AND profiles.couple_id = activity_logs.couple_id
+    )
+  );
+
+-- Shared Items policies
+CREATE POLICY "Couple members can view shared items" ON shared_items
+  FOR SELECT USING (
+    EXISTS (
+      SELECT 1 FROM profiles
+      WHERE profiles.id = auth.uid() AND profiles.couple_id = shared_items.couple_id
+    )
+  );
+
+CREATE POLICY "Couple members can manage shared items" ON shared_items
+  FOR ALL TO authenticated USING (
+    EXISTS (
+      SELECT 1 FROM profiles
+      WHERE profiles.id = auth.uid() AND profiles.couple_id = shared_items.couple_id
+    )
+  );
+
 -- ====================================================
 -- PROFILE AUTO-CREATION ON SIGNUP
 -- ====================================================
+
+-- Storage buckets for profile photos and voice notes
+INSERT INTO storage.buckets (id, name, public)
+VALUES ('profile-images', 'profile-images', true)
+ON CONFLICT (id) DO NOTHING;
+
+INSERT INTO storage.buckets (id, name, public)
+VALUES ('voice-notes', 'voice-notes', true)
+ON CONFLICT (id) DO NOTHING;
+
+CREATE POLICY "Authenticated users can upload profile images" ON storage.objects
+  FOR INSERT TO authenticated WITH CHECK (bucket_id = 'profile-images');
+
+CREATE POLICY "Authenticated users can upload voice notes" ON storage.objects
+  FOR INSERT TO authenticated WITH CHECK (bucket_id = 'voice-notes');
+
+CREATE POLICY "Public can read Gedwey media" ON storage.objects
+  FOR SELECT TO public USING (bucket_id IN ('profile-images', 'voice-notes'));
 
 -- Trigger function to automatically create a profile for new users
 CREATE OR REPLACE FUNCTION public.handle_new_user()

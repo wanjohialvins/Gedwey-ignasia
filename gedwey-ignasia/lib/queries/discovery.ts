@@ -2,6 +2,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '../supabase';
 import { Card } from './cards';
 import { sendPushNotification } from '../notifications';
+import { partnerWantsNotifications } from '../notificationPrefs';
 
 export interface DiscoverySession {
   id: string;
@@ -101,11 +102,11 @@ export const useSubmitGuestAnswer = () => {
         if (creatorId) {
           const { data: creatorProfile } = await supabase
             .from('profiles')
-            .select('expo_push_token')
+            .select('expo_push_token, preferences')
             .eq('id', creatorId)
             .maybeSingle();
 
-          if (creatorProfile?.expo_push_token) {
+          if (creatorProfile?.expo_push_token && partnerWantsNotifications(creatorProfile)) {
             const creatorToken = creatorProfile.expo_push_token;
             const title = 'Moments';
             const body = `${guestName} answered your discovery card! Tap to read.`;

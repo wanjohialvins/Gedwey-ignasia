@@ -1,5 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '../supabase';
+import { CACHE_KEYS, getCache, setCache } from '../offlineCache';
+import { isNetworkError, markOffline, markOnline } from '../networkStatus';
 
 export interface Card {
   id: string;
@@ -14,19 +16,28 @@ export const useCards = (category?: 'discovery' | 'intimacy' | 'fun' | 'relation
   return useQuery<Card[], Error>({
     queryKey: ['cards', category],
     queryFn: async () => {
-      let query = supabase.from('cards').select('*');
+      try {
+        let query = supabase.from('cards').select('*');
 
-      if (category) {
-        query = query.eq('category', category);
+        if (category) {
+          query = query.eq('category', category);
+        }
+
+        const { data, error } = await query;
+
+        if (error) throw new Error(error.message);
+
+        const cards = (data || []) as Card[];
+        await setCache(CACHE_KEYS.sessionCards(category), cards);
+        markOnline();
+        return cards;
+      } catch (err) {
+        const message = err instanceof Error ? err.message : String(err);
+        if (isNetworkError(message)) markOffline();
+        const cached = await getCache<Card[]>(CACHE_KEYS.sessionCards(category));
+        if (cached?.length) return cached;
+        throw err instanceof Error ? err : new Error(message);
       }
-
-      const { data, error } = await query;
-
-      if (error) {
-        throw new Error(error.message);
-      }
-
-      return data as Card[];
     },
   });
 };

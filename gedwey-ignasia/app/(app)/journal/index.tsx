@@ -14,6 +14,8 @@ import { useJournalEntries, JournalEntry } from '../../../lib/queries/journal';
 import { Button } from '../../../components/Button';
 import { Card } from '../../../components/Card';
 import { Skeleton } from '../../../components/Skeleton';
+import { BottomNav } from '../../../components/BottomNav';
+import { isFeatureUnlocked } from '../../../lib/devMode';
 
 export default function JournalListScreen() {
   const router = useRouter();
@@ -57,7 +59,7 @@ export default function JournalListScreen() {
   }
 
   const completedSessionsCount = sessionHistory?.length ?? 0;
-  const isJournalUnlocked = completedSessionsCount >= 5;
+  const isJournalUnlocked = isFeatureUnlocked(completedSessionsCount >= 5);
 
   // Safeguard gate in case of direct routing
   if (!profile?.couple_id || !isJournalUnlocked) {
@@ -89,6 +91,7 @@ export default function JournalListScreen() {
             />
           </View>
         </View>
+        <BottomNav />
       </SafeAreaView>
     );
   }
@@ -189,7 +192,7 @@ export default function JournalListScreen() {
         {/* Floating Action Button */}
         {entries && entries.length > 0 && (
           <TouchableOpacity
-            className="absolute bottom-6 right-6 bg-primary-600 w-14 h-14 rounded-full justify-center items-center shadow-lg active:bg-primary-500"
+            className="absolute bottom-24 right-6 bg-primary-600 w-14 h-14 rounded-full justify-center items-center shadow-lg active:bg-primary-500"
             onPress={() => router.push('/journal/create')}
             activeOpacity={0.8}
           >
@@ -197,6 +200,7 @@ export default function JournalListScreen() {
           </TouchableOpacity>
         )}
       </View>
+      <BottomNav />
     </SafeAreaView>
   );
 }

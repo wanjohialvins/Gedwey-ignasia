@@ -13,11 +13,14 @@ import { useAuthStore } from '../../../lib/store/authStore';
 import { useUserProfile } from '../../../lib/queries/profile';
 import { useCards, Card as CardType } from '../../../lib/queries/cards';
 import { useActiveSession, useCreateSession, useSubmitSessionAnswer } from '../../../lib/queries/sessions';
-import { scheduleLocalNotification } from '../../../lib/notifications';
+import { scheduleLocalNotification, NOTIFICATION_CHANNELS } from '../../../lib/notifications';
+import { userWantsSessionReminders } from '../../../lib/notificationPrefs';
+import { useSessionSoundscape } from '../../../lib/hooks/useSessionSoundscape';
 import { Button } from '../../../components/Button';
 import { Input } from '../../../components/Input';
 import { Card } from '../../../components/Card';
 import { Skeleton } from '../../../components/Skeleton';
+import { VoiceNoteRecorder } from '../../../components/VoiceNoteRecorder';
 
 export default function SessionCardScreen() {
   const router = useRouter();
@@ -31,11 +34,12 @@ export default function SessionCardScreen() {
   );
   const createSession = useCreateSession();
   const submitAnswer = useSubmitSessionAnswer();
+  useSessionSoundscape(profile);
 
   const [selectedCard, setSelectedCard] = useState<CardType | null>(null);
   const [answer, setAnswer] = useState('');
-  const [hasCreatedSession, setHasCreatedSession] = useState(false);
-
+  const [voiceUrl, setVoiceUrl] = useState<string | null>(null);
+  const [voiceDuration, setVoiceDuration] = useState<number | null>(null);
   // If there's an active session, use that card. Otherwise pick a random one.
   useEffect(() => {
     if (activeSession?.cards) {
@@ -47,41 +51,45 @@ export default function SessionCardScreen() {
   }, [activeSession, cards]);
 
   const handleSubmit = async () => {
-    if (!answer.trim()) {
-      Alert.alert('Answer Required', 'Please write your answer.');
+    if (!answer.trim() && !voiceUrl) {
+      Alert.alert('Answer Required', 'Please write your answer or attach a voice note.');
       return;
     }
     if (!user || !profile?.couple_id || !selectedCard) return;
 
     try {
-      if (activeSession) {
-        // Join/answer existing session
-        await submitAnswer.mutateAsync({
-          sessionId: activeSession.id,
-          coupleId: profile.couple_id,
-          userId: user.id,
-          answer: answer.trim(),
-          mood: mood || undefined,
-        });
+      const sessionId =
+        activeSession?.id ??
+        (
+          await createSession.mutateAsync({
+            coupleId: profile.couple_id,
+            cardId: selectedCard.id,
+            userId: user.id,
+            mood: mood || 'neutral',
+          })
+        ).id;
 
-        // Schedule daily session reminder for 24 hours from now
+      await submitAnswer.mutateAsync({
+        sessionId,
+        coupleId: profile.couple_id,
+        userId: user.id,
+        answer: answer.trim() || 'Voice note response',
+        mood: mood || undefined,
+        voiceUrl: voiceUrl || undefined,
+        voiceDuration: voiceDuration || undefined,
+      });
+
+      if (userWantsSessionReminders(profile)) {
         await scheduleLocalNotification(
           'Daily Check-in Reminder 🎴',
           'It has been 24 hours since your last session. Connect with your partner today!',
           86400,
-          'daily_session_reminder'
+          {
+            identifier: 'daily_session_reminder',
+            channelId: NOTIFICATION_CHANNELS.sessions,
+            data: { type: 'session_reminder' },
+          }
         );
-      } else {
-        // Create new session with the answer
-        await createSession.mutateAsync({
-          coupleId: profile.couple_id,
-          cardId: selectedCard.id,
-          userId: user.id,
-          mood: mood || 'neutral',
-        });
-
-        // Now submit the answer to the newly created session
-        setHasCreatedSession(true);
       }
 
       router.replace('/session/reveal');
@@ -89,33 +97,6 @@ export default function SessionCardScreen() {
       Alert.alert('Error', err.message || 'Could not submit your answer.');
     }
   };
-
-  // After session creation, submit the answer
-  useEffect(() => {
-    if (hasCreatedSession && activeSession && user && answer.trim()) {
-      submitAnswer
-        .mutateAsync({
-          sessionId: activeSession.id,
-          coupleId: activeSession.couple_id,
-          userId: user.id,
-          answer: answer.trim(),
-          mood: mood || undefined,
-        })
-        .then(async () => {
-          // Schedule daily session reminder for 24 hours from now
-          await scheduleLocalNotification(
-            'Daily Check-in Reminder 🎴',
-            'It has been 24 hours since your last session. Connect with your partner today!',
-            86400,
-            'daily_session_reminder'
-          );
-          router.replace('/session/reveal');
-        })
-        .catch((err) => {
-          Alert.alert('Error', err.message || 'Could not submit answer.');
-        });
-    }
-  }, [hasCreatedSession, activeSession]);
 
   const isLoading = sessionLoading || cardsLoading;
   const isPending = createSession.isPending || submitAnswer.isPending;
@@ -172,10 +153,18 @@ export default function SessionCardScreen() {
             className="h-32 text-left py-3.5"
           />
 
+          <VoiceNoteRecorder
+            userId={user?.id}
+            onUploaded={(url, duration) => {
+              setVoiceUrl(url);
+              setVoiceDuration(duration);
+            }}
+          />
+
           <Button
             title="Submit Answer"
             onPress={handleSubmit}
-            disabled={!answer.trim() || isPending}
+            disabled={(!answer.trim() && !voiceUrl) || isPending}
             loading={isPending}
             className="w-full mt-2"
           />

@@ -12,6 +12,7 @@ const MOODS = [
   { key: 'tired', emoji: '😴', label: 'Tired' },
   { key: 'anxious', emoji: '😟', label: 'Anxious' },
   { key: 'loving', emoji: '🥰', label: 'Loving' },
+  { key: 'neutral', emoji: '😐', label: 'Neutral' },
 ];
 
 export default function MoodScreen() {

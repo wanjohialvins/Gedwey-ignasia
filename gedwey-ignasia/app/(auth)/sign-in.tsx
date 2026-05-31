@@ -12,6 +12,8 @@ import { supabase } from '../../lib/supabase';
 import { Button } from '../../components/Button';
 import { Input } from '../../components/Input';
 import { Card } from '../../components/Card';
+import { BrandLogo } from '../../components/BrandLogo';
+import { GedweyLoader } from '../../components/GedweyLoader';
 
 export default function SignInScreen() {
   const router = useRouter();
@@ -62,6 +64,10 @@ export default function SignInScreen() {
     }
   };
 
+  if (loading) {
+    return <GedweyLoader subtitle="signing you in..." />;
+  }
+
   return (
     <KeyboardAvoidingView
       className="flex-1 bg-background"
@@ -70,8 +76,7 @@ export default function SignInScreen() {
       <View className="flex-1 justify-center px-4">
         {/* Header */}
         <View className="items-center mb-10">
-          <Text className="text-4xl font-bold text-primary-600 tracking-tight">Moments</Text>
-          <Text className="text-lg font-normal text-secondary mt-0.5">for Two</Text>
+          <BrandLogo size={78} />
           <Text className="text-sm text-text-muted mt-3 text-center px-8">
             Small intentional moments build strong relationships.
           </Text>
@@ -93,6 +98,7 @@ export default function SignInScreen() {
           <Input
             placeholder="Password"
             secureTextEntry
+            showPasswordToggle
             autoCapitalize="none"
             value={password}
             onChangeText={setPassword}

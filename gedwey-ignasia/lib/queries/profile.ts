@@ -1,5 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '../supabase';
+import { CACHE_KEYS, getCache, setCache } from '../offlineCache';
+import { isNetworkError, markOffline, markOnline } from '../networkStatus';
 
 export interface Profile {
   id: string;
@@ -12,6 +14,16 @@ export interface Profile {
   relationship_stage: string | null;
   invite_code: string | null;
   expo_push_token: string | null;
+  avatar_url: string | null;
+  theme_preference: 'default' | 'dark' | 'soft' | 'midnight' | 'rose' | 'forest' | 'cream' | 'slate';
+  accent_color: string | null;
+  mature_mode_enabled: boolean;
+  mature_mode_age_verified?: boolean;
+  dev_mode: boolean;
+  bio: string | null;
+  love_language: string | null;
+  birthday: string | null;
+  preferences: Record<string, unknown> | null;
 }
 
 // Fetch user profile
@@ -20,16 +32,26 @@ export const useUserProfile = (userId: string) => {
     queryKey: ['profile', userId],
     queryFn: async () => {
       if (!userId) throw new Error('User ID is required');
-      const { data, error } = await supabase
-        .from('profiles')
-        .select('*')
-        .eq('id', userId)
-        .single();
+      try {
+        const { data, error } = await supabase
+          .from('profiles')
+          .select('*')
+          .eq('id', userId)
+          .single();
 
-      if (error) {
-        throw new Error(error.message);
+        if (error) throw new Error(error.message);
+
+        const profile = data as Profile;
+        await setCache(CACHE_KEYS.profile(userId), profile);
+        markOnline();
+        return profile;
+      } catch (err) {
+        const message = err instanceof Error ? err.message : String(err);
+        if (isNetworkError(message)) markOffline();
+        const cached = await getCache<Profile>(CACHE_KEYS.profile(userId));
+        if (cached) return cached;
+        throw err instanceof Error ? err : new Error(message);
       }
-      return data as Profile;
     },
     enabled: !!userId,
   });
@@ -55,6 +77,7 @@ export const useUpdateProfile = () => {
     },
     onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ['profile', data.id] });
+      queryClient.invalidateQueries({ queryKey: ['couple'] });
     },
   });
 };

@@ -2,7 +2,13 @@ import { Platform } from 'react-native';
 import * as Notifications from 'expo-notifications';
 import * as Device from 'expo-device';
 
-// Configure default notification handler behavior
+export const NOTIFICATION_CHANNELS = {
+  default: 'default',
+  sessions: 'sessions',
+  partner: 'partner',
+  capsules: 'capsules',
+} as const;
+
 Notifications.setNotificationHandler({
   handleNotification: async () => ({
     shouldShowAlert: true,
@@ -13,10 +19,38 @@ Notifications.setNotificationHandler({
   }),
 });
 
-/**
- * Register device for remote push notifications.
- * Requests system permissions and retrieves the Expo Push Token.
- */
+export async function ensureNotificationChannels(): Promise<void> {
+  if (Platform.OS !== 'android') return;
+
+  await Notifications.setNotificationChannelAsync(NOTIFICATION_CHANNELS.default, {
+    name: 'General',
+    importance: Notifications.AndroidImportance.MAX,
+    vibrationPattern: [0, 250, 250, 250],
+    lightColor: '#4F46E5',
+  });
+
+  await Notifications.setNotificationChannelAsync(NOTIFICATION_CHANNELS.sessions, {
+    name: 'Session Reminders',
+    importance: Notifications.AndroidImportance.HIGH,
+    vibrationPattern: [0, 200, 200],
+    lightColor: '#4F46E5',
+  });
+
+  await Notifications.setNotificationChannelAsync(NOTIFICATION_CHANNELS.partner, {
+    name: 'Partner Activity',
+    importance: Notifications.AndroidImportance.HIGH,
+    vibrationPattern: [0, 150, 100, 150],
+    lightColor: '#E11D48',
+  });
+
+  await Notifications.setNotificationChannelAsync(NOTIFICATION_CHANNELS.capsules, {
+    name: 'Time Capsules',
+    importance: Notifications.AndroidImportance.HIGH,
+    vibrationPattern: [0, 300, 200, 300],
+    lightColor: '#7C3AED',
+  });
+}
+
 export async function registerForPushNotificationsAsync(): Promise<string | null> {
   if (Platform.OS === 'web') {
     return null;
@@ -24,7 +58,6 @@ export async function registerForPushNotificationsAsync(): Promise<string | null
 
   if (!Device.isDevice) {
     console.log('[Notifications] Must use a physical device for remote push notifications.');
-    // In emulator, we can return a mock token or null
     return 'ExponentPushToken[MockTokenForTesting]';
   }
 
@@ -38,18 +71,19 @@ export async function registerForPushNotificationsAsync(): Promise<string | null
     }
 
     if (finalStatus !== 'granted') {
-      console.log('[Notifications] Failed to get push token for push notifications! Permission denied.');
+      console.log('[Notifications] Push permission denied.');
       return null;
     }
 
-    // Get the Expo Push Token
-    let token = null;
+    await ensureNotificationChannels();
+
+    let token: string | null = null;
     try {
-      let projectId = undefined;
+      let projectId: string | undefined;
       try {
         const Constants = require('expo-constants').default;
         projectId = Constants.expoConfig?.extra?.eas?.projectId ?? Constants.easConfig?.projectId;
-      } catch (e) {
+      } catch {
         console.log('[Notifications] Could not load projectId from expo-constants');
       }
 
@@ -57,32 +91,19 @@ export async function registerForPushNotificationsAsync(): Promise<string | null
         projectId ? { projectId } : undefined
       );
       token = tokenData.data;
-      console.log('[Notifications] Device push token successfully registered:', token);
+      console.log('[Notifications] Push token registered:', token);
     } catch (tokenError) {
-      console.log('[Notifications] Could not retrieve Expo Push Token (likely no projectId or not logged in to Expo). Using mock token:', tokenError);
+      console.log('[Notifications] Expo push token unavailable, using mock:', tokenError);
       token = 'ExponentPushToken[MockTokenForTesting]';
-    }
-
-    // Set up default channel for Android
-    if (Platform.OS === 'android') {
-      await Notifications.setNotificationChannelAsync('default', {
-        name: 'default',
-        importance: Notifications.AndroidImportance.MAX,
-        vibrationPattern: [0, 250, 250, 250],
-        lightColor: '#2563EB',
-      });
     }
 
     return token;
   } catch (error) {
-    console.error('[Notifications] Error registering for push notifications:', error);
+    console.error('[Notifications] Registration failed:', error);
     return null;
   }
 }
 
-/**
- * Dispatches a remote push notification payload to the partner's device token via Expo's gateway.
- */
 export async function sendPushNotification(
   toToken: string,
   title: string,
@@ -90,7 +111,7 @@ export async function sendPushNotification(
   data?: Record<string, unknown>
 ): Promise<boolean> {
   if (!toToken || toToken.includes('MockToken')) {
-    console.log('[Notifications] Skipping push dispatch: empty or mock token.');
+    console.log('[Notifications] Skipping push: empty or mock token.');
     return false;
   }
 
@@ -100,6 +121,7 @@ export async function sendPushNotification(
     title,
     body,
     data: data || {},
+    channelId: NOTIFICATION_CHANNELS.partner,
   };
 
   try {
@@ -114,42 +136,58 @@ export async function sendPushNotification(
     });
 
     const resData = await response.json();
-    console.log('[Notifications] Push dispatch gateway response:', resData);
+    console.log('[Notifications] Push gateway response:', resData);
     return response.ok;
   } catch (error) {
-    console.error('[Notifications] Error sending push notification:', error);
+    console.error('[Notifications] Push send failed:', error);
     return false;
   }
 }
 
-/**
- * Schedules an offline local device alert notification to trigger after a set timeframe.
- */
 export async function scheduleLocalNotification(
   title: string,
   body: string,
   triggerSeconds: number,
-  identifier?: string
+  options?: {
+    identifier?: string;
+    data?: Record<string, unknown>;
+    channelId?: string;
+  }
 ): Promise<string | null> {
   if (Platform.OS === 'web') return null;
+  if (triggerSeconds <= 0) return null;
 
   try {
+    await ensureNotificationChannels();
+
     const id = await Notifications.scheduleNotificationAsync({
-      identifier,
+      identifier: options?.identifier,
       content: {
         title,
         body,
         sound: true,
+        data: options?.data || {},
+        ...(Platform.OS === 'android'
+          ? { channelId: options?.channelId || NOTIFICATION_CHANNELS.default }
+          : {}),
       },
       trigger: {
         type: Notifications.SchedulableTriggerInputTypes.TIME_INTERVAL,
         seconds: triggerSeconds,
       },
     });
-    console.log(`[Notifications] Local notification scheduled with ID: ${id} to trigger in ${triggerSeconds} seconds.`);
+    console.log(`[Notifications] Scheduled local notification ${id} in ${triggerSeconds}s`);
     return id;
   } catch (error) {
-    console.error('[Notifications] Error scheduling local notification:', error);
+    console.error('[Notifications] Schedule failed:', error);
     return null;
+  }
+}
+
+export async function cancelScheduledNotification(identifier: string): Promise<void> {
+  try {
+    await Notifications.cancelScheduledNotificationAsync(identifier);
+  } catch {
+    // ignore
   }
 }
