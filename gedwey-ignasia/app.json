@@ -56,6 +56,18 @@
           "photosPermission": "Allow Gedwey Ignasia to access your photos so you can select and share memories with your partner.",
           "cameraPermission": "Allow Gedwey Ignasia to access your camera to capture new memories for your shared journal."
         }
+      ],
+      [
+        "expo-location",
+        {
+          "locationWhenInUsePermission": "Allow Gedwey Ignasia to use your location so you can tag memories and discover date spots with your partner."
+        }
+      ],
+      [
+        "expo-sensors",
+        {
+          "motionPermission": "Allow Gedwey Ignasia to access your motion sensors for interactive couple gestures."
+        }
       ]
     ],
     "extra": {
