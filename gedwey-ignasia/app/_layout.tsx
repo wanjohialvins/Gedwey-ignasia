@@ -1,7 +1,8 @@
 import "../global.css";
 import React, { useEffect } from 'react';
-import { View, LogBox } from 'react-native';
+import { View, LogBox, Alert } from 'react-native';
 import { Stack, useRouter, useSegments } from 'expo-router';
+import * as Updates from 'expo-updates';
 
 LogBox.ignoreLogs([
   'expo-notifications: Android Push notifications',
@@ -33,6 +34,35 @@ function InitialLayout() {
   const router = useRouter();
 
   console.log('[InitialLayout] Rendering, loading:', loading, 'session:', !!session, 'segments:', segments);
+
+  // Check for OTA updates on app launch
+  useEffect(() => {
+    async function checkUpdates() {
+      if (__DEV__) return;
+      try {
+        console.log('[Updates] Checking for updates...');
+        const update = await Updates.checkForUpdateAsync();
+        if (update.isAvailable) {
+          console.log('[Updates] New update found. Downloading...');
+          await Updates.fetchUpdateAsync();
+          console.log('[Updates] Update downloaded. Prompting user...');
+          Alert.alert(
+            "Update Available",
+            "A new version of Gedwey Ignasia is available. Would you like to restart the app to apply the update now?",
+            [
+              { text: "Later", style: "cancel" },
+              { text: "Restart Now", onPress: () => Updates.reloadAsync() }
+            ]
+          );
+        } else {
+          console.log('[Updates] No updates available.');
+        }
+      } catch (error) {
+        console.log('[Updates] Error checking for updates:', error);
+      }
+    }
+    checkUpdates();
+  }, []);
 
   // 1. Listen to Auth state changes
   useEffect(() => {
