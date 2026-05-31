@@ -1,9 +1,20 @@
-import * as FileSystem from 'expo-file-system/legacy';
+import { File, Paths, Directory } from 'expo-file-system';
+
+const CACHE_DIR_NAME = 'audio_cache';
+
+/** Lazily ensure our audio cache sub-directory exists and return it. */
+function getAudioCacheDir(): Directory {
+  const dir = new Directory(Paths.cache, CACHE_DIR_NAME);
+  if (!dir.exists) {
+    dir.create({ intermediates: true });
+  }
+  return dir;
+}
 
 /**
- * Checks if a remote audio URL is already downloaded to local document storage.
- * If yes, returns the local 'file://' path. If no, downloads it in the background
- * and returns the new local path so the track is available offline thereafter.
+ * Checks if a remote audio URL is already downloaded to local cache.
+ * If yes, returns the local 'file://' URI. If no, downloads it and
+ * returns the new local URI so the track is available offline thereafter.
  */
 export async function getCachedAudioUri(remoteUrl: string): Promise<string> {
   if (!remoteUrl || typeof remoteUrl !== 'string') return remoteUrl;
@@ -21,19 +32,20 @@ export async function getCachedAudioUri(remoteUrl: string): Promise<string> {
   // Generate a reliable, unique local filename based on the remote URL
   const cleanUrl = remoteUrl.split('?')[0];
   const filename = cleanUrl.split('/').pop() || 'temp_track.mp3';
-  const localUri = `${FileSystem.documentDirectory}${filename}`;
 
   try {
-    const fileInfo = await FileSystem.getInfoAsync(localUri);
-    if (fileInfo.exists) {
-      console.log('[AudioCache] Serving cached track:', localUri);
-      return localUri;
+    const cacheDir = getAudioCacheDir();
+    const cachedFile = new File(cacheDir, filename);
+
+    if (cachedFile.exists) {
+      console.log('[AudioCache] Serving cached track:', cachedFile.uri);
+      return cachedFile.uri;
     }
 
     console.log('[AudioCache] Downloading audio to local cache:', remoteUrl);
-    const result = await FileSystem.downloadAsync(remoteUrl, localUri);
-    console.log('[AudioCache] Download complete. Cached at:', result.uri);
-    return result.uri;
+    const downloaded = await File.downloadFileAsync(remoteUrl, cachedFile, { idempotent: true });
+    console.log('[AudioCache] Download complete. Cached at:', downloaded.uri);
+    return downloaded.uri;
   } catch (error) {
     console.warn('[AudioCache] Caching failed, falling back to streaming:', error);
     return remoteUrl;
