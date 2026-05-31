@@ -49,6 +49,13 @@
         {
           "microphonePermission": "Allow Gedwey Ignasia to record voice notes for sessions and journal entries."
         }
+      ],
+      [
+        "expo-image-picker",
+        {
+          "photosPermission": "Allow Gedwey Ignasia to access your photos so you can select and share memories with your partner.",
+          "cameraPermission": "Allow Gedwey Ignasia to access your camera to capture new memories for your shared journal."
+        }
       ]
     ],
     "extra": {
