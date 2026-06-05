@@ -48,6 +48,7 @@ export async function askCycleAssistant(
 
   for (const apiKey of OPENAI_KEYS) {
     try {
+      console.log('[CycleAssistant] Attempting OpenAI call with key ending:', apiKey.slice(-8));
       const response = await fetch('https://api.openai.com/v1/chat/completions', {
         method: 'POST',
         headers: {
@@ -61,14 +62,16 @@ export async function askCycleAssistant(
         }),
       });
 
+      console.log('[CycleAssistant] Response status:', response.status);
       const data = await response.json();
 
       if (response.ok) {
         const answer = data?.choices?.[0]?.message?.content;
+        console.log('[CycleAssistant] Got successful response');
         return answer ?? 'I need a little more cycle data to help.';
       }
 
-      lastError = data?.error?.message ?? `OpenAI returned HTTP ${response.status}`;
+      lastError = `HTTP ${response.status}: ${data?.error?.message ?? JSON.stringify(data?.error ?? data)}`;
       console.warn('[CycleAssistant] OpenAI key failed:', lastError);
     } catch (err: unknown) {
       lastError = err instanceof Error ? err.message : String(err);

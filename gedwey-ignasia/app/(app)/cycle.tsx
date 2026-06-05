@@ -262,12 +262,17 @@ export default function CycleCalendarScreen() {
       const assistantMsg = { id: `assistant-${Date.now()}`, role: 'assistant' as const, content: answer };
       setChatMessages((prev) => [...prev, assistantMsg]);
     } catch (err: any) {
-      console.warn('[CycleAssistant] OpenAI/Edge function failed, falling back to local responder:', err?.message || err);
+      const errorDetail = err?.message || String(err);
+      console.warn('[CycleAssistant] OpenAI failed:', errorDetail);
       const fallbackAnswer = respondToCycleQuery(query, {
         phase: prediction?.phase,
         insights,
       });
-      const assistantMsg = { id: `assistant-${Date.now()}`, role: 'assistant' as const, content: fallbackAnswer };
+      const assistantMsg = {
+        id: `assistant-${Date.now()}`,
+        role: 'assistant' as const,
+        content: `⚠️ AI connection failed: ${errorDetail}\n\n${fallbackAnswer}`,
+      };
       setChatMessages((prev) => [...prev, assistantMsg]);
     } finally {
       setAssistantLoading(false);
