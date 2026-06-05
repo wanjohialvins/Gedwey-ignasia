@@ -11,6 +11,8 @@ import {
 import { useRouter } from 'expo-router';
 import * as Clipboard from 'expo-clipboard';
 import * as ImagePicker from 'expo-image-picker';
+import * as Updates from 'expo-updates';
+import Constants from 'expo-constants';
 import { uriToUint8Array } from '../../lib/fileUtils';
 import { supabase } from '../../lib/supabase';
 import { useAuthStore } from '../../lib/store/authStore';
@@ -871,6 +873,15 @@ export default function SettingsScreen() {
           )}
         </>
       )}
+
+      {/* Version & Update Metadata Footer */}
+      <View className="items-center py-6 mt-4 gap-1">
+        <Text className="text-[10px] text-text-muted font-semibold">Gedwey Ignasia v{Constants.expoConfig?.version ?? '1.0.0'}</Text>
+        <Text className="text-3xs text-text-muted">
+          {Updates.updateId ? `Update: ${Updates.updateId.substring(0, 8)}` : 'Local Dev'}
+          {Updates.createdAt ? ` · Released: ${new Date(Updates.createdAt).toLocaleDateString()}` : ''}
+        </Text>
+      </View>
     </ScrollView>
     <BottomNav />
     </ScreenShell>

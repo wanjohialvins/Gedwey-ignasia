@@ -15,12 +15,16 @@ import { initMusicStoreSync } from '../../lib/store/musicStore';
 import { Audio } from 'expo-av';
 import { getCachedAudioUri } from '../../lib/audioCache';
 import { supabase } from '../../lib/supabase';
+import { useAppUpdates } from '../../lib/hooks/useAppUpdates';
 
 export default function AppLayout() {
   const { user } = useAuthStore();
   const segments = useSegments();
   const router = useRouter();
   const queryClient = useQueryClient();
+
+  // Automatically check for OTA updates via EAS Update in production
+  useAppUpdates();
 
   // Fetch user profile via React Query
   const { data: profile, isLoading, error } = useUserProfile(user?.id ?? '');
