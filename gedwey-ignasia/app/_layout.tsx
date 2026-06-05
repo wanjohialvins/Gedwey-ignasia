@@ -3,6 +3,8 @@ import React, { useEffect } from 'react';
 import { View, LogBox, Alert } from 'react-native';
 import { Stack, useRouter, useSegments } from 'expo-router';
 import * as Updates from 'expo-updates';
+import { useFonts } from 'expo-font';
+import { Ionicons } from '@expo/vector-icons';
 import "../lib/notifications";
 import { useAppUpdates } from '../lib/hooks/useAppUpdates';
 import { FuturisticUpdateModal } from '../components/FuturisticUpdateModal';
@@ -24,6 +26,15 @@ import { prefetchGameCards } from '../lib/queries/gameCards';
 const queryClient = new QueryClient();
 
 export default function RootLayout() {
+  const [fontsLoaded] = useFonts({
+    ...Ionicons.font,
+  });
+
+  // Block rendering until the Ionicons font is loaded
+  if (!fontsLoaded) {
+    return null;
+  }
+
   return (
     <QueryClientProvider client={queryClient}>
       <InitialLayout />
