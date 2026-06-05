@@ -121,6 +121,7 @@ export async function sendPushNotification(
     sound: 'default',
     title,
     body,
+    priority: 'high',
     data: data || {},
     channelId: NOTIFICATION_CHANNELS.partner,
   };
