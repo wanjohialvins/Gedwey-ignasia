@@ -14,8 +14,10 @@ import { useActiveSession, useSessionHistory, CoupleSession } from '../../../lib
 import { Button } from '../../../components/Button';
 import { Card } from '../../../components/Card';
 import { Skeleton } from '../../../components/Skeleton';
+import { ScreenShell } from '../../../components/ScreenShell';
 import { VoicePlaybackBubble } from '../../../components/VoicePlaybackBubble';
 import { formatShortDate } from '../../../lib/dateUtils';
+import { useTheme } from '../../../lib/hooks/useTheme';
 
 const MOOD_MAP: Record<string, { emoji: string; label: string }> = {
   happy: { emoji: '😊', label: 'Happy' },
@@ -32,6 +34,7 @@ const MOOD_MAP: Record<string, { emoji: string; label: string }> = {
 export default function SessionRevealScreen() {
   const router = useRouter();
   const { user } = useAuthStore();
+  const { theme, isDark } = useTheme();
 
   // Fetch current user's profile
   const { data: profile, isLoading: profileLoading } = useUserProfile(user?.id ?? '');
@@ -49,42 +52,44 @@ export default function SessionRevealScreen() {
 
   if (isLoading) {
     return (
-      <SafeAreaView className="flex-1 bg-background">
-        <View className="flex-1 px-4">
-          <Skeleton width={80} height={20} className="mt-2.5 mb-2 py-1" />
-          
-          {/* Question Section Skeleton */}
-          <View className="bg-white rounded-2xl p-5 border border-neutral-border shadow-sm mb-5">
-            <Skeleton width={80} height={14} className="mb-2" />
-            <Skeleton width="95%" height={18} className="mb-1" />
-            <Skeleton width="60%" height={18} className="mb-3" />
-            <Skeleton width={120} height={12} />
-          </View>
+      <ScreenShell className="flex-1">
+        <SafeAreaView className="flex-1">
+          <View className="flex-1 px-4">
+            <Skeleton width={80} height={20} className="mt-2.5 mb-2 py-1" />
+            
+            {/* Question Section Skeleton */}
+            <Card className="p-5 mb-5">
+              <Skeleton width={80} height={14} className="mb-2" />
+              <Skeleton width="95%" height={18} className="mb-1" />
+              <Skeleton width="60%" height={18} className="mb-3" />
+              <Skeleton width={120} height={12} />
+            </Card>
 
-          {/* Reveal Container / Answer Cards Skeletons */}
-          <View className="gap-4 mb-6">
-            <View className="bg-white rounded-2xl p-4 border border-blue-100 shadow-sm">
-              <View className="flex-row justify-between items-center mb-3 pb-2 border-b border-slate-100">
-                <Skeleton width={80} height={16} />
-                <Skeleton width={60} height={20} className="rounded-full" />
-              </View>
-              <Skeleton width="95%" height={16} className="mb-1" />
-              <Skeleton width="80%" height={16} />
+            {/* Reveal Container / Answer Cards Skeletons */}
+            <View className="gap-4 mb-6">
+              <Card className="p-4 border shadow-sm">
+                <View className="flex-row justify-between items-center mb-3 pb-2 border-b border-slate-100">
+                  <Skeleton width={80} height={16} />
+                  <Skeleton width={60} height={20} className="rounded-full" />
+                </View>
+                <Skeleton width="95%" height={16} className="mb-1" />
+                <Skeleton width="80%" height={16} />
+              </Card>
+
+              <Card className="p-4 border shadow-sm">
+                <View className="flex-row justify-between items-center mb-3 pb-2 border-b border-slate-100">
+                  <Skeleton width={100} height={16} />
+                  <Skeleton width={60} height={20} className="rounded-full" />
+                </View>
+                <Skeleton width="95%" height={16} className="mb-1" />
+                <Skeleton width="85%" height={16} />
+              </Card>
             </View>
 
-            <View className="bg-white rounded-2xl p-4 border border-neutral-border shadow-sm">
-              <View className="flex-row justify-between items-center mb-3 pb-2 border-b border-slate-100">
-                <Skeleton width={100} height={16} />
-                <Skeleton width={60} height={20} className="rounded-full" />
-              </View>
-              <Skeleton width="95%" height={16} className="mb-1" />
-              <Skeleton width="85%" height={16} />
-            </View>
+            <Skeleton width="100%" height={48} className="rounded-xl" />
           </View>
-
-          <Skeleton width="100%" height={48} className="rounded-xl" />
-        </View>
-      </SafeAreaView>
+        </SafeAreaView>
+      </ScreenShell>
     );
   }
 
@@ -92,8 +97,6 @@ export default function SessionRevealScreen() {
   const myName = profile?.display_name || 'You';
 
   // Determine which session to show
-  // 1. If activeSession exists and current user has answered, we are either waiting or showing reveal
-  // 2. If activeSession is null, check if we have any completed session in history
   let sessionToShow: CoupleSession | null = null;
   let isWaitingState = false;
 
@@ -103,22 +106,23 @@ export default function SessionRevealScreen() {
     const partnerAnswer = isUser1 ? activeSession.user2_answer : activeSession.user1_answer;
 
     if (!myAnswer) {
-      // Current user hasn't answered yet! They shouldn't be here, but let's redirect/guide them
       return (
-        <SafeAreaView className="flex-1 bg-background">
-          <View className="flex-1 justify-center items-center px-6">
-            <Text className="text-5xl mb-4">✍️</Text>
-            <Text className="text-xl font-bold text-text-primary mb-2 text-center">Answer Prompt First</Text>
-            <Text className="text-sm text-text-secondary text-center leading-relaxed mb-6 px-4">
-              You need to submit your answer to today's question before viewing the reveal.
-            </Text>
-            <Button
-              title="Answer Question"
-              onPress={() => router.replace('/session/card')}
-              className="w-full"
-            />
-          </View>
-        </SafeAreaView>
+        <ScreenShell className="flex-1">
+          <SafeAreaView className="flex-1">
+            <View className="flex-1 justify-center items-center px-6">
+              <Text className="text-5xl mb-4">✍️</Text>
+              <Text className="text-xl font-bold text-text-primary mb-2 text-center" style={{ color: theme.textPrimary }}>Answer Prompt First</Text>
+              <Text className="text-sm text-text-secondary text-center leading-relaxed mb-6 px-4" style={{ color: theme.textSecondary }}>
+                You need to submit your answer to today's question before viewing the reveal.
+              </Text>
+              <Button
+                title="Answer Question"
+                onPress={() => router.replace('/session/card')}
+                className="w-full"
+              />
+            </View>
+          </SafeAreaView>
+        </ScreenShell>
       );
     }
 
@@ -126,35 +130,35 @@ export default function SessionRevealScreen() {
       isWaitingState = true;
       sessionToShow = activeSession;
     } else {
-      // Both answered but somehow activeSession is still false (rare race condition)
       sessionToShow = activeSession;
     }
   } else if (sessionHistory && sessionHistory.length > 0) {
-    // No active session, show the most recent completed one
     sessionToShow = sessionHistory[0];
   }
 
   if (!sessionToShow) {
     return (
-      <SafeAreaView className="flex-1 bg-background">
-        <View className="flex-1 px-4">
-          <TouchableOpacity className="self-start py-2 mt-2 mb-2" onPress={() => router.replace('/')}>
-            <Text className="text-primary-600 text-sm font-semibold">← Home</Text>
-          </TouchableOpacity>
-          <View className="flex-1 justify-center items-center px-6 pb-12">
-            <Text className="text-5xl mb-4">🎴</Text>
-            <Text className="text-xl font-bold text-text-primary mb-2 text-center">No Sessions Yet</Text>
-            <Text className="text-sm text-text-secondary text-center leading-relaxed mb-6 px-4">
-              You haven't completed any sessions together. Start a session from the Home screen to connect!
-            </Text>
-            <Button
-              title="Start a Session"
-              onPress={() => router.replace('/session/start')}
-              className="w-full"
-            />
+      <ScreenShell className="flex-1">
+        <SafeAreaView className="flex-1">
+          <View className="flex-1 px-4">
+            <TouchableOpacity className="self-start py-2 mt-2 mb-2" onPress={() => router.replace('/')}>
+              <Text style={{ color: theme.accent }} className="text-sm font-semibold">← Home</Text>
+            </TouchableOpacity>
+            <View className="flex-1 justify-center items-center px-6 pb-12">
+              <Text className="text-5xl mb-4">🎴</Text>
+              <Text className="text-xl font-bold text-text-primary mb-2 text-center" style={{ color: theme.textPrimary }}>No Sessions Yet</Text>
+              <Text className="text-sm text-text-secondary text-center leading-relaxed mb-6 px-4" style={{ color: theme.textSecondary }}>
+                You haven't completed any sessions together. Start a session from the Home screen to connect!
+              </Text>
+              <Button
+                title="Start a Session"
+                onPress={() => router.replace('/session/start')}
+                className="w-full"
+              />
+            </View>
           </View>
-        </View>
-      </SafeAreaView>
+        </SafeAreaView>
+      </ScreenShell>
     );
   }
 
@@ -163,7 +167,7 @@ export default function SessionRevealScreen() {
   const myMoodKey = isUser1 ? sessionToShow.user1_mood : sessionToShow.user2_mood;
   const myVoiceUrl = isUser1 ? sessionToShow.user1_voice_url : sessionToShow.user2_voice_url;
   const myVoiceDuration = isUser1 ? sessionToShow.user1_voice_duration : sessionToShow.user2_voice_duration;
-  const partnerAnswer = isUser1 ? sessionToShow.user2_answer : sessionToShow.user1_answer;
+  const partnerAnswer = isUser1 ? sessionToShow.user2_answer : sessionToShow.user2_answer;
   const partnerMoodKey = isUser1 ? sessionToShow.user2_mood : sessionToShow.user1_mood;
   const partnerVoiceUrl = isUser1 ? sessionToShow.user2_voice_url : sessionToShow.user1_voice_url;
   const partnerVoiceDuration = isUser1 ? sessionToShow.user2_voice_duration : sessionToShow.user1_voice_duration;
@@ -174,97 +178,106 @@ export default function SessionRevealScreen() {
   const formattedDate = formatShortDate(sessionToShow.completed_at);
 
   return (
-    <SafeAreaView className="flex-1 bg-background">
-      <View className="flex-1 px-4">
-        <TouchableOpacity className="self-start py-2 mt-2 mb-2" onPress={() => router.replace('/')}>
-          <Text className="text-primary-600 text-sm font-semibold">← Home</Text>
-        </TouchableOpacity>
+    <ScreenShell className="flex-1">
+      <SafeAreaView className="flex-1">
+        <View className="flex-1 px-4">
+          <TouchableOpacity className="self-start py-2 mt-2 mb-2" onPress={() => router.replace('/')}>
+            <Text style={{ color: theme.accent }} className="text-sm font-semibold">← Home</Text>
+          </TouchableOpacity>
 
-        <ScrollView contentContainerStyle={{ flexGrow: 1, paddingBottom: 40 }} showsVerticalScrollIndicator={false}>
-          {/* Question Section */}
-          <Card className="p-5 mb-5">
-            <Text className="text-xs font-bold text-primary-600 uppercase tracking-widest mb-2">
-              Today's Prompt
-            </Text>
-            <Text className="text-base font-semibold text-text-primary leading-relaxed mb-2">
-              {sessionToShow.cards?.text || 'Loading prompt...'}
-            </Text>
-            {formattedDate ? (
-              <Text className="text-2xs text-text-muted">Revealed on {formattedDate}</Text>
-            ) : null}
-          </Card>
-
-          {isWaitingState ? (
-            /* Waiting State */
-            <View className="mb-6">
-              <View className="flex-row items-center mb-2 px-1">
-                <ActivityIndicator size="small" color="#2563EB" className="mr-2" />
-                <Text className="text-lg font-bold text-text-primary">Waiting for {partnerName}...</Text>
-              </View>
-              <Text className="text-sm text-text-secondary leading-relaxed mb-5 px-1">
-                We'll notify you as soon as {partnerName} answers. Keep this page open or check back later!
+          <ScrollView contentContainerStyle={{ flexGrow: 1, paddingBottom: 40 }} showsVerticalScrollIndicator={false}>
+            {/* Question Section */}
+            <Card className="p-5 mb-5">
+              <Text className="text-xs font-bold uppercase tracking-widest mb-2" style={{ color: theme.accent }}>
+                Today's Prompt
               </Text>
+              <Text className="text-base font-semibold text-text-primary leading-relaxed mb-2" style={{ color: theme.textPrimary }}>
+                {sessionToShow.cards?.text || 'Loading prompt...'}
+              </Text>
+              {formattedDate ? (
+                <Text className="text-2xs text-text-muted" style={{ color: theme.textTertiary }}>Revealed on {formattedDate}</Text>
+              ) : null}
+            </Card>
 
-              {/* My Answer Preview */}
-              <View className="bg-white rounded-2xl p-5 border border-dashed border-slate-300">
-                <Text className="text-xs font-bold text-text-secondary mb-2">Your Response</Text>
-                <View className="flex-row items-center bg-blue-50 px-2.5 py-1 rounded-full self-start mb-3 border border-blue-100">
-                  <Text className="text-sm mr-1">{myMood.emoji}</Text>
-                  <Text className="text-2xs font-bold text-primary-600">{myMood.label}</Text>
+            {isWaitingState ? (
+              /* Waiting State */
+              <View className="mb-6">
+                <View className="flex-row items-center mb-2 px-1">
+                  <ActivityIndicator size="small" color={theme.accent} className="mr-2" />
+                  <Text className="text-lg font-bold text-text-primary" style={{ color: theme.textPrimary }}>Waiting for {partnerName}...</Text>
                 </View>
-                <Text className="text-sm text-text-secondary font-medium italic leading-relaxed">{myAnswer}</Text>
-                <VoicePlaybackBubble url={myVoiceUrl} duration={myVoiceDuration} />
-              </View>
-            </View>
-          ) : (
-            /* Reveal State */
-            <View className="gap-4 mb-6">
-              {/* My Answer Card */}
-              <Card className="p-4 border border-blue-100 shadow-sm">
-                <View className="flex-row justify-between items-center mb-3 pb-2 border-b border-slate-100">
-                  <Text className="text-sm font-bold text-text-primary">{myName}</Text>
-                  <View className="flex-row items-center bg-blue-50 px-2.5 py-1 rounded-full border border-blue-100">
+                <Text className="text-sm text-text-secondary leading-relaxed mb-5 px-1" style={{ color: theme.textSecondary }}>
+                  We'll notify you as soon as {partnerName} answers. Keep this page open or check back later!
+                </Text>
+
+                {/* My Answer Preview */}
+                <Card glass className="p-5 border border-dashed border-slate-300">
+                  <Text className="text-xs font-bold text-text-secondary mb-2" style={{ color: theme.textSecondary }}>Your Response</Text>
+                  <View className="flex-row items-center bg-blue-50/20 px-2.5 py-1 rounded-full self-start mb-3 border border-blue-100/30">
                     <Text className="text-sm mr-1">{myMood.emoji}</Text>
-                    <Text className="text-2xs font-bold text-primary-600">{myMood.label}</Text>
+                    <Text className="text-2xs font-bold text-primary-600" style={{ color: theme.accent }}>{myMood.label}</Text>
                   </View>
-                </View>
-                <Text className="text-sm text-text-secondary leading-relaxed">{myAnswer || 'No answer submitted.'}</Text>
-                <VoicePlaybackBubble url={myVoiceUrl} duration={myVoiceDuration} />
-              </Card>
-
-              {/* Partner Answer Card */}
-              <Card className="p-4 shadow-sm">
-                <View className="flex-row justify-between items-center mb-3 pb-2 border-b border-slate-100">
-                  <Text className="text-sm font-bold text-text-primary">{partnerName}</Text>
-                  <View className="flex-row items-center bg-slate-50 px-2.5 py-1 rounded-full border border-slate-200">
-                    <Text className="text-sm mr-1">{partnerMood.emoji}</Text>
-                    <Text className="text-2xs font-bold text-text-secondary">{partnerMood.label}</Text>
-                  </View>
-                </View>
-                <Text className="text-sm text-text-secondary leading-relaxed">{partnerAnswer || 'No answer submitted.'}</Text>
-                <VoicePlaybackBubble url={partnerVoiceUrl} duration={partnerVoiceDuration} />
-              </Card>
-
-              {/* Celebration Note */}
-              <View className="bg-blue-50 border border-blue-100 rounded-2xl p-4 items-center mt-2 shadow-sm">
-                <Text className="text-2xl mb-2">✨</Text>
-                <Text className="text-sm font-bold text-blue-900 text-center mb-1">
-                  Intimacy grows in shared moments.
-                </Text>
-                <Text className="text-xs text-primary-600 text-center leading-relaxed">
-                  Take a moment to talk about your answers and connect deeper in real life.
-                </Text>
+                  <Text className="text-sm text-text-secondary font-medium italic leading-relaxed" style={{ color: theme.textSecondary }}>{myAnswer}</Text>
+                  <VoicePlaybackBubble url={myVoiceUrl} duration={myVoiceDuration} />
+                </Card>
               </View>
-            </View>
-          )}
+            ) : (
+              /* Reveal State */
+              <View className="gap-4 mb-6">
+                {/* My Answer Card */}
+                <Card className="p-4 border border-blue-100/30 shadow-sm">
+                  <View className="flex-row justify-between items-center mb-3 pb-2 border-b border-slate-100/10">
+                    <Text className="text-sm font-bold text-text-primary" style={{ color: theme.textPrimary }}>{myName}</Text>
+                    <View className="flex-row items-center bg-blue-50/20 px-2.5 py-1 rounded-full border border-blue-100/30">
+                      <Text className="text-sm mr-1">{myMood.emoji}</Text>
+                      <Text className="text-2xs font-bold text-primary-600" style={{ color: theme.accent }}>{myMood.label}</Text>
+                    </View>
+                  </View>
+                  <Text className="text-sm text-text-secondary leading-relaxed" style={{ color: theme.textSecondary }}>{myAnswer || 'No answer submitted.'}</Text>
+                  <VoicePlaybackBubble url={myVoiceUrl} duration={myVoiceDuration} />
+                </Card>
 
-          <Button
-            title="Back to Dashboard"
-            onPress={() => router.replace('/')}
-            className="w-full mt-2"
-          />
-        </ScrollView>
-      </View>
-    </SafeAreaView>
+                {/* Partner Answer Card */}
+                <Card className="p-4 shadow-sm">
+                  <View className="flex-row justify-between items-center mb-3 pb-2 border-b border-slate-100/10">
+                    <Text className="text-sm font-bold text-text-primary" style={{ color: theme.textPrimary }}>{partnerName}</Text>
+                    <View className="flex-row items-center bg-slate-50/20 px-2.5 py-1 rounded-full border border-slate-200/30">
+                      <Text className="text-sm mr-1">{partnerMood.emoji}</Text>
+                      <Text className="text-2xs font-bold text-text-secondary" style={{ color: theme.textSecondary }}>{partnerMood.label}</Text>
+                    </View>
+                  </View>
+                  <Text className="text-sm text-text-secondary leading-relaxed" style={{ color: theme.textSecondary }}>{partnerAnswer || 'No answer submitted.'}</Text>
+                  <VoicePlaybackBubble url={partnerVoiceUrl} duration={partnerVoiceDuration} />
+                </Card>
+
+                {/* Celebration Note */}
+                <Card 
+                  glass 
+                  className="p-4 items-center mt-2 border shadow-sm"
+                  style={{
+                    backgroundColor: isDark ? 'rgba(79, 70, 229, 0.12)' : 'rgba(79, 70, 229, 0.06)',
+                    borderColor: isDark ? 'rgba(79, 70, 229, 0.25)' : 'rgba(79, 70, 229, 0.15)',
+                  }}
+                >
+                  <Text className="text-2xl mb-2">✨</Text>
+                  <Text className="text-sm font-bold text-center mb-1" style={{ color: theme.textPrimary }}>
+                    Intimacy grows in shared moments.
+                  </Text>
+                  <Text className="text-xs text-center leading-relaxed" style={{ color: theme.accent }}>
+                    Take a moment to talk about your answers and connect deeper in real life.
+                  </Text>
+                </Card>
+              </View>
+            )}
+
+            <Button
+              title="Back to Dashboard"
+              onPress={() => router.replace('/')}
+              className="w-full mt-2"
+            />
+          </ScrollView>
+        </View>
+      </SafeAreaView>
+    </ScreenShell>
   );
 }

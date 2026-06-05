@@ -5,6 +5,7 @@ import Animated, {
   withRepeat,
   withTiming,
 } from 'react-native-reanimated';
+import { useTheme } from '../lib/hooks/useTheme';
 
 type Props = {
   width?: number | string;
@@ -19,11 +20,12 @@ export const Skeleton = ({
   variant = 'rect',
   className = '',
 }: Props) => {
+  const { isDark } = useTheme();
   const opacity = useSharedValue(0.3);
 
   useEffect(() => {
     opacity.value = withRepeat(
-      withTiming(0.8, { duration: 800 }),
+      withTiming(0.7, { duration: 1000 }),
       -1,
       true
     );
@@ -35,16 +37,21 @@ export const Skeleton = ({
 
   const shapeClass = variant === 'circle' ? 'rounded-full' : 'rounded-lg';
 
+  const skeletonColor = isDark
+    ? 'rgba(255, 255, 255, 0.08)'
+    : 'rgba(0, 0, 0, 0.05)';
+
   return (
     <Animated.View
       style={[
         { 
           width: typeof width === 'number' ? width : undefined, 
-          height: typeof height === 'number' ? height : undefined 
+          height: typeof height === 'number' ? height : undefined,
+          backgroundColor: skeletonColor,
         }, 
         animatedStyle
       ]}
-      className={`bg-gray-200 ${shapeClass} ${className}`}
+      className={`${shapeClass} ${className}`}
     />
   );
 };

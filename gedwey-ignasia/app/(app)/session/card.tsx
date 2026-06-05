@@ -7,6 +7,7 @@ import {
   Platform,
   ScrollView,
   TouchableOpacity,
+  SafeAreaView,
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useAuthStore } from '../../../lib/store/authStore';
@@ -22,6 +23,7 @@ import { Card } from '../../../components/Card';
 import { Skeleton } from '../../../components/Skeleton';
 import { VoiceNoteRecorder } from '../../../components/VoiceNoteRecorder';
 import { AppIcon } from '../../../components/AppIcon';
+import { ScreenShell } from '../../../components/ScreenShell';
 
 const MOODS = [
   { id: 'happy', emoji: '😊', label: 'Happy' },
@@ -154,108 +156,116 @@ export default function SessionCardScreen() {
 
   if (isLoading) {
     return (
-      <View className="flex-1 bg-background px-4 pt-16 pb-6">
-        <Skeleton width={80} height={20} className="mb-4 py-1" />
-        <View className="bg-white rounded-2xl p-6 border border-neutral-border shadow-sm mb-6 items-center">
-          <Skeleton width="90%" height={24} className="mb-2" />
-          <Skeleton width="60%" height={24} />
-        </View>
+      <ScreenShell className="flex-1">
+        <SafeAreaView className="flex-1">
+          <View className="flex-1 px-4 pt-4 pb-6">
+            <Skeleton width={80} height={20} className="mb-4 py-1" />
+            <Card className="p-6 mb-6 items-center">
+              <Skeleton width="90%" height={24} className="mb-2" />
+              <Skeleton width="60%" height={24} />
+            </Card>
 
-        <View className="flex-1 gap-4">
-          <Skeleton width={100} height={16} />
-          <Skeleton width="100%" height={120} className="rounded-2xl" />
-          <Skeleton width="100%" height={48} className="rounded-xl" />
-        </View>
-      </View>
+            <View className="flex-1 gap-4">
+              <Skeleton width={100} height={16} />
+              <Skeleton width="100%" height={120} className="rounded-2xl" />
+              <Skeleton width="100%" height={48} className="rounded-xl" />
+            </View>
+          </View>
+        </SafeAreaView>
+      </ScreenShell>
     );
   }
 
   return (
-    <KeyboardAvoidingView
-      className="flex-1 bg-background"
-      behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-    >
-      <ScrollView contentContainerStyle={{ flexGrow: 1, paddingHorizontal: 16, paddingTop: 50, paddingBottom: 24 }}>
-        <View className="flex-row items-center justify-between mb-4">
-          <TouchableOpacity className="py-1" onPress={() => router.replace('/')}>
-            <Text className="text-primary-600 text-sm font-semibold">← Home</Text>
-          </TouchableOpacity>
-          
-          <TouchableOpacity 
-            onPress={toggleMusic} 
-            className={`w-10 h-10 rounded-full items-center justify-center border ${isMusicPlaying ? 'bg-indigo-100 border-indigo-200' : 'bg-slate-50 border-slate-200'}`}
-          >
-            <AppIcon 
-              name={isMusicPlaying ? "musical-notes" : "musical-notes-outline"} 
-              size={20} 
-              color={isMusicPlaying ? "#4F46E5" : "#64748B"} 
-            />
-          </TouchableOpacity>
-        </View>
+    <ScreenShell className="flex-1">
+      <SafeAreaView className="flex-1">
+        <KeyboardAvoidingView
+          className="flex-1"
+          behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+        >
+          <ScrollView contentContainerStyle={{ flexGrow: 1, paddingHorizontal: 16, paddingTop: 10, paddingBottom: 24 }}>
+            <View className="flex-row items-center justify-between mb-4">
+              <TouchableOpacity className="py-1" onPress={() => router.replace('/')}>
+                <Text className="text-primary-600 text-sm font-semibold">← Home</Text>
+              </TouchableOpacity>
+              
+              <TouchableOpacity 
+                onPress={toggleMusic} 
+                className={`w-10 h-10 rounded-full items-center justify-center border ${isMusicPlaying ? 'bg-indigo-100/80 border-indigo-200/55' : 'bg-white/40 border-white/10'}`}
+              >
+                <AppIcon 
+                  name={isMusicPlaying ? "musical-notes" : "musical-notes-outline"} 
+                  size={20} 
+                  color={isMusicPlaying ? "#4F46E5" : "#64748B"} 
+                />
+              </TouchableOpacity>
+            </View>
 
-        {/* Question card */}
-        {selectedCard ? (
-          <Card className="p-6 mb-6 items-center relative border border-blue-50/80 shadow-sm bg-white">
-            <Text className="text-7xl font-bold text-blue-50/70 absolute top-[-10px] left-4">“</Text>
-            <Text className="text-lg font-semibold text-slate-800 text-center leading-relaxed mt-5 px-2">
-              {selectedCard.text}
-            </Text>
-          </Card>
-        ) : (
-          <Card className="p-6 mb-6 items-center bg-slate-50 border-slate-200">
-            <Text className="text-sm text-text-secondary text-center">No question available for today. Check back later!</Text>
-          </Card>
-        )}
+            {/* Question card */}
+            {selectedCard ? (
+              <Card className="p-6 mb-6 items-center relative border border-blue-50/80 shadow-sm bg-white">
+                <Text className="text-7xl font-bold text-blue-50/70 absolute top-[-10px] left-4">“</Text>
+                <Text className="text-lg font-semibold text-slate-800 text-center leading-relaxed mt-5 px-2">
+                  {selectedCard.text}
+                </Text>
+              </Card>
+            ) : (
+              <Card className="p-6 mb-6 items-center">
+                <Text className="text-sm text-text-secondary text-center">No question available for today. Check back later!</Text>
+              </Card>
+            )}
 
-        {/* Answering Form */}
-        <View className="flex-1">
-          {/* Mood Selector (Interactive Row) */}
-          <Text className="text-sm font-semibold text-slate-700 mb-2">How are you feeling right now?</Text>
-          <View className="flex-row justify-between mb-5 bg-slate-50 border border-slate-100 rounded-2xl p-2.5">
-            {MOODS.map((mood) => {
-              const selected = selectedMood === mood.id;
-              return (
-                <TouchableOpacity
-                  key={mood.id}
-                  onPress={() => setSelectedMood(mood.id)}
-                  className={`flex-1 py-2 mx-0.5 rounded-xl items-center ${selected ? 'bg-indigo-600 shadow-sm' : 'bg-transparent'}`}
-                >
-                  <Text className="text-xl mb-0.5">{mood.emoji}</Text>
-                  <Text className={`text-[9px] font-bold ${selected ? 'text-white' : 'text-slate-500'}`}>
-                    {mood.label}
-                  </Text>
-                </TouchableOpacity>
-              );
-            })}
-          </View>
+            {/* Answering Form */}
+            <View className="flex-1">
+              {/* Mood Selector (Interactive Row) */}
+              <Text className="text-sm font-semibold text-slate-700 mb-2">How are you feeling right now?</Text>
+              <View className="flex-row justify-between mb-5 bg-white/40 border border-white/10 rounded-2xl p-2.5">
+                {MOODS.map((mood) => {
+                  const selected = selectedMood === mood.id;
+                  return (
+                    <TouchableOpacity
+                      key={mood.id}
+                      onPress={() => setSelectedMood(mood.id)}
+                      className={`flex-1 py-2 mx-0.5 rounded-xl items-center ${selected ? 'bg-indigo-600 shadow-sm' : 'bg-transparent'}`}
+                    >
+                      <Text className="text-xl mb-0.5">{mood.emoji}</Text>
+                      <Text className={`text-[9px] font-bold ${selected ? 'text-white' : 'text-slate-500'}`}>
+                        {mood.label}
+                      </Text>
+                    </TouchableOpacity>
+                  );
+                })}
+              </View>
 
-          <Text className="text-sm font-semibold text-slate-700 mb-2">Your Answer</Text>
-          <Input
-            placeholder="Be open, honest, and vulnerable..."
-            multiline
-            numberOfLines={5}
-            value={answer}
-            onChangeText={setAnswer}
-            className="h-32 text-left py-3.5"
-          />
+              <Text className="text-sm font-semibold text-slate-700 mb-2">Your Answer</Text>
+              <Input
+                placeholder="Be open, honest, and vulnerable..."
+                multiline
+                numberOfLines={5}
+                value={answer}
+                onChangeText={setAnswer}
+                className="h-32 text-left py-3.5"
+              />
 
-          <VoiceNoteRecorder
-            userId={user?.id}
-            onUploaded={(url, duration) => {
-              setVoiceUrl(url);
-              setVoiceDuration(duration);
-            }}
-          />
+              <VoiceNoteRecorder
+                userId={user?.id}
+                onUploaded={(url, duration) => {
+                  setVoiceUrl(url);
+                  setVoiceDuration(duration);
+                }}
+              />
 
-          <Button
-            title="Submit Answer"
-            onPress={handleSubmit}
-            disabled={(!answer.trim() && !voiceUrl) || isPending}
-            loading={isPending}
-            className="w-full mt-2"
-          />
-        </View>
-      </ScrollView>
-    </KeyboardAvoidingView>
+              <Button
+                title="Submit Answer"
+                onPress={handleSubmit}
+                disabled={(!answer.trim() && !voiceUrl) || isPending}
+                loading={isPending}
+                className="w-full mt-2"
+              />
+            </View>
+          </ScrollView>
+        </KeyboardAvoidingView>
+      </SafeAreaView>
+    </ScreenShell>
   );
 }

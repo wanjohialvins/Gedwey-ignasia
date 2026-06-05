@@ -167,21 +167,23 @@ export default function HomeScreen() {
 
   if (isLoading || !profile) {
     return (
-      <ScrollView className="flex-1 bg-background" contentContainerStyle={{ paddingHorizontal: 16, paddingTop: 60, paddingBottom: 32 }}>
-        <View className="mb-6 flex-row items-center gap-3">
-          <Skeleton width={44} height={44} variant="circle" />
-          <View>
-            <Skeleton width={140} height={20} className="mb-2" />
-            <Skeleton width={90} height={14} />
+      <ScreenShell className="flex-1">
+        <ScrollView contentContainerStyle={{ paddingHorizontal: 16, paddingTop: 60, paddingBottom: 32 }} showsVerticalScrollIndicator={false}>
+          <View className="mb-6 flex-row items-center gap-3">
+            <Skeleton width={44} height={44} variant="circle" />
+            <View>
+              <Skeleton width={140} height={20} className="mb-2" />
+              <Skeleton width={90} height={14} />
+            </View>
           </View>
-        </View>
-        {[1, 2, 3].map((item) => (
-          <View key={item} className="bg-white p-5 rounded-2xl border border-neutral-border shadow-sm mb-5">
-            <Skeleton width={150} height={20} className="mb-3" />
-            <Skeleton width="100%" height={48} className="rounded-xl" />
-          </View>
-        ))}
-      </ScrollView>
+          {[1, 2, 3].map((item) => (
+            <Card key={item} className="p-5 mb-5 border border-neutral-border shadow-sm">
+              <Skeleton width={150} height={20} className="mb-3" />
+              <Skeleton width="100%" height={48} className="rounded-xl" />
+            </Card>
+          ))}
+        </ScrollView>
+      </ScreenShell>
     );
   }
 

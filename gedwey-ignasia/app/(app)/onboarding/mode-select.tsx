@@ -1,9 +1,10 @@
 import React, { useState } from 'react';
-import { View, Text, TouchableOpacity, Alert } from 'react-native';
+import { View, Text, TouchableOpacity, Alert, SafeAreaView } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useUpdateProfile } from '../../../lib/queries/profile';
 import { useAuthStore } from '../../../lib/store/authStore';
 import { Button } from '../../../components/Button';
+import { ScreenShell } from '../../../components/ScreenShell';
 
 type AppMode = 'discovery' | 'early_dating' | 'couples';
 
@@ -57,51 +58,55 @@ export default function ModeSelectScreen() {
   ];
 
   return (
-    <View className="flex-1 bg-background px-4 pt-16 pb-6 justify-between">
-      <View className="mb-6">
-        <Text className="text-3xl font-bold text-text-primary text-center mb-2">Welcome to Moments</Text>
-        <Text className="text-sm text-text-secondary text-center px-4 leading-relaxed">
-          Choose how you want to experience the app. You can always change this later.
-        </Text>
-      </View>
+    <ScreenShell className="flex-1">
+      <SafeAreaView className="flex-1">
+        <View className="flex-1 px-4 pt-4 pb-6 justify-between">
+          <View className="mb-6">
+            <Text className="text-3xl font-bold text-text-primary text-center mb-2">Welcome to Moments</Text>
+            <Text className="text-sm text-text-secondary text-center px-4 leading-relaxed">
+              Choose how you want to experience the app. You can always change this later.
+            </Text>
+          </View>
 
-      <View className="flex-1 justify-center gap-4 my-4">
-        {modes.map((mode) => {
-          const isSelected = selectedMode === mode.key;
-          return (
-            <TouchableOpacity
-              key={mode.key}
-              style={{ borderWidth: isSelected ? 2 : 1 }}
-              className={`bg-white rounded-2xl p-4 flex-row items-center shadow-sm ${
-                isSelected ? 'border-primary-600 bg-primary-100/50' : 'border-neutral-border'
-              }`}
-              onPress={() => setSelectedMode(mode.key)}
-              activeOpacity={0.85}
-            >
-              <Text className="text-4xl mr-4">{mode.emoji}</Text>
-              <View className="flex-1">
-                <Text 
-                  className={`text-base font-semibold mb-1 ${
-                    isSelected ? 'text-primary-600' : 'text-text-primary'
+          <View className="flex-1 justify-center gap-4 my-4">
+            {modes.map((mode) => {
+              const isSelected = selectedMode === mode.key;
+              return (
+                <TouchableOpacity
+                  key={mode.key}
+                  style={{ borderWidth: isSelected ? 2 : 1 }}
+                  className={`bg-white/60 rounded-2xl p-4 flex-row items-center shadow-sm ${
+                    isSelected ? 'border-primary-600 bg-primary-100/30' : 'border-neutral-border/10'
                   }`}
+                  onPress={() => setSelectedMode(mode.key)}
+                  activeOpacity={0.85}
                 >
-                  {mode.title}
-                </Text>
-                <Text className="text-xs text-text-secondary leading-relaxed">
-                  {mode.description}
-                </Text>
-              </View>
-            </TouchableOpacity>
-          );
-        })}
-      </View>
+                  <Text className="text-4xl mr-4">{mode.emoji}</Text>
+                  <View className="flex-1">
+                    <Text 
+                      className={`text-base font-semibold mb-1 ${
+                        isSelected ? 'text-primary-600' : 'text-text-primary'
+                      }`}
+                    >
+                      {mode.title}
+                    </Text>
+                    <Text className="text-xs text-text-secondary leading-relaxed">
+                      {mode.description}
+                    </Text>
+                  </View>
+                </TouchableOpacity>
+              );
+            })}
+          </View>
 
-      <Button
-        title={updateProfile.isPending ? 'Saving...' : 'Continue'}
-        onPress={handleContinue}
-        disabled={!selectedMode || updateProfile.isPending}
-        loading={updateProfile.isPending}
-      />
-    </View>
+          <Button
+            title={updateProfile.isPending ? 'Saving...' : 'Continue'}
+            onPress={handleContinue}
+            disabled={!selectedMode || updateProfile.isPending}
+            loading={updateProfile.isPending}
+          />
+        </View>
+      </SafeAreaView>
+    </ScreenShell>
   );
 }

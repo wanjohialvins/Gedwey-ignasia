@@ -25,8 +25,8 @@ export const Card = ({ children, className = '', style, glass = true, ...props }
     <View
       className={`p-4 rounded-2xl border shadow-sm ${className}`}
       style={[
-        cardStyle,
         style,
+        cardStyle,
       ]}
       {...props}
     >

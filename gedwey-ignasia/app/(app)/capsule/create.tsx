@@ -17,6 +17,7 @@ import { scheduleLocalNotification, NOTIFICATION_CHANNELS } from '../../../lib/n
 import { userWantsCapsuleNotifications } from '../../../lib/notificationPrefs';
 import { Button } from '../../../components/Button';
 import { Input } from '../../../components/Input';
+import { ScreenShell } from '../../../components/ScreenShell';
 
 interface Timeframe {
   label: string;
@@ -116,118 +117,120 @@ export default function CapsuleCreateScreen() {
   const isPending = createCapsule.isPending;
 
   return (
-    <SafeAreaView className="flex-1 bg-background">
-      <KeyboardAvoidingView
-        className="flex-1"
-        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-      >
-        <ScrollView contentContainerStyle={{ flexGrow: 1, paddingHorizontal: 16 }} showsVerticalScrollIndicator={false}>
-          <TouchableOpacity className="self-start py-2 mt-2 mb-2" onPress={() => router.back()}>
-            <Text className="text-primary-600 text-sm font-semibold">← Back</Text>
-          </TouchableOpacity>
+    <ScreenShell className="flex-1">
+      <SafeAreaView className="flex-1">
+        <KeyboardAvoidingView
+          className="flex-1"
+          behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+        >
+          <ScrollView contentContainerStyle={{ flexGrow: 1, paddingHorizontal: 16, paddingTop: 4 }} showsVerticalScrollIndicator={false}>
+            <TouchableOpacity className="self-start py-2 mb-2" onPress={() => router.back()}>
+              <Text className="text-primary-600 text-sm font-semibold">← Back</Text>
+            </TouchableOpacity>
 
-          <Text className="text-2xl font-bold text-text-primary">Seal a Capsule</Text>
-          <Text className="text-sm text-text-secondary mt-1 mb-6 leading-relaxed">
-            Lock a letter or photo reference. Neither of you will be able to read it until the countdown ends.
-          </Text>
+            <Text className="text-2xl font-bold text-text-primary">Seal a Capsule</Text>
+            <Text className="text-sm text-text-secondary mt-1 mb-6 leading-relaxed">
+              Lock a letter or photo reference. Neither of you will be able to read it until the countdown ends.
+            </Text>
 
-          <View className="flex-1 gap-4">
-            {/* Title */}
-            <Input
-              label="Capsule Title"
-              placeholder="E.g., Read this on our anniversary..."
-              value={title}
-              onChangeText={setTitle}
-              maxLength={80}
-            />
-
-            {/* Content */}
-            <Input
-              label="Sealed Message"
-              placeholder="Write your letter to the future..."
-              multiline
-              numberOfLines={6}
-              value={content}
-              onChangeText={setContent}
-              className="h-32 text-left py-3.5"
-            />
-
-            {/* Timeframe selector */}
-            <View className="mb-2">
-              <Text className="text-sm font-medium text-text-secondary mb-2">Seal Duration</Text>
-              
-              <View className="flex-row flex-wrap gap-2.5">
-                {TIMEFRAMES.map((tf) => {
-                  const isSelected = !isCustom && selectedTimeframe?.days === tf.days;
-                  return (
-                    <TouchableOpacity
-                      key={tf.days}
-                      style={{ borderWidth: isSelected ? 2 : 1 }}
-                      className={`flex-1 min-w-[140px] bg-white rounded-xl p-3 justify-center ${
-                        isSelected ? 'border-primary-600 bg-primary-100/50' : 'border-neutral-border'
-                      }`}
-                      onPress={() => {
-                        setIsCustom(false);
-                        setSelectedTimeframe(tf);
-                      }}
-                      activeOpacity={0.8}
-                    >
-                      <Text 
-                        className={`text-sm font-semibold mb-0.5 ${
-                          isSelected ? 'text-primary-600' : 'text-slate-700'
-                        }`}
-                      >
-                        {tf.label}
-                      </Text>
-                      <Text className="text-[10px] text-text-muted">{tf.sublabel}</Text>
-                    </TouchableOpacity>
-                  );
-                })}
-
-                <TouchableOpacity
-                  style={{ borderWidth: isCustom ? 2 : 1 }}
-                  className={`flex-1 min-w-[140px] bg-white rounded-xl p-3 justify-center ${
-                    isCustom ? 'border-primary-600 bg-primary-100/50' : 'border-neutral-border'
-                  }`}
-                  onPress={() => {
-                    setIsCustom(true);
-                    setSelectedTimeframe(null);
-                  }}
-                  activeOpacity={0.8}
-                >
-                  <Text 
-                    className={`text-sm font-semibold mb-0.5 ${
-                      isCustom ? 'text-primary-600' : 'text-slate-700'
-                    }`}
-                  >
-                    Custom
-                  </Text>
-                  <Text className="text-[10px] text-text-muted">Specify days offset</Text>
-                </TouchableOpacity>
-              </View>
-            </View>
-
-            {/* Custom Days offset input */}
-            {isCustom && (
+            <View className="flex-1 gap-4">
+              {/* Title */}
               <Input
-                label="Number of days to seal"
-                placeholder="E.g., 45"
-                keyboardType="numeric"
-                value={customDays}
-                onChangeText={setCustomDays}
+                label="Capsule Title"
+                placeholder="E.g., Read this on our anniversary..."
+                value={title}
+                onChangeText={setTitle}
+                maxLength={80}
               />
-            )}
 
-            <Button
-              title="Seal in Time Vault"
-              onPress={handleSubmit}
-              disabled={!title.trim() || !content.trim() || (!selectedTimeframe && !isCustom) || isPending}
-              loading={isPending}
-              className="w-full mt-2 mb-6"
-            />
-          </View>
-        </ScrollView>
-      </KeyboardAvoidingView>
-    </SafeAreaView>
+              {/* Content */}
+              <Input
+                label="Sealed Message"
+                placeholder="Write your letter to the future..."
+                multiline
+                numberOfLines={6}
+                value={content}
+                onChangeText={setContent}
+                className="h-32 text-left py-3.5"
+              />
+
+              {/* Timeframe selector */}
+              <View className="mb-2">
+                <Text className="text-sm font-medium text-text-secondary mb-2">Seal Duration</Text>
+                
+                <View className="flex-row flex-wrap gap-2.5">
+                  {TIMEFRAMES.map((tf) => {
+                    const isSelected = !isCustom && selectedTimeframe?.days === tf.days;
+                    return (
+                      <TouchableOpacity
+                        key={tf.days}
+                        style={{ borderWidth: isSelected ? 2 : 1 }}
+                        className={`flex-1 min-w-[140px] bg-white/60 rounded-xl p-3 justify-center ${
+                          isSelected ? 'border-primary-600 bg-primary-100/30' : 'border-neutral-border/10'
+                        }`}
+                        onPress={() => {
+                          setIsCustom(false);
+                          setSelectedTimeframe(tf);
+                        }}
+                        activeOpacity={0.8}
+                      >
+                        <Text 
+                          className={`text-sm font-semibold mb-0.5 ${
+                            isSelected ? 'text-primary-600' : 'text-slate-700'
+                          }`}
+                        >
+                          {tf.label}
+                        </Text>
+                        <Text className="text-[10px] text-text-muted">{tf.sublabel}</Text>
+                      </TouchableOpacity>
+                    );
+                  })}
+
+                  <TouchableOpacity
+                    style={{ borderWidth: isCustom ? 2 : 1 }}
+                    className={`flex-1 min-w-[140px] bg-white/60 rounded-xl p-3 justify-center ${
+                      isCustom ? 'border-primary-600 bg-primary-100/30' : 'border-neutral-border/10'
+                    }`}
+                    onPress={() => {
+                      setIsCustom(true);
+                      setSelectedTimeframe(null);
+                    }}
+                    activeOpacity={0.8}
+                  >
+                    <Text 
+                      className={`text-sm font-semibold mb-0.5 ${
+                        isCustom ? 'text-primary-600' : 'text-slate-700'
+                      }`}
+                    >
+                      Custom
+                    </Text>
+                    <Text className="text-[10px] text-text-muted">Specify days offset</Text>
+                  </TouchableOpacity>
+                </View>
+              </View>
+
+              {/* Custom Days offset input */}
+              {isCustom && (
+                <Input
+                  label="Number of days to seal"
+                  placeholder="E.g., 45"
+                  keyboardType="numeric"
+                  value={customDays}
+                  onChangeText={setCustomDays}
+                />
+              )}
+
+              <Button
+                title="Seal in Time Vault"
+                onPress={handleSubmit}
+                disabled={!title.trim() || !content.trim() || (!selectedTimeframe && !isCustom) || isPending}
+                loading={isPending}
+                className="w-full mt-2 mb-6"
+              />
+            </View>
+          </ScrollView>
+        </KeyboardAvoidingView>
+      </SafeAreaView>
+    </ScreenShell>
   );
 }

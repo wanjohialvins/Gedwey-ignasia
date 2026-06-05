@@ -6,6 +6,7 @@ import {
   Platform,
   Alert,
   TouchableOpacity,
+  SafeAreaView,
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import { supabase } from '../../lib/supabase';
@@ -14,6 +15,7 @@ import { Input } from '../../components/Input';
 import { Card } from '../../components/Card';
 import { BrandLogo } from '../../components/BrandLogo';
 import { GedweyLoader } from '../../components/GedweyLoader';
+import { ScreenShell } from '../../components/ScreenShell';
 
 export default function SignInScreen() {
   const router = useRouter();
@@ -69,71 +71,75 @@ export default function SignInScreen() {
   }
 
   return (
-    <KeyboardAvoidingView
-      className="flex-1 bg-background"
-      behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-    >
-      <View className="flex-1 justify-center px-4">
-        {/* Header */}
-        <View className="items-center mb-10">
-          <BrandLogo size={78} />
-          <Text className="text-sm text-text-muted mt-3 text-center px-8">
-            Small intentional moments build strong relationships.
-          </Text>
-        </View>
-
-        {/* Form Card */}
-        <Card className="p-6">
-          <Text className="text-2xl font-semibold text-text-primary mb-6">Welcome back</Text>
-
-          <Input
-            placeholder="Email address"
-            keyboardType="email-address"
-            autoCapitalize="none"
-            autoCorrect={false}
-            value={email}
-            onChangeText={setEmail}
-          />
-
-          <Input
-            placeholder="Password"
-            secureTextEntry
-            showPasswordToggle
-            autoCapitalize="none"
-            value={password}
-            onChangeText={setPassword}
-          />
-
-          {/* Sign In Button */}
-          <Button
-            title={loading ? 'Signing in...' : 'Sign In'}
-            onPress={handleSignIn}
-            loading={loading}
-            className="mt-3"
-          />
-
-          {/* Resend Confirmation Link */}
-          {errorMessage && errorMessage.includes('email not confirmed') && (
-            <TouchableOpacity
-              onPress={handleResendConfirmation}
-              activeOpacity={0.8}
-              className="mt-3 items-center"
-            >
-              <Text className="color-primary-600 text-sm underline font-medium">
-                Resend confirmation email
+    <ScreenShell className="flex-1">
+      <SafeAreaView className="flex-1">
+        <KeyboardAvoidingView
+          className="flex-1"
+          behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+        >
+          <View className="flex-1 justify-center px-4">
+            {/* Header */}
+            <View className="items-center mb-10">
+              <BrandLogo size={78} />
+              <Text className="text-sm text-text-muted mt-3 text-center px-8">
+                Small intentional moments build strong relationships.
               </Text>
-            </TouchableOpacity>
-          )}
-        </Card>
+            </View>
 
-        {/* Footer */}
-        <View className="flex-row justify-center mt-6">
-          <Text className="text-sm text-text-secondary">Don't have an account?</Text>
-          <TouchableOpacity onPress={() => router.push('/(auth)/sign-up')}>
-            <Text className="text-sm text-primary-600 font-semibold"> Create one</Text>
-          </TouchableOpacity>
-        </View>
-      </View>
-    </KeyboardAvoidingView>
+            {/* Form Card */}
+            <Card className="p-6">
+              <Text className="text-2xl font-semibold text-text-primary mb-6">Welcome back</Text>
+
+              <Input
+                placeholder="Email address"
+                keyboardType="email-address"
+                autoCapitalize="none"
+                autoCorrect={false}
+                value={email}
+                onChangeText={setEmail}
+              />
+
+              <Input
+                placeholder="Password"
+                secureTextEntry
+                showPasswordToggle
+                autoCapitalize="none"
+                value={password}
+                onChangeText={setPassword}
+              />
+
+              {/* Sign In Button */}
+              <Button
+                title={loading ? 'Signing in...' : 'Sign In'}
+                onPress={handleSignIn}
+                loading={loading}
+                className="mt-3"
+              />
+
+              {/* Resend Confirmation Link */}
+              {errorMessage && errorMessage.includes('email not confirmed') && (
+                <TouchableOpacity
+                  onPress={handleResendConfirmation}
+                  activeOpacity={0.8}
+                  className="mt-3 items-center"
+                >
+                  <Text className="color-primary-600 text-sm underline font-medium">
+                    Resend confirmation email
+                  </Text>
+                </TouchableOpacity>
+              )}
+            </Card>
+
+            {/* Footer */}
+            <View className="flex-row justify-center mt-6">
+              <Text className="text-sm text-text-secondary">Don't have an account?</Text>
+              <TouchableOpacity onPress={() => router.push('/(auth)/sign-up')}>
+                <Text className="text-sm text-primary-600 font-semibold"> Create one</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </KeyboardAvoidingView>
+      </SafeAreaView>
+    </ScreenShell>
   );
 }

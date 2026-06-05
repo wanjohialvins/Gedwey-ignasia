@@ -16,6 +16,7 @@ import { Card } from '../../../components/Card';
 import { Skeleton } from '../../../components/Skeleton';
 import { Input } from '../../../components/Input';
 import { Button } from '../../../components/Button';
+import { ScreenShell } from '../../../components/ScreenShell';
 
 interface DeckItem {
   key: 'fun' | 'discovery' | 'intimacy' | 'relationship_health';
@@ -119,135 +120,139 @@ export default function DeckSelectorScreen() {
 
   if (isLoading) {
     return (
-      <SafeAreaView className="flex-1 bg-background">
-        <View className="flex-1 px-4">
-          <Skeleton width={80} height={20} className="mt-2.5 mb-2 py-1" />
-          <View className="mb-4">
-            <Skeleton width={180} height={28} className="mb-2" />
-            <Skeleton width="100%" height={16} className="mb-1" />
-            <Skeleton width="85%" height={16} />
-          </View>
+      <ScreenShell className="flex-1">
+        <SafeAreaView className="flex-1">
+          <View className="flex-1 px-4">
+            <Skeleton width={80} height={20} className="mt-2.5 mb-2 py-1" />
+            <View className="mb-4">
+              <Skeleton width={180} height={28} className="mb-2" />
+              <Skeleton width="100%" height={16} className="mb-1" />
+              <Skeleton width="85%" height={16} />
+            </View>
 
-          <View className="gap-4">
-            {[1, 2, 3, 4].map((i) => (
-              <View key={i} className="bg-white p-5 rounded-2xl border border-neutral-border shadow-sm">
-                <View className="flex-row justify-between items-center mb-3">
-                  <Skeleton width={44} height={44} variant="circle" />
-                  {i > 2 && <Skeleton width={60} height={20} className="rounded-lg" />}
-                </View>
-                <Skeleton width={140} height={20} className="mb-2" />
-                <Skeleton width="90%" height={14} className="mb-2" />
-                <Skeleton width="80%" height={14} />
-              </View>
-            ))}
+            <View className="gap-4">
+              {[1, 2, 3, 4].map((i) => (
+                <Card key={i} className="p-5">
+                  <View className="flex-row justify-between items-center mb-3">
+                    <Skeleton width={44} height={44} variant="circle" />
+                    {i > 2 && <Skeleton width={60} height={20} className="rounded-lg" />}
+                  </View>
+                  <Skeleton width={140} height={20} className="mb-2" />
+                  <Skeleton width="90%" height={14} className="mb-2" />
+                  <Skeleton width="80%" height={14} />
+                </Card>
+              ))}
+            </View>
           </View>
-        </View>
-      </SafeAreaView>
+        </SafeAreaView>
+      </ScreenShell>
     );
   }
 
   const completedSessionsCount = sessionHistory?.length ?? 0;
 
   return (
-    <SafeAreaView className="flex-1 bg-background">
-      <View className="flex-1 px-4">
-        <TouchableOpacity className="self-start py-2 mt-2 mb-2" onPress={() => router.back()}>
-          <Text className="text-primary-600 text-sm font-semibold">← Back</Text>
-        </TouchableOpacity>
+    <ScreenShell className="flex-1">
+      <SafeAreaView className="flex-1">
+        <View className="flex-1 px-4">
+          <TouchableOpacity className="self-start py-2 mt-2 mb-2" onPress={() => router.back()}>
+            <Text className="text-primary-600 text-sm font-semibold">← Back</Text>
+          </TouchableOpacity>
 
-        <ScrollView contentContainerStyle={{ flexGrow: 1, paddingBottom: 40 }} showsVerticalScrollIndicator={false}>
-          <Text className="text-2xl font-bold text-text-primary mb-1">Choose a Deck</Text>
-          <Text className="text-sm text-text-secondary leading-relaxed mb-6">
-            Select a themed prompt for today's shared couple connection.
-          </Text>
+          <ScrollView contentContainerStyle={{ flexGrow: 1, paddingBottom: 40 }} showsVerticalScrollIndicator={false}>
+            <Text className="text-2xl font-bold text-text-primary mb-1">Choose a Deck</Text>
+            <Text className="text-sm text-text-secondary leading-relaxed mb-6">
+              Select a themed prompt for today's shared couple connection.
+            </Text>
 
-          <View className="gap-4 mb-8">
-            {DECKS.map((deck) => {
-              const isUnlocked = completedSessionsCount >= deck.requiredSessions;
-              const progress = Math.min((completedSessionsCount / deck.requiredSessions) * 100, 100);
+            <View className="gap-4 mb-8">
+              {DECKS.map((deck) => {
+                const isUnlocked = completedSessionsCount >= deck.requiredSessions;
+                const progress = Math.min((completedSessionsCount / deck.requiredSessions) * 100, 100);
 
-              return (
-                <TouchableOpacity
-                  key={deck.key}
-                  onPress={() => handleSelectDeck(deck)}
-                  activeOpacity={isUnlocked ? 0.7 : 0.85}
-                >
-                  <Card className={`p-5 ${!isUnlocked ? 'bg-slate-50/50 border-slate-200 opacity-90' : ''}`}>
-                    <View className="flex-row justify-between items-center mb-3">
-                      <Text className="text-4xl">{deck.emoji}</Text>
+                return (
+                  <TouchableOpacity
+                    key={deck.key}
+                    onPress={() => handleSelectDeck(deck)}
+                    activeOpacity={isUnlocked ? 0.7 : 0.85}
+                  >
+                    <Card className={`p-5 ${!isUnlocked ? 'bg-slate-50/50 border-slate-200 opacity-90' : ''}`}>
+                      <View className="flex-row justify-between items-center mb-3">
+                        <Text className="text-4xl">{deck.emoji}</Text>
+                        {!isUnlocked && (
+                          <View className="bg-blue-50 px-2 py-1 rounded-lg border border-blue-100">
+                            <Text className="text-2xs font-bold text-primary-600">🔒 Locked</Text>
+                          </View>
+                        )}
+                      </View>
+
+                      <Text className="text-lg font-bold text-text-primary mb-1">{deck.title}</Text>
+                      <Text className="text-xs text-text-secondary leading-normal mb-1">{deck.desc}</Text>
+
+                      {/* Progress Milestone Bar for Locked Decks */}
                       {!isUnlocked && (
-                        <View className="bg-blue-50 px-2 py-1 rounded-lg border border-blue-100">
-                          <Text className="text-2xs font-bold text-primary-600">🔒 Locked</Text>
+                        <View className="mt-3 border-t border-slate-100 pt-3">
+                          <View className="h-1.5 bg-slate-200 rounded-full mb-1.5 overflow-hidden">
+                            <View style={{ width: `${progress}%` }} className="h-full bg-primary-600 rounded-full" />
+                          </View>
+                          <Text className="text-[10px] font-semibold text-text-muted">
+                            Milestone: {completedSessionsCount}/{deck.requiredSessions} sessions
+                          </Text>
                         </View>
                       )}
-                    </View>
-
-                    <Text className="text-lg font-bold text-text-primary mb-1">{deck.title}</Text>
-                    <Text className="text-xs text-text-secondary leading-normal mb-1">{deck.desc}</Text>
-
-                    {/* Progress Milestone Bar for Locked Decks */}
-                    {!isUnlocked && (
-                      <View className="mt-3 border-t border-slate-100 pt-3">
-                        <View className="h-1.5 bg-slate-200 rounded-full mb-1.5 overflow-hidden">
-                          <View style={{ width: `${progress}%` }} className="h-full bg-primary-600 rounded-full" />
-                        </View>
-                        <Text className="text-[10px] font-semibold text-text-muted">
-                          Milestone: {completedSessionsCount}/{deck.requiredSessions} sessions
-                        </Text>
-                      </View>
-                    )}
-                  </Card>
-                </TouchableOpacity>
-              );
-            })}
-          </View>
-
-          {/* Premium Custom Card Creation Widget */}
-          <Card className="p-5 border border-primary-100 bg-blue-50/5">
-            <Text className="text-base font-bold text-text-primary mb-3">✍️ Write a Custom Prompt</Text>
-            <Text className="text-xs text-text-secondary leading-normal mb-4">
-              Add your own custom question cards to the pool. They will be immediately integrated into the active decks!
-            </Text>
-            
-            <Input
-              label="Your Question"
-              placeholder="e.g. What is a habit of mine you secretly adore?"
-              value={customText}
-              onChangeText={setCustomText}
-            />
-
-            <Text className="text-xs font-semibold text-text-secondary mt-3 mb-1.5">Deck Category</Text>
-            <View className="flex-row flex-wrap gap-2 mb-4">
-              {['discovery', 'fun', 'intimacy', 'relationship_health'].map((cat) => (
-                <TouchableOpacity
-                  key={cat}
-                  onPress={() => setCustomCategory(cat as any)}
-                  className={`px-3 py-2 rounded-xl border capitalize ${
-                    customCategory === cat
-                      ? 'bg-primary-100 border-primary-600'
-                      : 'bg-white border-neutral-border'
-                  }`}
-                >
-                  <Text
-                    className={`text-[10px] font-bold ${
-                      customCategory === cat ? 'text-primary-600' : 'text-text-secondary'
-                    }`}
-                  >
-                    {cat.replace('_', ' ')}
-                  </Text>
-                </TouchableOpacity>
-              ))}
+                    </Card>
+                  </TouchableOpacity>
+                );
+              })}
             </View>
 
-            <Button
-              title="Add Custom Prompt"
-              onPress={handleCreatePrompt}
-              loading={isSubmittingCard}
-              className="w-full"
-            />
-          </Card>
-        </ScrollView>
-      </View>
-    </SafeAreaView>
+            {/* Premium Custom Card Creation Widget */}
+            <Card className="p-5 border border-primary-100 bg-blue-50/5">
+              <Text className="text-base font-bold text-text-primary mb-3">✍️ Write a Custom Prompt</Text>
+              <Text className="text-xs text-text-secondary leading-normal mb-4">
+                Add your own custom question cards to the pool. They will be immediately integrated into the active decks!
+              </Text>
+              
+              <Input
+                label="Your Question"
+                placeholder="e.g. What is a habit of mine you secretly adore?"
+                value={customText}
+                onChangeText={setCustomText}
+              />
+
+              <Text className="text-xs font-semibold text-text-secondary mt-3 mb-1.5">Deck Category</Text>
+              <View className="flex-row flex-wrap gap-2 mb-4">
+                {['discovery', 'fun', 'intimacy', 'relationship_health'].map((cat) => (
+                  <TouchableOpacity
+                    key={cat}
+                    onPress={() => setCustomCategory(cat as any)}
+                    className={`px-3 py-2 rounded-xl border capitalize ${
+                      customCategory === cat
+                        ? 'bg-primary-100 border-primary-600'
+                        : 'bg-white border-neutral-border'
+                    }`}
+                  >
+                    <Text
+                      className={`text-[10px] font-bold ${
+                        customCategory === cat ? 'text-primary-600' : 'text-text-secondary'
+                      }`}
+                    >
+                      {cat.replace('_', ' ')}
+                    </Text>
+                  </TouchableOpacity>
+                ))}
+              </View>
+
+              <Button
+                title="Add Custom Prompt"
+                onPress={handleCreatePrompt}
+                loading={isSubmittingCard}
+                className="w-full"
+              />
+            </Card>
+          </ScrollView>
+        </View>
+      </SafeAreaView>
+    </ScreenShell>
   );
 }

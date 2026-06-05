@@ -19,6 +19,7 @@ import { Button } from '../../components/Button';
 import { Input } from '../../components/Input';
 import { Card } from '../../components/Card';
 import { Skeleton } from '../../components/Skeleton';
+import { ScreenShell } from '../../components/ScreenShell';
 
 // Function to generate a unique 16-character token
 const generateToken = (): string => {
@@ -136,112 +137,116 @@ export default function DiscoveryHomeScreen() {
 
   if (cardsLoading || profileLoading || profile?.couple_id) {
     return (
-      <View className="flex-1 bg-background px-4 pt-16 pb-6">
-        {/* Header Skeleton */}
-        <View className="mb-6">
-          <Skeleton width={100} height={20} className="mb-2" />
-          <Skeleton width={180} height={28} className="mb-2" />
-          <Skeleton width="100%" height={16} className="mb-1" />
-          <Skeleton width="80%" height={16} />
-        </View>
+      <ScreenShell className="flex-1">
+        <View className="flex-1 px-4 pt-16 pb-6">
+          {/* Header Skeleton */}
+          <View className="mb-6">
+            <Skeleton width={100} height={20} className="mb-2" />
+            <Skeleton width={180} height={28} className="mb-2" />
+            <Skeleton width="100%" height={16} className="mb-1" />
+            <Skeleton width="80%" height={16} />
+          </View>
 
-        {/* Card prompt Skeleton */}
-        <View className="bg-white rounded-2xl p-6 border border-neutral-border shadow-sm mb-5 items-center">
-          <Skeleton width={200} height={24} className="mb-4" />
-          <Skeleton width={120} height={32} className="rounded-xl" />
-        </View>
+          {/* Card prompt Skeleton */}
+          <Card className="p-6 mb-5 items-center">
+            <Skeleton width={200} height={24} className="mb-4" />
+            <Skeleton width={120} height={32} className="rounded-xl" />
+          </Card>
 
-        {/* Form Skeleton */}
-        <View className="flex-1 gap-4">
-          <Skeleton width={100} height={16} />
-          <Skeleton width="100%" height={120} className="rounded-2xl" />
-          <Skeleton width="100%" height={48} className="rounded-xl" />
+          {/* Form Skeleton */}
+          <View className="flex-1 gap-4">
+            <Skeleton width={100} height={16} />
+            <Skeleton width="100%" height={120} className="rounded-2xl" />
+            <Skeleton width="100%" height={48} className="rounded-xl" />
+          </View>
         </View>
-      </View>
+      </ScreenShell>
     );
   }
 
   return (
-    <KeyboardAvoidingView
-      className="flex-1 bg-background"
-      behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-    >
-      <ScrollView contentContainerStyle={{ flexGrow: 1, paddingHorizontal: 16, paddingTop: 50, paddingBottom: 24 }}>
-        {/* Header */}
-        <View className="mb-5">
-          <TouchableOpacity className="self-start py-1 mb-2" onPress={() => router.replace('/')}>
-            <Text className="text-primary-600 text-sm font-semibold">← Home</Text>
-          </TouchableOpacity>
-          <Text className="text-2xl font-bold text-text-primary mb-1.5">Discovery Mode</Text>
-          <Text className="text-sm text-text-secondary leading-relaxed">
-            Break the ice! Answer a question, share your custom link, and unlock their answer together.
-          </Text>
-        </View>
-
-        {/* Card prompt */}
-        {currentCard && (
-          <Card className="p-6 mb-5 items-center relative">
-            <Text className="text-7xl font-bold text-blue-50/70 absolute top-[-10px] left-4">“</Text>
-            <Text className="text-lg font-semibold text-slate-800 text-center leading-relaxed mt-5 mb-4 px-2">
-              {currentCard.text}
-            </Text>
-            <TouchableOpacity 
-              className="bg-slate-100 px-4 py-2 rounded-xl active:bg-slate-200" 
-              onPress={handleShuffle} 
-              activeOpacity={0.7}
-            >
-              <Text className="text-xs text-text-secondary font-semibold">🔀 Shuffle Question</Text>
+    <ScreenShell className="flex-1">
+      <KeyboardAvoidingView
+        className="flex-1"
+        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+      >
+        <ScrollView contentContainerStyle={{ flexGrow: 1, paddingHorizontal: 16, paddingTop: 50, paddingBottom: 24 }} showsVerticalScrollIndicator={false}>
+          {/* Header */}
+          <View className="mb-5">
+            <TouchableOpacity className="self-start py-1 mb-2" onPress={() => router.replace('/')}>
+              <Text className="text-primary-600 text-sm font-semibold">← Home</Text>
             </TouchableOpacity>
-          </Card>
-        )}
-
-        {/* Share Link Screen State */}
-        {shareLink ? (
-          <Card className="p-6 items-center">
-            <Text className="text-xl font-bold text-emerald-500 mb-2">🎉 Link Generated!</Text>
-            <Text className="text-sm text-text-secondary text-center leading-relaxed mb-5 px-1">
-              Your answer has been saved. Share the link below with your partner/guest. Once they answer, both responses will be revealed.
+            <Text className="text-2xl font-bold text-text-primary mb-1.5">Discovery Mode</Text>
+            <Text className="text-sm text-text-secondary leading-relaxed">
+              Break the ice! Answer a question, share your custom link, and unlock their answer together.
             </Text>
-
-            <View className="w-full bg-background border border-slate-200 rounded-xl p-3 items-center mb-4">
-              <Text className="text-sm font-medium text-primary-600 text-center w-full" numberOfLines={1} ellipsizeMode="middle">
-                {shareLink}
-              </Text>
-            </View>
-
-            <Button title="Copy Share Link" onPress={handleCopyLink} className="w-full mb-3" />
-
-            <TouchableOpacity
-              className="bg-slate-100 h-12 rounded-xl w-full items-center justify-center active:bg-slate-200"
-              onPress={() => router.push(`/discovery/${sessionToken}`)}
-              activeOpacity={0.8}
-            >
-              <Text className="text-text-secondary text-sm font-semibold">Open Guest Screen (Local Test)</Text>
-            </TouchableOpacity>
-          </Card>
-        ) : (
-          /* Form Screen State */
-          <View className="flex-1">
-            <Text className="text-sm font-semibold text-slate-700 mb-2">Your Answer</Text>
-            <Input
-              placeholder="Be honest and expressive..."
-              multiline
-              numberOfLines={4}
-              value={answer}
-              onChangeText={setAnswer}
-              className="h-28 text-left py-3.5"
-            />
-
-            <Button
-              title="Generate Share Link"
-              onPress={handleGenerateLink}
-              disabled={!answer.trim() || createSession.isPending}
-              loading={createSession.isPending}
-              className="w-full"
-            />
           </View>
-        )}
-      </ScrollView>
-    </KeyboardAvoidingView>
+
+          {/* Card prompt */}
+          {currentCard && (
+            <Card className="p-6 mb-5 items-center relative">
+              <Text className="text-7xl font-bold text-blue-50/70 absolute top-[-10px] left-4">“</Text>
+              <Text className="text-lg font-semibold text-slate-800 text-center leading-relaxed mt-5 mb-4 px-2">
+                {currentCard.text}
+              </Text>
+              <TouchableOpacity 
+                className="bg-slate-100 px-4 py-2 rounded-xl active:bg-slate-200" 
+                onPress={handleShuffle} 
+                activeOpacity={0.7}
+              >
+                <Text className="text-xs text-text-secondary font-semibold">🔀 Shuffle Question</Text>
+              </TouchableOpacity>
+            </Card>
+          )}
+
+          {/* Share Link Screen State */}
+          {shareLink ? (
+            <Card className="p-6 items-center">
+              <Text className="text-xl font-bold text-emerald-500 mb-2">🎉 Link Generated!</Text>
+              <Text className="text-sm text-text-secondary text-center leading-relaxed mb-5 px-1">
+                Your answer has been saved. Share the link below with your partner/guest. Once they answer, both responses will be revealed.
+              </Text>
+
+              <View className="w-full bg-background/50 border border-slate-200 rounded-xl p-3 items-center mb-4">
+                <Text className="text-sm font-medium text-primary-600 text-center w-full" numberOfLines={1} ellipsizeMode="middle">
+                  {shareLink}
+                </Text>
+              </View>
+
+              <Button title="Copy Share Link" onPress={handleCopyLink} className="w-full mb-3" />
+
+              <TouchableOpacity
+                className="bg-slate-100 h-12 rounded-xl w-full items-center justify-center active:bg-slate-200"
+                onPress={() => router.push(`/discovery/${sessionToken}`)}
+                activeOpacity={0.8}
+              >
+                <Text className="text-text-secondary text-sm font-semibold">Open Guest Screen (Local Test)</Text>
+              </TouchableOpacity>
+            </Card>
+          ) : (
+            /* Form Screen State */
+            <View className="flex-1">
+              <Text className="text-sm font-semibold text-slate-700 mb-2">Your Answer</Text>
+              <Input
+                placeholder="Be honest and expressive..."
+                multiline
+                numberOfLines={4}
+                value={answer}
+                onChangeText={setAnswer}
+                className="h-28 text-left py-3.5"
+              />
+
+              <Button
+                title="Generate Share Link"
+                onPress={handleGenerateLink}
+                disabled={!answer.trim() || createSession.isPending}
+                loading={createSession.isPending}
+                className="w-full"
+              />
+            </View>
+          )}
+        </ScrollView>
+      </KeyboardAvoidingView>
+    </ScreenShell>
   );
 }

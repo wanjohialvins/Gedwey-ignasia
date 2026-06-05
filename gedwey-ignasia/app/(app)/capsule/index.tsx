@@ -16,6 +16,7 @@ import { userWantsCapsuleNotifications } from '../../../lib/notificationPrefs';
 import { Button } from '../../../components/Button';
 import { Card } from '../../../components/Card';
 import { Skeleton } from '../../../components/Skeleton';
+import { ScreenShell } from '../../../components/ScreenShell';
 import { formatDateTime, formatShortDate } from '../../../lib/dateUtils';
 
 function getCountdownText(openDateString: string): { label: string; isReady: boolean } {
@@ -74,31 +75,33 @@ export default function CapsuleListScreen() {
 
   if (isLoading) {
     return (
-      <SafeAreaView className="flex-1 bg-background">
-        <View className="flex-1 px-4">
-          <Skeleton width={100} height={20} className="mt-2.5 mb-2 py-1" />
-          <View className="mb-4">
-            <Skeleton width={180} height={28} className="mb-2" />
-            <Skeleton width={140} height={16} />
-          </View>
+      <ScreenShell className="flex-1">
+        <SafeAreaView className="flex-1">
+          <View className="flex-1 px-4">
+            <Skeleton width={100} height={20} className="mt-2.5 mb-2 py-1" />
+            <View className="mb-4">
+              <Skeleton width={180} height={28} className="mb-2" />
+              <Skeleton width={140} height={16} />
+            </View>
 
-          <View className="gap-4">
-            {[1, 2, 3].map((i) => (
-              <View key={i} className="bg-white p-4 rounded-2xl border border-neutral-border shadow-sm">
-                <View className="flex-row justify-between mb-3 items-center">
-                  <Skeleton width={100} height={14} />
-                  <Skeleton width={60} height={18} className="rounded-lg" />
+            <View className="gap-4">
+              {[1, 2, 3].map((i) => (
+                <View key={i} className="bg-white/60 p-4 rounded-2xl border border-neutral-border/10 shadow-sm">
+                  <View className="flex-row justify-between mb-3 items-center">
+                    <Skeleton width={100} height={14} />
+                    <Skeleton width={60} height={18} className="rounded-lg" />
+                  </View>
+                  <Skeleton width={160} height={18} className="mb-3" />
+                  <View className="border-t border-slate-100/50 pt-3 flex-row justify-between">
+                    <Skeleton width={80} height={12} />
+                    <Skeleton width={70} height={12} />
+                  </View>
                 </View>
-                <Skeleton width={160} height={18} className="mb-3" />
-                <View className="border-t border-slate-100 pt-3 flex-row justify-between">
-                  <Skeleton width={80} height={12} />
-                  <Skeleton width={70} height={12} />
-                </View>
-              </View>
-            ))}
+              ))}
+            </View>
           </View>
-        </View>
-      </SafeAreaView>
+        </SafeAreaView>
+      </ScreenShell>
     );
   }
 
@@ -178,52 +181,54 @@ export default function CapsuleListScreen() {
   };
 
   return (
-    <SafeAreaView className="flex-1 bg-background">
-      <View className="flex-1 px-4">
-        {/* Header */}
-        <View className="pt-2.5 mb-5">
-          <TouchableOpacity className="self-start py-1 mb-1.5" onPress={() => router.replace('/')}>
-            <Text className="text-primary-600 text-sm font-semibold">← Dashboard</Text>
-          </TouchableOpacity>
-          <Text className="text-2xl font-bold text-text-primary">Time Capsules</Text>
-          <Text className="text-sm text-text-secondary mt-0.5">Our sealed letters to the future</Text>
-        </View>
-
-        {capsules && capsules.length > 0 ? (
-          <FlatList
-            data={capsules}
-            keyExtractor={(item) => item.id}
-            renderItem={renderCapsuleItem}
-            contentContainerStyle={{ paddingBottom: 80 }}
-            showsVerticalScrollIndicator={false}
-          />
-        ) : (
-          /* Empty State */
-          <View className="flex-1 justify-center items-center px-6 pb-20">
-            <Text className="text-5xl mb-4">⏳</Text>
-            <Text className="text-xl font-bold text-text-primary mb-2 text-center">Time Capsule Vault</Text>
-            <Text className="text-sm text-text-secondary text-center leading-relaxed mb-6 px-4">
-              Seal a memory, photo reference, or letter to open together in the future.
-            </Text>
-            <Button
-              title="Seal First Capsule"
-              onPress={() => router.push('/capsule/create')}
-              className="w-full"
-            />
+    <ScreenShell className="flex-1">
+      <SafeAreaView className="flex-1">
+        <View className="flex-1 px-4 pt-4">
+          {/* Header */}
+          <View className="mb-5">
+            <TouchableOpacity className="self-start py-1 mb-1.5" onPress={() => router.replace('/')}>
+              <Text className="text-primary-600 text-sm font-semibold">← Dashboard</Text>
+            </TouchableOpacity>
+            <Text className="text-2xl font-bold text-text-primary">Time Capsules</Text>
+            <Text className="text-sm text-text-secondary mt-0.5">Our sealed letters to the future</Text>
           </View>
-        )}
 
-        {/* Floating Action Button */}
-        {capsules && capsules.length > 0 && (
-          <TouchableOpacity
-            className="absolute bottom-6 right-6 bg-primary-600 w-14 h-14 rounded-full justify-center items-center shadow-lg active:bg-primary-500"
-            onPress={() => router.push('/capsule/create')}
-            activeOpacity={0.8}
-          >
-            <Text className="text-white text-3xl font-light mt-[-4px]">+</Text>
-          </TouchableOpacity>
-        )}
-      </View>
-    </SafeAreaView>
+          {capsules && capsules.length > 0 ? (
+            <FlatList
+              data={capsules}
+              keyExtractor={(item) => item.id}
+              renderItem={renderCapsuleItem}
+              contentContainerStyle={{ paddingBottom: 80 }}
+              showsVerticalScrollIndicator={false}
+            />
+          ) : (
+            /* Empty State */
+            <View className="flex-1 justify-center items-center px-6 pb-20">
+              <Text className="text-5xl mb-4">⏳</Text>
+              <Text className="text-xl font-bold text-text-primary mb-2 text-center">Time Capsule Vault</Text>
+              <Text className="text-sm text-text-secondary text-center leading-relaxed mb-6 px-4">
+                Seal a memory, photo reference, or letter to open together in the future.
+              </Text>
+              <Button
+                title="Seal First Capsule"
+                onPress={() => router.push('/capsule/create')}
+                className="w-full"
+              />
+            </View>
+          )}
+
+          {/* Floating Action Button */}
+          {capsules && capsules.length > 0 && (
+            <TouchableOpacity
+              className="absolute bottom-6 right-6 bg-primary-600 w-14 h-14 rounded-full justify-center items-center shadow-lg active:bg-primary-500"
+              onPress={() => router.push('/capsule/create')}
+              activeOpacity={0.8}
+            >
+              <Text className="text-white text-3xl font-light mt-[-4px]">+</Text>
+            </TouchableOpacity>
+          )}
+        </View>
+      </SafeAreaView>
+    </ScreenShell>
   );
 }

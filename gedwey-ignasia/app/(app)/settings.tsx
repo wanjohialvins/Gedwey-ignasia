@@ -351,21 +351,23 @@ export default function SettingsScreen() {
 
   if (isLoading) {
     return (
-      <View className="flex-1 bg-background px-4 pt-16">
-        <View className="flex-row items-center mb-6">
-          <Skeleton width={80} height={20} className="mr-4" />
-          <Skeleton width={150} height={28} />
+      <ScreenShell className="flex-1">
+        <View className="flex-1 px-4 pt-16">
+          <View className="flex-row items-center mb-6">
+            <Skeleton width={80} height={20} className="mr-4" />
+            <Skeleton width={150} height={28} />
+          </View>
+          <Card glass className="p-5 mb-5">
+            <Skeleton width={120} height={20} className="mb-4" />
+            <Skeleton width="100%" height={44} className="mb-3 rounded-xl" />
+            <Skeleton width="100%" height={44} className="rounded-xl" />
+          </Card>
+          <Card glass className="p-5 mb-5">
+            <Skeleton width={150} height={20} className="mb-4" />
+            <Skeleton width="100%" height={80} className="rounded-xl" />
+          </Card>
         </View>
-        <Card className="p-5 mb-5">
-          <Skeleton width={120} height={20} className="mb-4" />
-          <Skeleton width="100%" height={44} className="mb-3 rounded-xl" />
-          <Skeleton width="100%" height={44} className="rounded-xl" />
-        </Card>
-        <Card className="p-5 mb-5">
-          <Skeleton width={150} height={20} className="mb-4" />
-          <Skeleton width="100%" height={80} className="rounded-xl" />
-        </Card>
-      </View>
+      </ScreenShell>
     );
   }
 

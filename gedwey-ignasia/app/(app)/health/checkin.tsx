@@ -13,6 +13,7 @@ import { useUserProfile } from '../../../lib/queries/profile';
 import { useCreateHealthCheckin } from '../../../lib/queries/health';
 import { Button } from '../../../components/Button';
 import { Card } from '../../../components/Card';
+import { ScreenShell } from '../../../components/ScreenShell';
 
 interface DimensionSpec {
   key: 'communication' | 'intimacy' | 'trust' | 'connection' | 'conflict';
@@ -170,76 +171,78 @@ export default function HealthCheckinScreen() {
   const isPending = createCheckin.isPending;
 
   return (
-    <SafeAreaView className="flex-1 bg-background">
-      <View className="flex-1 px-4">
-        <TouchableOpacity className="self-start py-2 mt-2 mb-2" onPress={() => router.back()}>
-          <Text className="text-primary-600 text-sm font-semibold">← Back</Text>
-        </TouchableOpacity>
+    <ScreenShell className="flex-1">
+      <SafeAreaView className="flex-1">
+        <View className="flex-1 px-4">
+          <TouchableOpacity className="self-start py-2 mt-2 mb-2" onPress={() => router.back()}>
+            <Text className="text-primary-600 text-sm font-semibold">← Back</Text>
+          </TouchableOpacity>
 
-        <ScrollView contentContainerStyle={{ flexGrow: 1, paddingBottom: 40 }} showsVerticalScrollIndicator={false}>
-          <Text className="text-2xl font-bold text-text-primary">Weekly Health Check-in</Text>
-          <Text className="text-sm text-text-secondary mt-1 mb-6 leading-relaxed">
-            Reflect on your connection this week. Rate each dimension honestly from 1 to 10.
-          </Text>
+          <ScrollView contentContainerStyle={{ flexGrow: 1, paddingBottom: 40 }} showsVerticalScrollIndicator={false}>
+            <Text className="text-2xl font-bold text-text-primary">Weekly Health Check-in</Text>
+            <Text className="text-sm text-text-secondary mt-1 mb-6 leading-relaxed">
+              Reflect on your connection this week. Rate each dimension honestly from 1 to 10.
+            </Text>
 
-          <View className="gap-5">
-            {DIMENSIONS.map((dim) => {
-              const currentScore = ratings[dim.key];
-              const scoreLabel = dim.labels[currentScore] || 'Tap a number to rate';
+            <View className="gap-5">
+              {DIMENSIONS.map((dim) => {
+                const currentScore = ratings[dim.key];
+                const scoreLabel = dim.labels[currentScore] || 'Tap a number to rate';
 
-              return (
-                <Card key={dim.key} className="p-4">
-                  <Text className="text-base font-bold text-text-primary mb-1">{dim.title}</Text>
-                  <Text className="text-xs text-text-secondary leading-relaxed mb-4">{dim.desc}</Text>
+                return (
+                  <Card key={dim.key} className="p-4">
+                    <Text className="text-base font-bold text-text-primary mb-1">{dim.title}</Text>
+                    <Text className="text-xs text-text-secondary leading-relaxed mb-4">{dim.desc}</Text>
 
-                  {/* Rating Selector circle grids */}
-                  <View className="flex-row justify-between flex-wrap gap-2.5 mb-3">
-                    {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map((score) => {
-                      const isSelected = currentScore === score;
-                      return (
-                        <TouchableOpacity
-                          key={score}
-                          className={`w-8 h-8 rounded-full justify-center items-center border active:bg-slate-200 ${
-                            isSelected 
-                              ? 'bg-primary-600 border-primary-600' 
-                              : 'bg-slate-100 border-slate-200'
-                          }`}
-                          onPress={() => handleSelectScore(dim.key, score)}
-                          activeOpacity={0.7}
-                        >
-                          <Text 
-                            className={`text-xs font-semibold ${
-                              isSelected ? 'text-white' : 'text-slate-600'
+                    {/* Rating Selector circle grids */}
+                    <View className="flex-row justify-between flex-wrap gap-2.5 mb-3">
+                      {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map((score) => {
+                        const isSelected = currentScore === score;
+                        return (
+                          <TouchableOpacity
+                            key={score}
+                            className={`w-8 h-8 rounded-full justify-center items-center border active:bg-slate-200/50 ${
+                              isSelected 
+                                ? 'bg-primary-600 border-primary-600' 
+                                : 'bg-white/60 border-neutral-border/10'
                             }`}
+                            onPress={() => handleSelectScore(dim.key, score)}
+                            activeOpacity={0.7}
                           >
-                            {score}
-                          </Text>
-                        </TouchableOpacity>
-                      );
-                    })}
-                  </View>
+                            <Text 
+                              className={`text-xs font-semibold ${
+                                isSelected ? 'text-white' : 'text-slate-600'
+                              }`}
+                            >
+                              {score}
+                            </Text>
+                          </TouchableOpacity>
+                        );
+                      })}
+                    </View>
 
-                  {/* Description label for current selection */}
-                  <View className="bg-slate-50 rounded-lg py-2.5 px-3 items-center">
-                    <Text className="text-[11px] text-text-secondary font-medium text-center">
-                      {currentScore > 0 ? `Rating: ${currentScore}/10 — ` : ''}
-                      <Text className="font-bold text-primary-600">{scoreLabel}</Text>
-                    </Text>
-                  </View>
-                </Card>
-              );
-            })}
+                    {/* Description label for current selection */}
+                    <View className="bg-white/40 border border-white/5 rounded-lg py-2.5 px-3 items-center">
+                      <Text className="text-[11px] text-text-secondary font-medium text-center">
+                        {currentScore > 0 ? `Rating: ${currentScore}/10 — ` : ''}
+                        <Text className="font-bold text-primary-600">{scoreLabel}</Text>
+                      </Text>
+                    </View>
+                  </Card>
+                );
+              })}
 
-            <Button
-              title="Submit Weekly Check-in"
-              onPress={handleSubmit}
-              disabled={Object.values(ratings).includes(0) || isPending}
-              loading={isPending}
-              className="w-full mt-2"
-            />
-          </View>
-        </ScrollView>
-      </View>
-    </SafeAreaView>
+              <Button
+                title="Submit Weekly Check-in"
+                onPress={handleSubmit}
+                disabled={Object.values(ratings).includes(0) || isPending}
+                loading={isPending}
+                className="w-full mt-2"
+              />
+            </View>
+          </ScrollView>
+        </View>
+      </SafeAreaView>
+    </ScreenShell>
   );
 }
