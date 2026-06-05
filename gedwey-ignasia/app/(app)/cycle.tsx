@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import { Alert, ScrollView, Text, TouchableOpacity, View } from 'react-native';
+import { Alert, ScrollView, Text, TouchableOpacity, View, SafeAreaView } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useRouter } from 'expo-router';
 import { BottomNav } from '../../components/BottomNav';
@@ -155,7 +155,13 @@ export default function CycleCalendarScreen() {
   const [sleepHours, setSleepHours] = useState('7');
   const [voiceText, setVoiceText] = useState('');
   const [assistantQuery, setAssistantQuery] = useState('');
-  const [assistantResponse, setAssistantResponse] = useState('');
+  const [chatMessages, setChatMessages] = useState<{ id: string; role: 'user' | 'assistant'; content: string }[]>([
+    {
+      id: 'welcome',
+      role: 'assistant',
+      content: 'Hello! I am your cycle assistant. Ask me anything about symptoms, predictions, or mood trends!',
+    },
+  ]);
   const [assistantLoading, setAssistantLoading] = useState(false);
   const [privacyMode, setPrivacyMode] = useState<(typeof PRIVACY_OPTIONS)[number]>('cloud');
   const [localLogs, setLocalLogs] = useState<CycleLog[]>([]);
@@ -240,7 +246,11 @@ export default function CycleCalendarScreen() {
     const query = assistantQuery.trim();
     if (!query) return;
 
+    const userMsg = { id: `user-${Date.now()}`, role: 'user' as const, content: query };
+    setChatMessages((prev) => [...prev, userMsg]);
+    setAssistantQuery('');
     setAssistantLoading(true);
+
     try {
       const answer = await askCycleAssistant(query, {
         ...(prediction ?? {}),
@@ -249,15 +259,16 @@ export default function CycleCalendarScreen() {
         symptoms,
         mood,
       });
-      setAssistantResponse(answer);
+      const assistantMsg = { id: `assistant-${Date.now()}`, role: 'assistant' as const, content: answer };
+      setChatMessages((prev) => [...prev, assistantMsg]);
     } catch (err: any) {
       console.warn('[CycleAssistant] OpenAI/Edge function failed, falling back to local responder:', err?.message || err);
-      setAssistantResponse(
-        respondToCycleQuery(query, {
-          phase: prediction?.phase,
-          insights,
-        })
-      );
+      const fallbackAnswer = respondToCycleQuery(query, {
+        phase: prediction?.phase,
+        insights,
+      });
+      const assistantMsg = { id: `assistant-${Date.now()}`, role: 'assistant' as const, content: fallbackAnswer };
+      setChatMessages((prev) => [...prev, assistantMsg]);
     } finally {
       setAssistantLoading(false);
     }
@@ -368,19 +379,26 @@ export default function CycleCalendarScreen() {
 
   return (
     <ScreenShell className="flex-1">
-      <ScrollView contentContainerStyle={{ paddingHorizontal: 16, paddingTop: 56, paddingBottom: 112 }}>
-        <TouchableOpacity onPress={() => router.back()} className="mb-5 flex-row items-center gap-1">
-          <AppIcon name="arrow-back" size={16} color={theme.accent} />
-          <Text className="text-sm font-bold" style={{ color: theme.accent }}>Back</Text>
-        </TouchableOpacity>
-
-        <View className="flex-row items-center gap-2 mb-2">
-          <AppIcon name={NAV_ICONS.health} size={24} color={theme.accent} />
-          <Text className="text-2xl font-bold" style={{ color: theme.textPrimary }}>Cycle Calendar</Text>
+      <SafeAreaView className="flex-1">
+        {/* ── Standardized Header ── */}
+        <View className="flex-row items-center justify-between pt-2.5 mb-5">
+          <TouchableOpacity
+            onPress={() => router.back()}
+            className="w-10 h-10 bg-indigo-50/60 items-center justify-center rounded-full active:opacity-75"
+          >
+            <AppIcon name="arrow-back" size={20} color="#4F46E5" />
+          </TouchableOpacity>
+          <View className="flex-row items-center gap-2">
+            <AppIcon name={NAV_ICONS.cycle} size={22} color="#4F46E5" />
+            <Text className="text-lg font-extrabold text-text-primary">Cycle Calendar</Text>
+          </View>
+          <View className="w-10" />
         </View>
-        <Text className="text-sm mb-4" style={{ color: theme.textSecondary }}>
-          Track flow, mood, and symptoms — shared with your partner. Smart predictions improve as you log more.
-        </Text>
+
+        <ScrollView contentContainerStyle={{ paddingHorizontal: 16, paddingBottom: 112 }} showsVerticalScrollIndicator={false}>
+          <Text className="text-sm mb-4" style={{ color: theme.textSecondary }}>
+            Track flow, mood, and symptoms — shared with your partner. Smart predictions improve as you log more.
+          </Text>
 
         <Card className="p-5 mb-4" style={{ backgroundColor: prediction ? '#FFF1F2' : theme.cardBackground, borderColor: '#FECDD3' }}>
           <View className="flex-row items-start justify-between gap-3">
@@ -695,17 +713,80 @@ export default function CycleCalendarScreen() {
             <AppIcon name="chatbubble-ellipses-outline" size={18} color={theme.accent} />
             <Text className="text-sm font-bold" style={{ color: theme.textPrimary }}>Cycle assistant</Text>
           </View>
-          <Input
-            label="Ask a question"
-            placeholder="Why do I feel tired?"
-            value={assistantQuery}
-            onChangeText={setAssistantQuery}
-            containerClassName="mb-2"
-          />
-          <Button title="Ask assistant" variant="secondary" onPress={askAssistant} loading={assistantLoading} />
-          {assistantResponse ? (
-            <Text className="text-sm mt-3" style={{ color: theme.textSecondary }}>{assistantResponse}</Text>
-          ) : null}
+
+          {/* Message Bubbles Container */}
+          <View className="bg-slate-50/50 border border-slate-100 rounded-2xl p-3 min-h-[160px] max-h-[300px]">
+            <ScrollView
+              nestedScrollEnabled={true}
+              showsVerticalScrollIndicator={true}
+              contentContainerStyle={{ paddingBottom: 8 }}
+            >
+              {chatMessages.map((msg) => {
+                const isUser = msg.role === 'user';
+                return (
+                  <View
+                    key={msg.id}
+                    className={`flex-row mb-3 ${isUser ? 'justify-end' : 'justify-start'}`}
+                  >
+                    {!isUser && (
+                      <View className="w-6 h-6 rounded-full bg-indigo-100 items-center justify-center mr-2 mt-1">
+                        <Text className="text-[10px]">🤖</Text>
+                      </View>
+                    )}
+                    <View
+                      className={`p-3 max-w-[80%] rounded-2xl ${
+                        isUser
+                          ? 'bg-indigo-600 rounded-tr-none'
+                          : 'bg-white border border-indigo-100 rounded-tl-none'
+                      }`}
+                      style={isUser ? { backgroundColor: theme.accent } : undefined}
+                    >
+                      <Text
+                        className={`text-xs leading-relaxed ${
+                          isUser ? 'text-white' : 'text-slate-800'
+                        }`}
+                      >
+                        {msg.content}
+                      </Text>
+                    </View>
+                    {isUser && (
+                      <View className="w-6 h-6 rounded-full bg-indigo-50 border border-indigo-100 items-center justify-center ml-2 mt-1">
+                        <Text className="text-[10px]">👤</Text>
+                      </View>
+                    )}
+                  </View>
+                );
+              })}
+              {assistantLoading && (
+                <View className="flex-row items-center mb-3 justify-start">
+                  <View className="w-6 h-6 rounded-full bg-indigo-100 items-center justify-center mr-2 mt-1">
+                    <Text className="text-[10px]">🤖</Text>
+                  </View>
+                  <View className="p-3 bg-white border border-indigo-100 rounded-2xl rounded-tl-none">
+                    <Text className="text-xs text-slate-400 italic">Thinking...</Text>
+                  </View>
+                </View>
+              )}
+            </ScrollView>
+          </View>
+
+          {/* Chat input row */}
+          <View className="flex-row items-center gap-2 mt-4">
+            <Input
+              placeholder="Ask a question..."
+              value={assistantQuery}
+              onChangeText={setAssistantQuery}
+              containerClassName="mb-0 flex-1"
+            />
+            <TouchableOpacity
+              onPress={askAssistant}
+              disabled={assistantLoading || !assistantQuery.trim()}
+              className="w-12 h-12 rounded-xl items-center justify-center active:opacity-75 disabled:opacity-50"
+              style={{ backgroundColor: theme.accent }}
+            >
+              <AppIcon name="send" size={18} color="#FFFFFF" />
+            </TouchableOpacity>
+          </View>
         </Card>
 
         {selectedLog ? (
@@ -725,8 +806,9 @@ export default function CycleCalendarScreen() {
             </Text>
           </Card>
         ) : null}
-      </ScrollView>
-      <BottomNav />
+        </ScrollView>
+        <BottomNav />
+      </SafeAreaView>
     </ScreenShell>
   );
 }

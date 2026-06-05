@@ -24,6 +24,8 @@ import { VoiceNoteRecorder } from '../../../components/VoiceNoteRecorder';
 import { supabase } from '../../../lib/supabase';
 import { uriToUint8Array } from '../../../lib/fileUtils';
 import { useTheme } from '../../../lib/hooks/useTheme';
+import { AppIcon } from '../../../components/AppIcon';
+import { NAV_ICONS } from '../../../lib/navigationIcons';
 
 export default function JournalCreateScreen() {
   const router = useRouter();
@@ -137,12 +139,22 @@ export default function JournalCreateScreen() {
           className="flex-1"
           behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
         >
-          <ScrollView contentContainerStyle={{ flexGrow: 1, paddingHorizontal: 16, paddingBottom: 40 }} showsVerticalScrollIndicator={false}>
-            <TouchableOpacity className="self-start py-2 mt-2 mb-2" onPress={() => router.back()}>
-              <Text style={{ color: theme.accent }} className="text-sm font-semibold">← Back</Text>
+          {/* ── Standardized Header ── */}
+          <View className="flex-row items-center justify-between pt-2.5 mb-5">
+            <TouchableOpacity
+              onPress={() => router.back()}
+              className="w-10 h-10 bg-indigo-50/60 items-center justify-center rounded-full active:opacity-75"
+            >
+              <AppIcon name="arrow-back" size={20} color="#4F46E5" />
             </TouchableOpacity>
+            <View className="flex-row items-center gap-2">
+              <AppIcon name={NAV_ICONS.journal} size={22} color="#4F46E5" />
+              <Text className="text-lg font-extrabold text-text-primary">New Memory</Text>
+            </View>
+            <View className="w-10" />
+          </View>
 
-            <Text className="text-2xl font-bold text-text-primary mb-1" style={{ color: theme.textPrimary }}>New Memory</Text>
+          <ScrollView contentContainerStyle={{ flexGrow: 1, paddingHorizontal: 16, paddingBottom: 40 }} showsVerticalScrollIndicator={false}>
             <Text className="text-sm text-text-secondary mb-6 leading-relaxed" style={{ color: theme.textSecondary }}>
               Capture a special moment, milestone, or reflection together.
             </Text>

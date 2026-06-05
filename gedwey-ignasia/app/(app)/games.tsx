@@ -341,6 +341,7 @@ export default function GamesScreen() {
                         uri={isMe ? profile?.avatar_url : partnerProfile?.avatar_url}
                         name={item!.profiles?.display_name}
                         size={32}
+                        isOwnAvatar={isMe}
                       />
                       <View className="flex-1 bg-slate-50 border border-slate-100/50 rounded-xl p-3">
                         <Text className="text-2xs font-bold text-text-primary capitalize">

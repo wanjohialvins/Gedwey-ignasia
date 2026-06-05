@@ -16,6 +16,8 @@ import { ScreenShell } from '../../../components/ScreenShell';
 import { VoicePlaybackBubble } from '../../../components/VoicePlaybackBubble';
 import { formatLongDate } from '../../../lib/dateUtils';
 import { useTheme } from '../../../lib/hooks/useTheme';
+import { AppIcon } from '../../../components/AppIcon';
+import { NAV_ICONS } from '../../../lib/navigationIcons';
 
 export default function JournalDetailScreen() {
   const router = useRouter();
@@ -57,9 +59,20 @@ export default function JournalDetailScreen() {
       <ScreenShell className="flex-1">
         <SafeAreaView className="flex-1">
           <View className="flex-1 px-4">
-            <TouchableOpacity className="self-start py-2 mt-2 mb-2" onPress={() => router.back()}>
-              <Text style={{ color: theme.accent }} className="text-sm font-semibold">← Back</Text>
-            </TouchableOpacity>
+            {/* ── Standardized Header ── */}
+            <View className="flex-row items-center justify-between pt-2.5 mb-5">
+              <TouchableOpacity
+                onPress={() => router.back()}
+                className="w-10 h-10 bg-indigo-50/60 items-center justify-center rounded-full active:opacity-75"
+              >
+                <AppIcon name="arrow-back" size={20} color="#4F46E5" />
+              </TouchableOpacity>
+              <View className="flex-row items-center gap-2">
+                <AppIcon name={NAV_ICONS.journal} size={22} color="#4F46E5" />
+                <Text className="text-lg font-extrabold text-text-primary">Memory Detail</Text>
+              </View>
+              <View className="w-10" />
+            </View>
             <View className="flex-1 justify-center items-center px-6 pb-12">
               <Text className="text-5xl mb-4">⚠️</Text>
               <Text className="text-xl font-bold text-text-primary mb-2 text-center" style={{ color: theme.textPrimary }}>Failed to load memory</Text>
@@ -106,9 +119,20 @@ export default function JournalDetailScreen() {
     <ScreenShell className="flex-1">
       <SafeAreaView className="flex-1">
         <View className="flex-1 px-4">
-          <TouchableOpacity className="self-start py-2 mt-2 mb-2" onPress={() => router.back()}>
-            <Text style={{ color: theme.accent }} className="text-sm font-semibold">← Back</Text>
-          </TouchableOpacity>
+          {/* ── Standardized Header ── */}
+          <View className="flex-row items-center justify-between pt-2.5 mb-5">
+            <TouchableOpacity
+              onPress={() => router.back()}
+              className="w-10 h-10 bg-indigo-50/60 items-center justify-center rounded-full active:opacity-75"
+            >
+              <AppIcon name="arrow-back" size={20} color="#4F46E5" />
+            </TouchableOpacity>
+            <View className="flex-row items-center gap-2">
+              <AppIcon name={NAV_ICONS.journal} size={22} color="#4F46E5" />
+              <Text className="text-lg font-extrabold text-text-primary">Memory Detail</Text>
+            </View>
+            <View className="w-10" />
+          </View>
 
           <ScrollView contentContainerStyle={{ flexGrow: 1, paddingBottom: 40 }} showsVerticalScrollIndicator={false}>
             <Card glass className="p-6 border shadow-md flex-col gap-4">

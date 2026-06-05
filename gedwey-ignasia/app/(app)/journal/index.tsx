@@ -18,6 +18,8 @@ import { Card } from '../../../components/Card';
 import { Skeleton } from '../../../components/Skeleton';
 import { BottomNav } from '../../../components/BottomNav';
 import { ScreenShell } from '../../../components/ScreenShell';
+import { AppIcon } from '../../../components/AppIcon';
+import { NAV_ICONS } from '../../../lib/navigationIcons';
 import { useTheme } from '../../../lib/hooks/useTheme';
 
 export default function JournalListScreen() {
@@ -161,13 +163,19 @@ export default function JournalListScreen() {
     <ScreenShell className="flex-1">
       <SafeAreaView className="flex-1">
         <View className="flex-1 px-4">
-          {/* Header */}
-          <View className="pt-2.5 mb-5">
-            <TouchableOpacity className="self-start py-1 mb-1.5" onPress={() => router.replace('/')}>
-              <Text style={{ color: theme.accent }} className="text-sm font-semibold">← Dashboard</Text>
+          {/* ── Standardized Header ── */}
+          <View className="flex-row items-center justify-between pt-2.5 mb-5">
+            <TouchableOpacity
+              onPress={() => router.back()}
+              className="w-10 h-10 bg-indigo-50/60 items-center justify-center rounded-full active:opacity-75"
+            >
+              <AppIcon name="arrow-back" size={20} color="#4F46E5" />
             </TouchableOpacity>
-            <Text className="text-2xl font-bold text-text-primary" style={{ color: theme.textPrimary }}>Shared Journal</Text>
-            <Text className="text-sm text-text-secondary mt-0.5" style={{ color: theme.textSecondary }}>Our private memory scrapbook</Text>
+            <View className="flex-row items-center gap-2">
+              <AppIcon name={NAV_ICONS.journal} size={22} color="#4F46E5" />
+              <Text className="text-lg font-extrabold text-text-primary">Shared Journal</Text>
+            </View>
+            <View className="w-10" />
           </View>
 
           {entries && entries.length > 0 ? (

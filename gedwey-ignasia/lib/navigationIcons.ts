@@ -36,6 +36,8 @@ export const NAV_ICONS = {
   playAudio: 'play-circle' as IconName,
   pauseAudio: 'pause-circle' as IconName,
   link: 'link-outline' as IconName,
+  watchlist: 'film-outline' as IconName,
+  watchlistActive: 'film' as IconName,
 };
 
 export const SIDEBAR_ITEMS = [
@@ -45,6 +47,7 @@ export const SIDEBAR_ITEMS = [
   { key: 'games', icon: NAV_ICONS.games, label: 'Games', detail: 'Truth or Dare and more', route: '/games' },
   { key: 'lists', icon: NAV_ICONS.lists, label: 'Shared Lists', detail: 'To-dos and bucket goals', route: '/lists' },
   { key: 'music', icon: NAV_ICONS.music, label: 'Music', detail: 'Our soundtrack', route: '/music' },
+  { key: 'watchlist', icon: NAV_ICONS.watchlist, label: 'Watchlist', detail: 'Shows & movie recs', route: '/watchlist' },
   { key: 'history', icon: NAV_ICONS.history, label: 'History', detail: 'Activity timeline', route: '/history' },
   { key: 'journal', icon: NAV_ICONS.journal, label: 'Shared Journal', detail: 'Private memories', route: '/journal', milestone: 5 },
   { key: 'capsule', icon: NAV_ICONS.capsule, label: 'Time Capsules', detail: 'Future memories', route: '/capsule', requiresPair: true },

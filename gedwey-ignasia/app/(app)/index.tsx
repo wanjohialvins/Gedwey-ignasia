@@ -215,6 +215,7 @@ export default function HomeScreen() {
         { label: 'Cat Care', detail: 'Daily streak tasks', icon: NAV_ICONS.play, action: () => navigateFromDrawer('/cat-care') },
         { label: 'Music', detail: 'Our soundtrack', icon: NAV_ICONS.music, action: () => navigateFromDrawer('/music') },
         { label: 'Shared Lists', detail: 'To-dos and bucket goals', icon: NAV_ICONS.lists, action: () => navigateFromDrawer('/lists') },
+        { label: 'Watchlist', detail: 'Shows & movie recs', icon: NAV_ICONS.watchlist, action: () => navigateFromDrawer('/watchlist') },
       ],
     },
     {
@@ -322,20 +323,22 @@ export default function HomeScreen() {
 
             {/* Right: partner pill or pair button */}
             {isPaired && partnerProfile ? (
-              <TouchableOpacity
-                onPress={() => router.push('/partner')}
-                className="flex-row items-center gap-2 bg-white border border-indigo-100 rounded-xl px-3 py-2 active:bg-indigo-50"
+              <View
+                className="flex-row items-center gap-2 bg-white border border-indigo-100 rounded-xl px-3 py-2"
               >
                 <ProfileAvatar uri={partnerProfile.avatar_url} name={partnerProfile.display_name} size={28} />
-                <View>
+                <TouchableOpacity
+                  onPress={() => router.push('/partner')}
+                  className="active:opacity-75"
+                >
                   <Text className="text-2xs font-bold text-text-primary capitalize" numberOfLines={1}>
                     {partnerProfile.display_name || 'Partner'}
                   </Text>
                   <Text className="text-3xs text-text-secondary">
                     {partnerMoodText ? `Feeling ${partnerMoodText}` : 'No mood set'}
                   </Text>
-                </View>
-              </TouchableOpacity>
+                </TouchableOpacity>
+              </View>
             ) : (
               <TouchableOpacity
                 onPress={() => router.push('/settings')}
@@ -562,7 +565,7 @@ export default function HomeScreen() {
           >
             {/* Drawer header */}
             <View className="mb-5 pb-5 border-b border-indigo-50 flex-row items-center gap-3">
-              <ProfileAvatar uri={profile.avatar_url} name={profile.display_name} size={48} />
+              <ProfileAvatar uri={profile.avatar_url} name={profile.display_name} size={48} isOwnAvatar={true} />
               <View className="flex-1">
                 <View className="flex-row justify-between items-center mb-1">
                   <Text className="text-xl font-bold text-text-primary">Menu</Text>

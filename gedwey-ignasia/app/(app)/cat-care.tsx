@@ -248,7 +248,7 @@ export default function CatCareScreen() {
         {/* ── Co-op Owner Avatars ─────────────────────────────────── */}
         <View className="flex-row justify-center gap-6 mb-6">
           <View className="items-center">
-            <ProfileAvatar uri={profile?.avatar_url} name={profile?.display_name} size={40} />
+            <ProfileAvatar uri={profile?.avatar_url} name={profile?.display_name} size={40} isOwnAvatar={true} />
             <Text className="text-3xs font-extrabold text-text-secondary mt-1.5 capitalize">You</Text>
           </View>
           <View className="items-center">

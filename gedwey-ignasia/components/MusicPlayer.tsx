@@ -26,6 +26,7 @@ export const MusicPlayer = ({ moodId, customUrl = '', onNowPlaying }: Props) => 
     playMood,
     playUrl,
     toggle,
+    stop,
   } = useMusicStore();
 
   useEffect(() => {
@@ -76,13 +77,21 @@ export const MusicPlayer = ({ moodId, customUrl = '', onNowPlaying }: Props) => 
           <Text className="text-xs text-emerald-950 text-center">Offline Mode — playing from local cache</Text>
         </View>
       ) : null}
-      <View className="bg-white border border-indigo-100 rounded-2xl p-5 shadow-sm mb-4">
+      <View className="relative bg-white border border-indigo-100 rounded-2xl p-5 shadow-sm mb-4">
+        {source ? (
+          <TouchableOpacity
+            onPress={stop}
+            className="absolute top-4 right-4 w-7 h-7 bg-slate-50 border border-slate-100 rounded-full items-center justify-center active:bg-slate-100 z-10"
+          >
+            <AppIcon name={NAV_ICONS.close} size={15} color="#64748B" />
+          </TouchableOpacity>
+        ) : null}
         <Text className="text-xs font-bold text-indigo-600 uppercase tracking-widest mb-2">Now playing</Text>
-        <Text className="text-lg font-bold text-text-primary">
+        <Text className="text-lg font-bold text-text-primary pr-6">
           {source === 'youtube' ? 'YouTube video' : showTitle}
         </Text>
         {source !== 'youtube' ? (
-          <Text className="text-sm text-text-secondary mt-1">{showSubtitle}</Text>
+          <Text className="text-sm text-text-secondary mt-1 pr-6">{showSubtitle}</Text>
         ) : null}
 
         <View className="flex-row gap-3 mt-5">
