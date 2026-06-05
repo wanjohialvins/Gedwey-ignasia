@@ -12,6 +12,7 @@ import { useActivityLogs } from '../../lib/queries/engagement';
 import { useTheme } from '../../lib/hooks/useTheme';
 import { ThemedText } from '../../components/ThemedText';
 import { formatWeekdayMonthDay } from '../../lib/dateUtils';
+import { usePendingSessionsForMe, usePendingGamePromptsForMe } from '../../lib/queries/gameAnswers';
 
 const ACTIVITY_ICONS: Record<string, { icon: IconName; color: string; iconColor: string }> = {
   session: { icon: NAV_ICONS.session, color: 'bg-violet-100', iconColor: '#7C3AED' },
@@ -43,7 +44,36 @@ export default function HistoryScreen() {
   const { data: profile } = useUserProfile(user?.id ?? '');
   const { data: partnerProfile } = useUserProfile(profile?.partner_id ?? '');
   const [filter, setFilter] = useState('all');
-  const { data: logs = [] } = useActivityLogs(profile?.couple_id ?? '', filter);
+  const { data: logs = [] } = useActivityLogs(
+    profile?.couple_id ?? '',
+    filter === 'yet-to-do' ? 'all' : filter
+  );
+
+  const { data: pendingSessions = [] } = usePendingSessionsForMe(profile?.couple_id ?? '', user?.id ?? '');
+  const { data: pendingGamePrompts = [] } = usePendingGamePromptsForMe(profile?.couple_id ?? '', user?.id ?? '');
+
+  const yetToDoItems = useMemo(() => {
+    if (filter !== 'yet-to-do') return [];
+    const sessions = pendingSessions.map((s) => ({
+      id: s.id,
+      type: 'session' as const,
+      prompt: s.prompt,
+      category: s.category,
+      timestamp: s.partnerAnsweredAt,
+      route: '/session/card' as const,
+    }));
+    const games = pendingGamePrompts.map((g) => ({
+      id: g.gameCardId,
+      type: 'game' as const,
+      prompt: g.prompt,
+      category: g.category,
+      timestamp: g.partnerAnsweredAt,
+      route: '/games' as const,
+    }));
+    return [...sessions, ...games].sort(
+      (a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime()
+    );
+  }, [pendingSessions, pendingGamePrompts, filter]);
 
   const nameForUser = (userId: string | null, log?: { profiles?: { display_name: string | null } | null }) => {
     if (log?.profiles?.display_name) return log.profiles.display_name;
@@ -119,7 +149,7 @@ export default function HistoryScreen() {
 
         {/* ── Filters Horizontal Scroll Bar ────────────────────────── */}
         <ScrollView horizontal showsHorizontalScrollIndicator={false} className="mb-5">
-          {['all', 'session', 'game', 'todo', 'bucket', 'music'].map((item) => {
+          {['all', 'yet-to-do', 'session', 'game', 'todo', 'bucket', 'music'].map((item) => {
             const active = filter === item;
             return (
               <TouchableOpacity
@@ -132,7 +162,7 @@ export default function HistoryScreen() {
                 <Text
                   className={`text-3xs font-bold uppercase tracking-wider ${active ? 'text-white' : 'text-text-secondary'}`}
                 >
-                  {item}
+                  {item === 'yet-to-do' ? 'Yet To Do' : item}
                 </Text>
               </TouchableOpacity>
             );
@@ -147,6 +177,43 @@ export default function HistoryScreen() {
               Your shared timeline will appear after you connect with a partner.
             </Text>
           </Card>
+        ) : filter === 'yet-to-do' ? (
+          yetToDoItems.length > 0 ? (
+            yetToDoItems.map((item) => {
+              const meta = ACTIVITY_ICONS[item.type] || ACTIVITY_ICONS.profile;
+              return (
+                <TouchableOpacity
+                  key={item.id}
+                  onPress={() => router.push(item.route)}
+                  className="active:opacity-90 mb-3"
+                  activeOpacity={0.9}
+                >
+                  <Card className="p-4 border border-rose-100 bg-rose-50/10">
+                    <View className="flex-row items-center gap-3.5">
+                      <View className={`w-9 h-9 rounded-xl items-center justify-center ${meta.color} border border-white`}>
+                        <AppIcon name={meta.icon} size={18} color={meta.iconColor} />
+                      </View>
+                      <View className="flex-1">
+                        <Text className="text-sm font-bold text-text-primary leading-normal">"{item.prompt}"</Text>
+                        <Text className="text-3xs text-rose-500 font-extrabold mt-1 uppercase tracking-wide">
+                          {item.type} · Partner answered · Your Turn
+                        </Text>
+                      </View>
+                      <AppIcon name={NAV_ICONS.chevron} size={14} color="#FDA4AF" />
+                    </View>
+                  </Card>
+                </TouchableOpacity>
+              );
+            })
+          ) : (
+            <Card className="p-6 items-center border border-indigo-50/60 bg-white">
+              <AppIcon name="checkmark-circle-outline" size={28} color="#10B981" />
+              <Text className="text-sm font-bold text-text-primary mt-3">All caught up!</Text>
+              <Text className="text-xs text-center text-text-secondary mt-1.5 leading-relaxed">
+                You've answered all of your partner's active prompts. Nice job!
+              </Text>
+            </Card>
+          )
         ) : Object.keys(grouped).length ? (
           Object.entries(grouped).map(([hour, items]) => (
             <View key={hour} className="mb-5">

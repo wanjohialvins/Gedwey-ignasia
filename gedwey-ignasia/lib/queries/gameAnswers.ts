@@ -273,3 +273,128 @@ export const groupAnswersByDay = (
       return tB - tA;
     });
 };
+
+// ── Pending Items (partner answered, I have not) ─────────────────────────────
+
+export type PendingSession = {
+  id: string;
+  created_at: string;
+  card_id: string;
+  prompt: string;
+  category: string;
+  partnerAnsweredAt: string;
+};
+
+/** Sessions where the couple partner has answered but the current user has not yet. */
+export const usePendingSessionsForMe = (coupleId: string, myId: string) => {
+  return useQuery<PendingSession[], Error>({
+    queryKey: ['pendingSessions', coupleId, myId],
+    queryFn: async () => {
+      if (!coupleId || !myId) return [];
+      const { data, error } = await supabase
+        .from('sessions')
+        .select('id, created_at, card_id, user1_id, user2_id, user1_answer, user2_answer, cards(text, category)')
+        .eq('couple_id', coupleId)
+        .eq('completed', false)
+        .order('created_at', { ascending: false })
+        .limit(50);
+
+      if (error) throw new Error(error.message);
+
+      return (data || [])
+        .filter((s: Record<string, unknown>) => {
+          const isUser1 = s.user1_id === myId;
+          const isUser2 = s.user2_id === myId;
+          // Partner started it and answered, I haven't joined/answered
+          const partnerStartedIHaventJoined = !isUser1 && !isUser2 && !!s.user1_answer;
+          // I'm user1 but haven't answered yet AND partner (user2) already has
+          const imUser1NotAnswered = isUser1 && !s.user1_answer && !!s.user2_answer;
+          // I'm user2 but haven't answered yet AND user1 already has
+          const imUser2NotAnswered = isUser2 && !s.user2_answer && !!s.user1_answer;
+          return partnerStartedIHaventJoined || imUser1NotAnswered || imUser2NotAnswered;
+        })
+        .map((s: Record<string, unknown>) => {
+          const card = s.cards as { text?: string; category?: string } | null;
+          return {
+            id: s.id as string,
+            created_at: s.created_at as string,
+            card_id: s.card_id as string,
+            prompt: card?.text || 'Session question',
+            category: card?.category || 'session',
+            partnerAnsweredAt: s.created_at as string,
+          };
+        });
+    },
+    enabled: !!coupleId && !!myId,
+    refetchInterval: 10000,
+  });
+};
+
+export type PendingGamePrompt = {
+  gameCardId: string;
+  prompt: string;
+  category: string;
+  gameType: GameMode;
+  partnerAnswerId: string;
+  partnerAnsweredAt: string;
+};
+
+/** Game prompts where the partner has answered but the current user has not. */
+export const usePendingGamePromptsForMe = (coupleId: string, myId: string) => {
+  return useQuery<PendingGamePrompt[], Error>({
+    queryKey: ['pendingGamePrompts', coupleId, myId],
+    queryFn: async () => {
+      if (!coupleId || !myId) return [];
+
+      // Fetch all game answers for this couple
+      const { data, error } = await supabase
+        .from('game_answers')
+        .select('id, created_at, user_id, game_card_id, game_type, category, prompt')
+        .eq('couple_id', coupleId)
+        .order('created_at', { ascending: false })
+        .limit(200);
+
+      if (error) throw new Error(error.message);
+      const rows = (data || []) as {
+        id: string;
+        created_at: string;
+        user_id: string;
+        game_card_id: string | null;
+        game_type: GameMode;
+        category: string;
+        prompt: string;
+      }[];
+
+      // Group by game_card_id
+      const byCard = new Map<string, typeof rows>();
+      rows.forEach((row) => {
+        if (!row.game_card_id) return;
+        const list = byCard.get(row.game_card_id) || [];
+        list.push(row);
+        byCard.set(row.game_card_id, list);
+      });
+
+      const pending: PendingGamePrompt[] = [];
+      byCard.forEach((answers, cardId) => {
+        const myAnswer = answers.find((a) => a.user_id === myId);
+        const partnerAnswer = answers.find((a) => a.user_id !== myId);
+        if (!myAnswer && partnerAnswer) {
+          pending.push({
+            gameCardId: cardId,
+            prompt: partnerAnswer.prompt,
+            category: partnerAnswer.category,
+            gameType: partnerAnswer.game_type,
+            partnerAnswerId: partnerAnswer.id,
+            partnerAnsweredAt: partnerAnswer.created_at,
+          });
+        }
+      });
+
+      return pending.sort(
+        (a, b) => new Date(b.partnerAnsweredAt).getTime() - new Date(a.partnerAnsweredAt).getTime()
+      );
+    },
+    enabled: !!coupleId && !!myId,
+    refetchInterval: 10000,
+  });
+};

@@ -8,7 +8,7 @@ import { AppIcon } from '../../components/AppIcon';
 import { NAV_ICONS } from '../../lib/navigationIcons';
 import { useAuthStore } from '../../lib/store/authStore';
 import { useUserProfile } from '../../lib/queries/profile';
-import { groupAnswersByDay, useAllCoupleAnswers } from '../../lib/queries/gameAnswers';
+import { groupAnswersByDay, useAllCoupleAnswers, usePendingSessionsForMe, usePendingGamePromptsForMe } from '../../lib/queries/gameAnswers';
 import { useTheme } from '../../lib/hooks/useTheme';
 import { CATEGORY_LABELS } from '../../lib/gamePrompts';
 
@@ -21,6 +21,8 @@ export default function AnswersArchiveScreen() {
   const [filter, setFilter] = useState<'all' | 'game' | 'session'>('all');
 
   const { gameAnswers, sessionAnswers } = useAllCoupleAnswers(profile?.couple_id ?? '');
+  const { data: pendingSessions = [] } = usePendingSessionsForMe(profile?.couple_id ?? '', user?.id ?? '');
+  const { data: pendingGamePrompts = [] } = usePendingGamePromptsForMe(profile?.couple_id ?? '', user?.id ?? '');
 
   const grouped = useMemo(() => {
     const all = groupAnswersByDay(
@@ -62,6 +64,59 @@ export default function AnswersArchiveScreen() {
         <Text className="text-xs text-text-secondary leading-relaxed mb-5 px-1">
           Every answer from games and sessions — visible to both of you, sorted by day and category.
         </Text>
+
+        {/* ── Your Turn Section ────────────────────────────────────── */}
+        {(pendingSessions.length > 0 || pendingGamePrompts.length > 0) && (
+          <View className="mb-6">
+            <Text className="text-3xs font-extrabold text-indigo-600 uppercase tracking-widest mb-3 px-1">
+              Your Turn 🎯
+            </Text>
+            {pendingSessions.map((session) => (
+              <TouchableOpacity
+                key={session.id}
+                onPress={() => router.push('/session/card')}
+                className="mb-3 active:opacity-90"
+                activeOpacity={0.9}
+              >
+                <Card className="p-4 border border-rose-100 bg-rose-50/20">
+                  <View className="flex-row items-center justify-between mb-2">
+                    <View className="px-2 py-0.5 rounded bg-rose-100">
+                      <Text className="text-[9px] font-extrabold text-rose-700 uppercase tracking-wide">
+                        Session · {session.category.replace('_', ' ')}
+                      </Text>
+                    </View>
+                    <Text className="text-[10px] font-bold text-rose-500">Answer Now</Text>
+                  </View>
+                  <Text className="text-sm font-bold text-text-primary px-0.5 leading-normal">
+                    "{session.prompt}"
+                  </Text>
+                </Card>
+              </TouchableOpacity>
+            ))}
+            {pendingGamePrompts.map((game) => (
+              <TouchableOpacity
+                key={game.gameCardId}
+                onPress={() => router.push('/games')}
+                className="mb-3 active:opacity-90"
+                activeOpacity={0.9}
+              >
+                <Card className="p-4 border border-pink-100 bg-pink-50/20">
+                  <View className="flex-row items-center justify-between mb-2">
+                    <View className="px-2 py-0.5 rounded bg-pink-100">
+                      <Text className="text-[9px] font-extrabold text-pink-700 uppercase tracking-wide">
+                        Game · {CATEGORY_LABELS[game.category as keyof typeof CATEGORY_LABELS] || game.category}
+                      </Text>
+                    </View>
+                    <Text className="text-[10px] font-bold text-pink-500">Answer Now</Text>
+                  </View>
+                  <Text className="text-sm font-bold text-text-primary px-0.5 leading-normal">
+                    "{game.prompt}"
+                  </Text>
+                </Card>
+              </TouchableOpacity>
+            ))}
+          </View>
+        )}
 
         {/* ── Tabs Selector ────────────────────────────────────────── */}
         <View className="flex-row bg-slate-100 p-1 rounded-xl mb-5 border border-slate-200/50">
