@@ -6,7 +6,7 @@ import { useQueryClient } from '@tanstack/react-query';
 import { ThemeProvider } from '../../lib/hooks/useTheme';
 import { useUserProfile, useUpdateProfile } from '../../lib/queries/profile';
 import { useAuthStore } from '../../lib/store/authStore';
-import { registerForPushNotificationsAsync } from '../../lib/notifications';
+import { registerForPushNotificationsAsync, scheduleDailyReminderNotification } from '../../lib/notifications';
 import { syncOfflineQueue } from '../../lib/offlineQueue';
 import { markOnline } from '../../lib/networkStatus';
 import { GedweyLoader } from '../../components/GedweyLoader';
@@ -63,6 +63,9 @@ export default function AppLayout() {
             expo_push_token: token,
           });
         }
+        
+        // Schedule local daily reminder notification at 8:00 PM (20:00) by default
+        await scheduleDailyReminderNotification(20, 0);
       } catch (err) {
         console.error('[AppLayout] Push notification setup failed:', err);
       }

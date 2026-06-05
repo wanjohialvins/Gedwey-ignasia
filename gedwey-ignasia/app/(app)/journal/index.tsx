@@ -74,7 +74,7 @@ export default function JournalListScreen() {
             <Text className="text-5xl mb-4">🔒</Text>
             <Text className="text-xl font-bold text-text-primary mb-2 text-center">Journal is Locked</Text>
             <Text className="text-sm text-text-secondary text-center leading-relaxed mb-6 px-4">
-              Complete 5 shared couple sessions to unlock your private memory book.
+              Complete 5 Daily Questions to unlock your private memory book.
             </Text>
             <View className="h-2 w-4/5 bg-slate-200 rounded-full mb-2 overflow-hidden">
               <View
@@ -83,10 +83,10 @@ export default function JournalListScreen() {
               />
             </View>
             <Text className="text-xs font-semibold text-text-muted mb-6">
-              {completedSessionsCount} of 5 sessions completed
+              {completedSessionsCount} of 5 Daily Questions completed
             </Text>
             <Button
-              title="Start a Session"
+              title="Answer Daily Question"
               onPress={() => router.replace('/session/start')}
               className="w-full"
             />

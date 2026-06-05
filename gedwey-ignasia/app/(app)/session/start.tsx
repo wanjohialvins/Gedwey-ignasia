@@ -19,10 +19,10 @@ export default function SessionStartScreen() {
 
   const handleNewSession = () => {
     if (!profile?.couple_id) {
-      Alert.alert('Not Paired', 'You need to be paired with a partner to start a session.');
+      Alert.alert('Not Paired', 'You need to be paired with a partner to start a Daily Question.');
       return;
     }
-    router.push('/session/deck');
+    router.push('/session/card');
   };
 
   const handleResumeSession = () => {
@@ -69,28 +69,28 @@ export default function SessionStartScreen() {
 
       <View className="flex-1 justify-center items-center pb-16">
         <Text className="text-6xl mb-4">🎴</Text>
-        <Text className="text-2xl font-bold text-text-primary mb-2 text-center">Couple Sessions</Text>
+        <Text className="text-2xl font-bold text-text-primary mb-2 text-center">Daily Question</Text>
         <Text className="text-sm text-text-secondary text-center leading-relaxed mb-8 px-4">
-          Answer shared prompts together. See how your partner responds — after you both answer.
+          Connect daily with a new, shared question. Your responses are revealed once you both answer.
         </Text>
 
         {activeSession ? (
-          <Card className="w-full p-5 border border-primary-100 shadow-sm mb-4">
+          <Card className="w-full p-5 border border-primary-100 shadow-sm mb-4 bg-white">
             <Text className="text-xs font-bold text-primary-600 uppercase tracking-widest mb-2">
-              Active Session
+              Active Question
             </Text>
             <Text className="text-sm text-text-secondary leading-normal mb-4" numberOfLines={2}>
               {activeSession.cards?.text || 'Loading question...'}
             </Text>
             <Button
-              title="Continue Session"
+              title="Open Daily Question"
               onPress={handleResumeSession}
               className="w-full"
             />
           </Card>
         ) : (
           <Button
-            title="Start New Session"
+            title="Start Daily Question"
             onPress={handleNewSession}
             className="w-full"
           />

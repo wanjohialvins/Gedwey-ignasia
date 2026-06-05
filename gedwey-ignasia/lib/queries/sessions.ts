@@ -226,3 +226,47 @@ export const useSubmitSessionAnswer = () => {
     },
   });
 };
+
+// Fetch the deterministic card of the day for a couple that they haven't answered yet
+export const useDailyQuestion = (coupleId: string) => {
+  return useQuery<Card | null, Error>({
+    queryKey: ['dailyQuestion', coupleId],
+    queryFn: async () => {
+      if (!coupleId) return null;
+
+      // 1. Get all session card IDs for the couple (already answered/started)
+      const { data: sessions, error: sessionErr } = await supabase
+        .from('sessions')
+        .select('card_id')
+        .eq('couple_id', coupleId);
+
+      if (sessionErr) throw new Error(sessionErr.message);
+      const answeredCardIds = (sessions || []).map((s) => s.card_id);
+
+      // 2. Fetch all cards
+      const { data: cards, error: cardsErr } = await supabase
+        .from('cards')
+        .select('*');
+
+      if (cardsErr) throw new Error(cardsErr.message);
+      if (!cards || cards.length === 0) return null;
+
+      // 3. Filter out cards that are already answered
+      const unanswered = cards.filter((c) => !answeredCardIds.includes(c.id));
+      const pool = unanswered.length > 0 ? unanswered : cards; // fallback to all if all are answered
+
+      // Sort by ID to ensure order stability across devices/partners
+      pool.sort((a, b) => a.id.localeCompare(b.id));
+
+      // 4. Select based on current Date (UTC days since an epoch)
+      const now = new Date();
+      const epoch = new Date('2024-01-01T00:00:00Z');
+      const diffMs = Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate()) - epoch.getTime();
+      const days = Math.floor(diffMs / (1000 * 60 * 60 * 24));
+
+      const cardIndex = days % pool.length;
+      return pool[cardIndex] as Card;
+    },
+    enabled: !!coupleId,
+  });
+};

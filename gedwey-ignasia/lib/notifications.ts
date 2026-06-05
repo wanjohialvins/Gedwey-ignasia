@@ -224,3 +224,34 @@ export async function broadcastCoupleEvent(
     console.error('[broadcastCoupleEvent] Failed to send broadcast event:', err);
   }
 }
+
+export async function scheduleDailyReminderNotification(hour = 20, minute = 0): Promise<string | null> {
+  if (Platform.OS === 'web') return null;
+  try {
+    await ensureNotificationChannels();
+    
+    // Cancel any existing daily reminder first to avoid duplicates
+    await cancelScheduledNotification('daily_reminder');
+
+    const id = await Notifications.scheduleNotificationAsync({
+      identifier: 'daily_reminder',
+      content: {
+        title: "Daily Question Ready! 🎴",
+        body: "Tap to open today's question and connect with your partner.",
+        sound: true,
+        data: { type: 'session_reminder' },
+        ...(Platform.OS === 'android' ? { channelId: NOTIFICATION_CHANNELS.sessions } : {}),
+      },
+      trigger: {
+        hour,
+        minute,
+        repeats: true,
+      } as any,
+    });
+    console.log(`[Notifications] Scheduled daily reminder ${id} at ${hour}:${minute}`);
+    return id;
+  } catch (error) {
+    console.error('[Notifications] Failed to schedule daily reminder:', error);
+    return null;
+  }
+}

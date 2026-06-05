@@ -39,7 +39,7 @@ export const NAV_ICONS = {
 export const SIDEBAR_ITEMS = [
   { key: 'dashboard', icon: NAV_ICONS.dashboard, label: 'Dashboard', detail: 'Home summary', route: '/' },
   { key: 'discovery', icon: NAV_ICONS.discovery, label: 'Discovery Mode', detail: 'Share and compare answers', route: '/discovery', unpairedOnly: true },
-  { key: 'session', icon: NAV_ICONS.session, label: 'Couple Sessions', detail: 'Daily question cards', route: '/session/start', requiresPair: true },
+  { key: 'session', icon: NAV_ICONS.session, label: 'Daily Question', detail: 'Daily question cards', route: '/session/start', requiresPair: true },
   { key: 'games', icon: NAV_ICONS.games, label: 'Games', detail: 'Truth or Dare and more', route: '/games' },
   { key: 'lists', icon: NAV_ICONS.lists, label: 'Shared Lists', detail: 'To-dos and bucket goals', route: '/lists' },
   { key: 'music', icon: NAV_ICONS.music, label: 'Music', detail: 'Our soundtrack', route: '/music' },

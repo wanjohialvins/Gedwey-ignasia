@@ -188,6 +188,24 @@ export default function HomeScreen() {
   const partnerMoodText = getPartnerMoodText();
   const progress = Math.min(completedSessionsCount, 10);
 
+  const isDailyCompletedToday = sessionHistory?.some(session => {
+    if (!session.completed_at) return false;
+    const compDate = new Date(session.completed_at);
+    const today = new Date();
+    return (
+      compDate.getUTCFullYear() === today.getUTCFullYear() &&
+      compDate.getUTCMonth() === today.getUTCMonth() &&
+      compDate.getUTCDate() === today.getUTCDate()
+    );
+  });
+
+  const hasAnsweredActive = activeSession ? (
+    (activeSession.user1_id === user?.id && activeSession.user1_answer) ||
+    (activeSession.user2_id === user?.id && activeSession.user2_answer)
+  ) : false;
+
+  const isDailyPending = isPaired && !isDailyCompletedToday && !hasAnsweredActive;
+
   type SidebarRow = { label: string; detail: string; icon: typeof NAV_ICONS.dashboard; action: () => void };
 
   const sidebarItems: SidebarRow[] = [
@@ -196,12 +214,16 @@ export default function HomeScreen() {
       ? [{ label: 'Discovery Mode', detail: 'Share and compare answers', icon: NAV_ICONS.discovery, action: () => navigateFromDrawer('/discovery') }]
       : []),
     {
-      label: 'Couple Sessions',
-      detail: 'Daily question cards',
+      label: 'Daily Question',
+      detail: isDailyCompletedToday
+        ? 'Completed today ✨'
+        : (activeSession && hasAnsweredActive)
+          ? 'Waiting for partner ⏳'
+          : 'Pending daily 🎴',
       icon: NAV_ICONS.session,
       action: () => {
         if (isPaired) navigateFromDrawer('/session/start');
-        else Alert.alert('Pairing Required', 'Pair with your partner before starting sessions.');
+        else Alert.alert('Pairing Required', 'Pair with your partner before starting Daily Questions.');
       },
     },
     { label: 'Games', detail: 'Truth or Dare and more', icon: NAV_ICONS.games, action: () => navigateFromDrawer('/games') },
@@ -221,7 +243,7 @@ export default function HomeScreen() {
         handleLockedRoute(
           '/journal',
           isJournalUnlocked,
-          `Complete 5 sessions to unlock your shared journal. Progress: ${completedSessionsCount}/5.`
+          `Complete 5 Daily Questions to unlock your shared journal. Progress: ${completedSessionsCount}/5.`
         ),
     },
     {
@@ -244,7 +266,7 @@ export default function HomeScreen() {
         handleLockedRoute(
           '/health',
           isHealthUnlocked,
-          `Complete 10 sessions to unlock relationship health. Progress: ${completedSessionsCount}/10.`
+          `Complete 10 Daily Questions to unlock relationship health. Progress: ${completedSessionsCount}/10.`
         ),
     },
     { label: 'Settings', detail: 'Profile and pairing', icon: NAV_ICONS.settings, action: () => navigateFromDrawer('/settings') },
@@ -299,27 +321,42 @@ export default function HomeScreen() {
             <Text className="text-lg font-bold text-indigo-600">{coupleDetails?.streak || 0} days</Text>
           </View>
           <Text className="text-xs text-text-secondary leading-normal">
-            {isPaired ? getAnniversaryText(coupleDetails?.created_at) : 'Pair with your partner to begin shared streaks and sessions.'}
+            {isPaired ? getAnniversaryText(coupleDetails?.created_at) : 'Pair with your partner to begin shared streaks and daily questions.'}
           </Text>
         </Card>
 
-        <Card className="p-5 mb-5">
-          <Text className="text-sm font-bold text-text-primary mb-3">Today</Text>
+        <Card className="p-5 mb-5 border border-indigo-100 bg-indigo-50/10 bg-white">
+          <View className="flex-row justify-between items-center mb-3">
+            <Text className="text-sm font-bold text-text-primary">Today's Daily Question</Text>
+            {isPaired && (
+              <View className={`px-2.5 py-1 rounded-full ${isDailyCompletedToday ? 'bg-green-100' : isDailyPending ? 'bg-orange-100' : 'bg-blue-100'}`}>
+                <Text className={`text-2xs font-bold ${isDailyCompletedToday ? 'text-green-700' : isDailyPending ? 'text-orange-700' : 'text-blue-700'}`}>
+                  {isDailyCompletedToday ? 'Completed ✨' : isDailyPending ? 'Pending Daily 🎴' : 'Waiting for Partner ⏳'}
+                </Text>
+              </View>
+            )}
+          </View>
           <Text className="text-sm text-text-secondary leading-normal mb-4">
             {isPaired
-              ? 'Start one focused moment together, or open the menu for every feature.'
-              : 'Pair with your partner first, then all shared spaces open from the menu.'}
+              ? isDailyCompletedToday
+                ? "You've both answered today's question! Tap below to view your revealed answers."
+                : isDailyPending
+                  ? "Connect with your partner by answering today's shared question."
+                  : "You've answered! Waiting for your partner to submit their response."
+              : 'Pair with your partner first, then get a new shared question every single day.'}
           </Text>
           <View className="flex-row gap-3">
             <TouchableOpacity
               className={`flex-1 bg-primary-600 rounded-xl h-12 items-center justify-center active:bg-primary-500 ${!isPaired ? 'opacity-60' : ''}`}
               onPress={() => {
                 if (isPaired) router.push('/session/start');
-                else Alert.alert('Pairing Required', 'Pair with your partner in settings before starting sessions.');
+                else Alert.alert('Pairing Required', 'Pair with your partner in settings before opening.');
               }}
               activeOpacity={0.85}
             >
-              <Text className="text-white text-sm font-bold">Start Session</Text>
+              <Text className="text-white text-sm font-bold">
+                {isDailyCompletedToday ? 'View Answers' : isDailyPending ? 'Answer Daily Question' : 'Check Status'}
+              </Text>
             </TouchableOpacity>
             <TouchableOpacity
               className="flex-1 bg-primary-100 rounded-xl h-12 items-center justify-center active:bg-blue-200"
@@ -395,9 +432,9 @@ export default function HomeScreen() {
           </View>
           <Text className="text-xs text-text-secondary mt-3">
             {completedSessionsCount < 5
-              ? `${5 - completedSessionsCount} sessions until Shared Journal`
+              ? `${5 - completedSessionsCount} Daily Questions until Shared Journal`
               : completedSessionsCount < 10
-              ? `${10 - completedSessionsCount} sessions until Relationship Health`
+              ? `${10 - completedSessionsCount} Daily Questions until Relationship Health`
               : 'All primary milestones are available'}
           </Text>
         </Card>
