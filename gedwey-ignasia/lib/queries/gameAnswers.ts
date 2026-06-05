@@ -2,6 +2,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '../supabase';
 import type { GameMode, GameCategory } from '../gamePrompts';
 import { incrementStreak } from './streak';
+import { formatMediumDate } from '../dateUtils';
 
 export type GameAnswer = {
   id: string;
@@ -207,8 +208,7 @@ export const groupAnswersByDay = (
   const map = new Map<string, GroupedAnswer['items']>();
 
   const dayKey = (iso: string) => {
-    const d = new Date(iso);
-    return d.toLocaleDateString(undefined, { weekday: 'long', month: 'short', day: 'numeric', year: 'numeric' });
+    return formatMediumDate(iso);
   };
 
   gameAnswers.forEach((ga) => {

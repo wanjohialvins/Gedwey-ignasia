@@ -1,11 +1,17 @@
 {
   "cli": {
-    "version": ">= 9.0.0"
+    "version": ">= 9.0.0",
+    "env": {
+      "EAS_SKIP_AUTO_FINGERPRINT": "1"
+    }
   },
   "build": {
     "development": {
       "developmentClient": true,
-      "distribution": "internal"
+      "distribution": "internal",
+      "env": {
+        "EAS_SKIP_AUTO_FINGERPRINT": "1"
+      }
     },
     "preview": {
       "distribution": "internal",
@@ -15,11 +21,15 @@
       },
       "env": {
         "EXPO_PUBLIC_SUPABASE_URL": "https://gpgjjdvhyeqefcmfuonc.supabase.co",
-        "EXPO_PUBLIC_SUPABASE_ANON_KEY": "sb_publishable_gYtyQRq005MoFYkt8KVtzQ_J5oct5mg"
+        "EXPO_PUBLIC_SUPABASE_ANON_KEY": "sb_publishable_gYtyQRq005MoFYkt8KVtzQ_J5oct5mg",
+        "EAS_SKIP_AUTO_FINGERPRINT": "1"
       }
     },
     "production": {
-      "channel": "production"
+      "channel": "production",
+      "env": {
+        "EAS_SKIP_AUTO_FINGERPRINT": "1"
+      }
     }
   },
   "submit": {

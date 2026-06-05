@@ -11,6 +11,7 @@ import { useUserProfile } from '../../lib/queries/profile';
 import { useActivityLogs } from '../../lib/queries/engagement';
 import { useTheme } from '../../lib/hooks/useTheme';
 import { ThemedText } from '../../components/ThemedText';
+import { formatWeekdayMonthDay } from '../../lib/dateUtils';
 
 const ACTIVITY_ICONS: Record<string, { icon: IconName; color: string; iconColor: string }> = {
   session: { icon: NAV_ICONS.session, color: 'bg-violet-100', iconColor: '#7C3AED' },
@@ -31,7 +32,7 @@ const formatDayLabel = (dateString: string) => {
   yesterday.setDate(today.getDate() - 1);
   if (date.toDateString() === today.toDateString()) return 'Today';
   if (date.toDateString() === yesterday.toDateString()) return 'Yesterday';
-  return date.toLocaleDateString(undefined, { weekday: 'long', month: 'short', day: 'numeric' });
+  return formatWeekdayMonthDay(date, 'short');
 };
 
 export default function HistoryScreen() {

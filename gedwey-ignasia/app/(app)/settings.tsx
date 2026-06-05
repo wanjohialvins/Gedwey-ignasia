@@ -23,6 +23,7 @@ import {
   useUnpairPartner,
 } from '../../lib/queries/profile';
 import { Button } from '../../components/Button';
+import { formatShortDate } from '../../lib/dateUtils';
 import { Input } from '../../components/Input';
 import { Card } from '../../components/Card';
 import { Skeleton } from '../../components/Skeleton';
@@ -879,7 +880,7 @@ export default function SettingsScreen() {
         <Text className="text-[10px] text-text-muted font-semibold">Gedwey Ignasia v{Constants.expoConfig?.version ?? '1.0.0'}</Text>
         <Text className="text-3xs text-text-muted">
           {Updates.updateId ? `Update: ${Updates.updateId.substring(0, 8)}` : 'Local Dev'}
-          {Updates.createdAt ? ` · Released: ${new Date(Updates.createdAt).toLocaleDateString()}` : ''}
+          {Updates.createdAt ? ` · Released: ${formatShortDate(Updates.createdAt)}` : ''}
         </Text>
       </View>
     </ScrollView>

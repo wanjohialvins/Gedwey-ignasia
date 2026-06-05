@@ -17,6 +17,7 @@ import {
   useImportantDates,
 } from '../../lib/queries/coupleFeatures';
 import { useTheme } from '../../lib/hooks/useTheme';
+import { formatMonthDay } from '../../lib/dateUtils';
 
 export default function ImportantDatesScreen() {
   const router = useRouter();
@@ -108,7 +109,7 @@ export default function ImportantDatesScreen() {
                   <View className="flex-1 pr-3">
                     <Text className="text-base font-bold" style={{ color: theme.textPrimary }}>{d.title}</Text>
                     <Text className="text-sm mt-1" style={{ color: theme.textSecondary }}>
-                      {new Date(d.event_date + 'T00:00:00').toLocaleDateString(undefined, { month: 'long', day: 'numeric' })}
+                      {formatMonthDay(d.event_date + 'T00:00:00', 'long')}
                       {d.repeats_yearly ? ' (yearly)' : ''}
                     </Text>
                     <Text className="text-xs mt-1" style={{ color: theme.textTertiary }}>

@@ -16,6 +16,7 @@ import { userWantsCapsuleNotifications } from '../../../lib/notificationPrefs';
 import { Button } from '../../../components/Button';
 import { Card } from '../../../components/Card';
 import { Skeleton } from '../../../components/Skeleton';
+import { formatDateTime, formatShortDate } from '../../../lib/dateUtils';
 
 function getCountdownText(openDateString: string): { label: string; isReady: boolean } {
   const openDate = new Date(openDateString);
@@ -107,10 +108,7 @@ export default function CapsuleListScreen() {
     if (!isReady) {
       Alert.alert(
         'Capsule Locked 🔒',
-        `Patience! This capsule is sealed until ${new Date(item.open_date).toLocaleDateString(
-          undefined,
-          { month: 'long', day: 'numeric', year: 'numeric', hour: '2-digit', minute: '2-digit' }
-        )}. There is ${label} remaining.`
+        `Patience! This capsule is sealed until ${formatDateTime(item.open_date)}. There is ${label} remaining.`
       );
       return;
     }
@@ -134,11 +132,7 @@ export default function CapsuleListScreen() {
     const { label, isReady } = getCountdownText(item.open_date);
     const creatorName = item.profiles?.display_name || 'Partner';
     
-    const formattedOpenDate = new Date(item.open_date).toLocaleDateString(undefined, {
-      month: 'short',
-      day: 'numeric',
-      year: 'numeric',
-    });
+    const formattedOpenDate = formatShortDate(item.open_date);
 
     return (
       <TouchableOpacity

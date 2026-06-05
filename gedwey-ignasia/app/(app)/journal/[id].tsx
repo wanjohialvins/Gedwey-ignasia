@@ -12,6 +12,7 @@ import { useJournalEntry } from '../../../lib/queries/journal';
 import { Button } from '../../../components/Button';
 import { Card } from '../../../components/Card';
 import { Skeleton } from '../../../components/Skeleton';
+import { formatLongDate } from '../../../lib/dateUtils';
 
 export default function JournalDetailScreen() {
   const router = useRouter();
@@ -69,21 +70,19 @@ export default function JournalDetailScreen() {
     );
   }
 
-  const formattedDate = new Date(entry.created_at).toLocaleDateString(undefined, {
-    weekday: 'long',
-    month: 'long',
-    day: 'numeric',
-    year: 'numeric',
-  });
+  const formattedDate = formatLongDate(entry?.created_at);
 
-  const creatorName = entry.profiles?.display_name || 'Partner';
+  const rawProfiles = entry?.profiles;
+  const profilesObj = Array.isArray(rawProfiles) ? rawProfiles[0] : rawProfiles;
+  const creatorName = profilesObj?.display_name || 'Partner';
 
   // Parse mock voice note metadata
-  const voiceMatch = entry.content.match(/\[voice:(\d+:\d+)\]/);
-  const displayContent = entry.content.replace(/\[voice:\d+:\d+\]/g, '').trim();
+  const voiceMatch = entry?.content ? entry.content.match(/\[voice:(\d+:\d+)\]/) : null;
+  const displayContent = entry?.content ? entry.content.replace(/\[voice:\d+:\d+\]/g, '').trim() : '';
 
   // Deterministic random rotation based on entry ID hash
-  const getRotationAngle = (idStr: string) => {
+  const getRotationAngle = (idStr?: string) => {
+    if (!idStr) return '0deg';
     let hash = 0;
     for (let i = 0; i < idStr.length; i++) {
       hash = idStr.charCodeAt(i) + ((hash << 5) - hash);
@@ -138,7 +137,7 @@ export default function JournalDetailScreen() {
         <ScrollView contentContainerStyle={{ flexGrow: 1, paddingBottom: 40 }} showsVerticalScrollIndicator={false}>
           {/* Header section */}
           <View className="pt-2.5 mb-4">
-            <Text className="text-2xl font-bold text-text-primary mb-3 leading-normal">{entry.title}</Text>
+            <Text className="text-2xl font-bold text-text-primary mb-3 leading-normal">{entry?.title || 'Untitled Memory'}</Text>
             <View className="flex-row justify-between items-center flex-wrap gap-2">
               <Text className="text-xs font-semibold text-primary-600">{formattedDate}</Text>
               <Text className="text-xs text-text-muted font-medium">Written by {creatorName}</Text>
@@ -149,11 +148,11 @@ export default function JournalDetailScreen() {
           <View className="h-[1px] bg-slate-200 w-full mb-5" />
 
           {/* Polaroid Scrapbook Grid Section */}
-          {entry.image_url && (
+          {entry?.image_url && (
             <View className="items-center mb-6">
               <View 
                 style={{ 
-                  transform: [{ rotate: getRotationAngle(entry.id) }] 
+                  transform: [{ rotate: getRotationAngle(entry?.id) }] 
                 }}
                 className="bg-white border border-slate-200 p-3 pb-10 shadow-lg rounded-sm w-[90%] max-w-[320px]"
               >

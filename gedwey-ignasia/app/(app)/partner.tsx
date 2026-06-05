@@ -10,6 +10,7 @@ import { NAV_ICONS } from '../../lib/navigationIcons';
 import { useAuthStore } from '../../lib/store/authStore';
 import { useCouple, useUserProfile } from '../../lib/queries/profile';
 import { useTheme } from '../../lib/hooks/useTheme';
+import { formatMonthDay } from '../../lib/dateUtils';
 
 export default function PartnerProfileScreen() {
   const router = useRouter();
@@ -73,7 +74,7 @@ export default function PartnerProfileScreen() {
           <Card className="p-5 mb-4">
             <Text className="text-sm font-bold mb-2" style={{ color: theme.textPrimary }}>Birthday</Text>
             <Text className="text-sm" style={{ color: theme.textSecondary }}>
-              {new Date(partner.birthday + 'T00:00:00').toLocaleDateString(undefined, { month: 'long', day: 'numeric' })}
+              {formatMonthDay(partner.birthday + 'T00:00:00', 'long')}
             </Text>
           </Card>
         ) : null}

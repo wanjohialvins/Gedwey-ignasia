@@ -16,18 +16,14 @@ import { initMusicStoreSync } from '../../lib/store/musicStore';
 import { Audio } from 'expo-av';
 import { getCachedAudioUri } from '../../lib/audioCache';
 import { supabase } from '../../lib/supabase';
-import { useAppUpdates } from '../../lib/hooks/useAppUpdates';
 
 export default function AppLayout() {
   const { user } = useAuthStore();
   const segments = useSegments();
   const router = useRouter();
   const queryClient = useQueryClient();
-
-  // Automatically check for OTA updates via EAS Update in production
-  useAppUpdates();
-
   const insets = useSafeAreaInsets();
+
   const [toast, setToast] = useState<{ title: string; body: string; type?: string } | null>(null);
   const slideAnim = useRef(new Animated.Value(-150)).current;
 

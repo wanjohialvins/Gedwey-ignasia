@@ -1,8 +1,9 @@
-import { useEffect } from 'react';
-import { Alert } from 'react-native';
+import { useState, useEffect } from 'react';
 import * as Updates from 'expo-updates';
 
 export function useAppUpdates() {
+  const [updateAvailable, setUpdateAvailable] = useState(false);
+
   useEffect(() => {
     // Only check for updates in production build runtime environment, not during development
     if (__DEV__) return;
@@ -17,25 +18,9 @@ export function useAppUpdates() {
           // Download the new bundle
           await Updates.fetchUpdateAsync();
           
-          if (!isMounted) return;
-
-          Alert.alert(
-            'App Update Available 🚀',
-            'A new version has been downloaded. Restart the app now to apply the changes?',
-            [
-              { text: 'Later', style: 'cancel' },
-              { 
-                text: 'Restart Now', 
-                onPress: async () => {
-                  try {
-                    await Updates.reloadAsync();
-                  } catch (err) {
-                    console.error('[useAppUpdates] Reload failed:', err);
-                  }
-                } 
-              }
-            ]
-          );
+          if (isMounted) {
+            setUpdateAvailable(true);
+          }
         }
       } catch (error) {
         console.log('[useAppUpdates] Update check failed:', error);
@@ -48,4 +33,9 @@ export function useAppUpdates() {
       isMounted = false;
     };
   }, []);
+
+  return {
+    updateAvailable,
+    setUpdateAvailable,
+  };
 }

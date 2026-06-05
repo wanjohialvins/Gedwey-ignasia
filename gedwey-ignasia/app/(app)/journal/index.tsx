@@ -12,6 +12,7 @@ import { useAuthStore } from '../../../lib/store/authStore';
 import { useUserProfile } from '../../../lib/queries/profile';
 import { useSessionHistory } from '../../../lib/queries/sessions';
 import { useJournalEntries, JournalEntry } from '../../../lib/queries/journal';
+import { formatShortDate } from '../../../lib/dateUtils';
 import { Button } from '../../../components/Button';
 import { Card } from '../../../components/Card';
 import { Skeleton } from '../../../components/Skeleton';
@@ -98,17 +99,15 @@ export default function JournalListScreen() {
   }
 
   const renderJournalItem = ({ item }: { item: JournalEntry }) => {
-    const formattedDate = new Date(item.created_at).toLocaleDateString(undefined, {
-      month: 'short',
-      day: 'numeric',
-      year: 'numeric',
-    });
+    const formattedDate = formatShortDate(item.created_at);
 
-    const creatorName = item.profiles?.display_name || 'Partner';
+    const rawProfiles = item.profiles;
+    const profilesObj = Array.isArray(rawProfiles) ? rawProfiles[0] : rawProfiles;
+    const creatorName = profilesObj?.display_name || 'Partner';
 
     // Parse mock voice notes
-    const voiceMatch = item.content.match(/\[voice:(\d+:\d+)\]/);
-    const displayContent = item.content.replace(/\[voice:\d+:\d+\]/g, '').trim();
+    const voiceMatch = item?.content ? item.content.match(/\[voice:(\d+:\d+)\]/) : null;
+    const displayContent = item?.content ? item.content.replace(/\[voice:\d+:\d+\]/g, '').trim() : '';
 
     return (
       <TouchableOpacity

@@ -11,6 +11,7 @@ import { useTimeCapsule } from '../../../lib/queries/capsules';
 import { Button } from '../../../components/Button';
 import { Card } from '../../../components/Card';
 import { Skeleton } from '../../../components/Skeleton';
+import { formatDateTime, formatShortDate } from '../../../lib/dateUtils';
 
 export default function CapsuleDetailScreen() {
   const router = useRouter();
@@ -77,14 +78,7 @@ export default function CapsuleDetailScreen() {
   const isLocked = now.getTime() < openDate.getTime();
 
   if (isLocked) {
-    const formattedOpenDate = openDate.toLocaleDateString(undefined, {
-      weekday: 'long',
-      month: 'long',
-      day: 'numeric',
-      year: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit',
-    });
+    const formattedOpenDate = formatDateTime(capsule.open_date);
 
     return (
       <SafeAreaView className="flex-1 bg-background">
@@ -129,12 +123,10 @@ export default function CapsuleDetailScreen() {
     );
   }
 
-  const creatorName = capsule.profiles?.display_name || 'Partner';
-  const formattedOpenDate = openDate.toLocaleDateString(undefined, {
-    month: 'short',
-    day: 'numeric',
-    year: 'numeric',
-  });
+  const rawProfiles = capsule.profiles;
+  const profilesObj = Array.isArray(rawProfiles) ? rawProfiles[0] : rawProfiles;
+  const creatorName = profilesObj?.display_name || 'Partner';
+  const formattedOpenDate = formatShortDate(capsule.open_date);
 
   return (
     <SafeAreaView className="flex-1 bg-background">

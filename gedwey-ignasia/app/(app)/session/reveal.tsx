@@ -15,6 +15,7 @@ import { Button } from '../../../components/Button';
 import { Card } from '../../../components/Card';
 import { Skeleton } from '../../../components/Skeleton';
 import { VoicePlaybackBubble } from '../../../components/VoicePlaybackBubble';
+import { formatShortDate } from '../../../lib/dateUtils';
 
 const MOOD_MAP: Record<string, { emoji: string; label: string }> = {
   happy: { emoji: '😊', label: 'Happy' },
@@ -170,13 +171,7 @@ export default function SessionRevealScreen() {
   const myMood = MOOD_MAP[myMoodKey || 'neutral'] || MOOD_MAP.neutral;
   const partnerMood = MOOD_MAP[partnerMoodKey || 'neutral'] || MOOD_MAP.neutral;
 
-  const formattedDate = sessionToShow.completed_at
-    ? new Date(sessionToShow.completed_at).toLocaleDateString(undefined, {
-        month: 'short',
-        day: 'numeric',
-        year: 'numeric',
-      })
-    : '';
+  const formattedDate = formatShortDate(sessionToShow.completed_at);
 
   return (
     <SafeAreaView className="flex-1 bg-background">

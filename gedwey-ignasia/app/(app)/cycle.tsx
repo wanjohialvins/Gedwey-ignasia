@@ -18,6 +18,7 @@ import {
 import { useTheme } from '../../lib/hooks/useTheme';
 import { askCycleAssistant } from '../../lib/queries/cycleAssistant';
 import { scheduleLocalNotification } from '../../lib/notifications';
+import { formatMonthDay, formatMonthYear, formatWeekdayMonthDay } from '../../lib/dateUtils';
 import type { IconName } from '../../lib/navigationIcons';
 import type { CycleLog } from '../../lib/queries/coupleFeatures';
 import {
@@ -67,7 +68,7 @@ const PRIVACY_OPTIONS = ['cloud', 'local'] as const;
 const CYCLE_PRIVACY_KEY = 'cycle-tracker:privacy-mode';
 
 const formatDate = (iso: string) =>
-  new Date(iso + 'T00:00:00').toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
+  formatMonthDay(iso + 'T00:00:00', 'short');
 
 const localCycleKey = (userId?: string) => `cycle-tracker:local-logs:${userId ?? 'anonymous'}`;
 
@@ -362,7 +363,7 @@ export default function CycleCalendarScreen() {
     } else setViewMonth((m) => m + 1);
   };
 
-  const monthLabel = new Date(viewYear, viewMonth).toLocaleDateString(undefined, { month: 'long', year: 'numeric' });
+  const monthLabel = formatMonthYear(new Date(viewYear, viewMonth));
 
   return (
     <ScreenShell className="flex-1">
@@ -391,7 +392,7 @@ export default function CycleCalendarScreen() {
               </Text>
               <Text className="text-sm mt-1" style={{ color: prediction ? '#9F1239' : theme.textSecondary }}>
                 {prediction
-                  ? `Next period: ${new Date(prediction.nextPeriod + 'T00:00:00').toLocaleDateString(undefined, { weekday: 'long', month: 'long', day: 'numeric' })}`
+                  ? `Next period: ${formatWeekdayMonthDay(prediction.nextPeriod + 'T00:00:00', 'long')}`
                   : 'Log at least 2 period starts to unlock predictions.'}
               </Text>
             </View>
@@ -577,7 +578,7 @@ export default function CycleCalendarScreen() {
 
         <Card className="p-5 mb-5">
           <Text className="text-sm font-bold mb-3" style={{ color: theme.textPrimary }}>
-            Log for {new Date(selectedDate + 'T00:00:00').toLocaleDateString(undefined, { month: 'short', day: 'numeric' })}
+            Log for {formatMonthDay(selectedDate + 'T00:00:00', 'short')}
           </Text>
 
           <Text className="text-xs font-bold mb-2" style={{ color: theme.textSecondary }}>Flow strength</Text>
