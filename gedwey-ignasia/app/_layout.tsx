@@ -3,6 +3,7 @@ import React, { useEffect } from 'react';
 import { View, LogBox, Alert } from 'react-native';
 import { Stack, useRouter, useSegments } from 'expo-router';
 import * as Updates from 'expo-updates';
+import "../lib/notifications";
 
 LogBox.ignoreLogs([
   'expo-notifications: Android Push notifications',

@@ -1,6 +1,7 @@
-import React, { useEffect, useRef } from 'react';
+import React, { useEffect, useRef, useState, useCallback } from 'react';
 import { Stack, useRouter, useSegments } from 'expo-router';
-import { View, Text, AppState } from 'react-native';
+import { View, Text, AppState, Animated, Pressable } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import * as Notifications from 'expo-notifications';
 import { useQueryClient } from '@tanstack/react-query';
 import { ThemeProvider } from '../../lib/hooks/useTheme';
@@ -25,6 +26,53 @@ export default function AppLayout() {
 
   // Automatically check for OTA updates via EAS Update in production
   useAppUpdates();
+
+  const insets = useSafeAreaInsets();
+  const [toast, setToast] = useState<{ title: string; body: string; type?: string } | null>(null);
+  const slideAnim = useRef(new Animated.Value(-150)).current;
+
+  const dismissToast = useCallback(() => {
+    Animated.timing(slideAnim, {
+      toValue: -150,
+      duration: 250,
+      useNativeDriver: true,
+    }).start(() => {
+      setToast(null);
+    });
+  }, [slideAnim]);
+
+  useEffect(() => {
+    if (toast) {
+      Animated.spring(slideAnim, {
+        toValue: 0,
+        useNativeDriver: true,
+        tension: 40,
+        friction: 8,
+      }).start();
+
+      const timer = setTimeout(() => {
+        dismissToast();
+      }, 4500);
+
+      return () => clearTimeout(timer);
+    }
+  }, [toast, slideAnim, dismissToast]);
+
+  const handleToastPress = () => {
+    if (!toast) return;
+    const type = toast.type;
+    dismissToast();
+    
+    if (type === 'session_answered') {
+      router.push('/session/reveal');
+    } else if (type === 'capsule_ready') {
+      router.push('/capsule');
+    } else if (type === 'session_reminder') {
+      router.push('/session/start');
+    } else if (type === 'nudge') {
+      router.push('/history');
+    }
+  };
 
   // Fetch user profile via React Query
   const { data: profile, isLoading, error } = useUserProfile(user?.id ?? '');
@@ -122,6 +170,7 @@ export default function AppLayout() {
 
         // Schedule local notification to pop up a banner & play a sound
         if (title && body) {
+          setToast({ title, body, type: event });
           try {
             await Notifications.scheduleNotificationAsync({
               content: {
@@ -164,6 +213,11 @@ export default function AppLayout() {
     const receivedSub = Notifications.addNotificationReceivedListener((notification) => {
       console.log('[AppLayout] Notification received in foreground:', notification.request.content.title);
       
+      const { title, body, data } = notification.request.content;
+      if (title && body) {
+        setToast({ title, body, type: typeof data?.type === 'string' ? data.type : undefined });
+      }
+
       // Play a satisfying raindrop water drop sound for foreground partner activities
       const playRaindropSound = async () => {
         try {
@@ -271,6 +325,38 @@ export default function AppLayout() {
       <Stack.Screen name="health/checkin" />
         </Stack>
         <GlobalMusicFAB />
+
+        {toast && (
+          <Animated.View
+            style={{
+              position: 'absolute',
+              top: 0,
+              left: 16,
+              right: 16,
+              zIndex: 9999,
+              transform: [{ translateY: slideAnim }],
+              paddingTop: Math.max(insets.top, 12),
+            }}
+          >
+            <Pressable
+              onPress={handleToastPress}
+              className="bg-slate-900 border border-slate-800 rounded-2xl p-4 flex-row items-center gap-3 shadow-2xl active:opacity-95"
+            >
+              <View className="w-10 h-10 rounded-full bg-indigo-600/20 items-center justify-center border border-indigo-500/30">
+                <Text className="text-lg">
+                  {toast.type === 'nudge' ? '💖' : toast.type === 'session_answered' ? '✨' : toast.type === 'capsule_ready' ? '⏳' : '🔔'}
+                </Text>
+              </View>
+              <View className="flex-1">
+                <Text className="text-xs font-bold text-white mb-0.5">{toast.title}</Text>
+                <Text className="text-3xs text-slate-300 leading-normal" numberOfLines={2}>{toast.body}</Text>
+              </View>
+              <Pressable onPress={(e) => { e.stopPropagation(); dismissToast(); }} className="px-2.5 py-1.5 rounded-lg bg-slate-800 active:bg-slate-700">
+                <Text className="text-slate-300 text-[10px] font-bold">Dismiss</Text>
+              </Pressable>
+            </Pressable>
+          </Animated.View>
+        )}
       </View>
     </ThemeProvider>
   );
