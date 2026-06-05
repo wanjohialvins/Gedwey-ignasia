@@ -62,7 +62,7 @@ export async function askCycleAssistant(
 
   // 1. Attempt Groq call
   try {
-    console.log('[CycleAssistant] Attempting Groq call with model llama3-8b-8192...');
+    console.log('[CycleAssistant] Attempting Groq call with model llama-3.1-8b-instant...');
     const response = await fetch('https://api.groq.com/openai/v1/chat/completions', {
       method: 'POST',
       headers: {
@@ -70,7 +70,7 @@ export async function askCycleAssistant(
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        model: 'llama3-8b-8192',
+        model: 'llama-3.1-8b-instant',
         messages: [
           { role: 'system', content: SYSTEM_PROMPT },
           { role: 'user', content: promptContent },
@@ -101,9 +101,9 @@ export async function askCycleAssistant(
 
   // 2. Attempt Gemini fallback call
   try {
-    console.log('[CycleAssistant] Attempting Gemini fallback call with gemini-1.5-flash...');
+    console.log('[CycleAssistant] Attempting Gemini fallback call with gemini-2.0-flash...');
     const response = await fetch(
-      `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${geminiApiKey}`,
+      `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${geminiApiKey}`,
       {
         method: 'POST',
         headers: {

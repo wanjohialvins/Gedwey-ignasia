@@ -261,55 +261,201 @@ export function generateReminders(prediction: CyclePrediction | null) {
 
 export function respondToCycleQuery(query: string, context: { phase?: CyclePhase; insights?: string[] }) {
   const lower = query.toLowerCase();
+  const phase = context.phase;
 
-  if (lower.includes('diet') || lower.includes('food') || lower.includes('eat') || lower.includes('nutrition')) {
-    if (context.phase === 'period') {
-      return 'During your period, focus on iron-rich foods (leafy greens, lean meats), vitamin C to aid absorption, and anti-inflammatory foods like ginger or dark chocolate to ease cramps. Stay hydrated!';
+  // ── DIET & NUTRITION ──────────────────────────────────────────────────────
+  if (lower.includes('diet') || lower.includes('food') || lower.includes('eat') || lower.includes('nutrition') || lower.includes('craving') || lower.includes('hungry')) {
+    if (phase === 'period') {
+      return 'Oh babe, your body is working hard right now! \u{1F497} Focus on iron-rich foods \u2014 leafy greens, lean meats, lentils \u2014 and pair them with vitamin C (oranges, bell peppers) to boost absorption. Dark chocolate and ginger tea can genuinely help ease cramps too. Stay hydrated, luv.';
     }
-    if (context.phase === 'pms' || context.phase === 'luteal') {
-      return 'In your luteal/PMS phase, complex carbs (oats, sweet potatoes) can help stabilize blood sugar and mood. Healthy fats and magnesium-rich foods (bananas, pumpkin seeds) can curb cravings.';
+    if (phase === 'pms' || phase === 'luteal') {
+      return 'Luv, those pre-period cravings are SO real and completely normal. Complex carbs like oats and sweet potatoes help stabilize your blood sugar and mood. Magnesium-rich foods \u2014 bananas, pumpkin seeds, dark leafy greens \u2014 can also ease that restless, irritable feeling. And yes, a little chocolate is totally allowed \u{1F36B}';
     }
-    return 'For general cycle wellness, prioritize whole foods, healthy fats (avocado, nuts), lean proteins, and plenty of water. Adjusting nutrition to your cycle phase can help support natural hormone fluctuations.';
-  }
-
-  if (lower.includes('exercise') || lower.includes('workout') || lower.includes('gym') || lower.includes('run')) {
-    if (context.phase === 'period' || context.phase === 'pms') {
-      return 'When energy is lower during PMS and period days, gentle movement like yoga, walking, or light stretching is ideal. Listen to your body and prioritize rest over intense workouts.';
+    if (phase === 'follicular' || phase === 'ovulation') {
+      return "You're in your power phase girl! \u{1F338} This is when your estrogen is rising and your energy is naturally higher. Load up on whole foods, lean proteins, and good fats (avocado, salmon, nuts) to sustain that glow. Your gut absorption is also better now, so it's a great time to eat nutritiously.";
     }
-    if (context.phase === 'fertile' || context.phase === 'ovulation' || context.phase === 'follicular') {
-      return 'During follicular and ovulation phases, estrogen rises, boosting your energy and strength. This is a great window for high-intensity workouts, strength training, or challenging runs!';
+    return 'For overall cycle wellness, think whole foods, healthy fats like avocado and nuts, lean proteins, and lots of water. Tuning your diet to each phase of your cycle can genuinely help balance your hormones and energy over time. \u{1F957}';
+  }
+
+  // ── EXERCISE & MOVEMENT ───────────────────────────────────────────────────
+  if (lower.includes('exercise') || lower.includes('workout') || lower.includes('gym') || lower.includes('run') || lower.includes('yoga') || lower.includes('walk') || lower.includes('sport')) {
+    if (phase === 'period') {
+      return "Babe, give yourself grace on period days. \u{1F495} Gentle movement \u2014 slow walks, restorative yoga, or light stretching \u2014 is plenty. If you feel okay for more, go for it, but rest is just as valid as a full workout right now. Your body is literally shedding its uterine lining \u2014 that's effort enough!";
     }
-    return 'Tune your workouts to your energy levels. High-energy phases (follicular/ovulation) are great for strength and intensity, while low-energy phases (luteal/period) benefit from restorative exercises like walking or yoga.';
-  }
-
-  if (lower.includes('partner') || lower.includes('couple') || lower.includes('husband') || lower.includes('boyfriend') || lower.includes('help')) {
-    return 'Sharing your cycle with your partner helps them understand your emotional and physical changes. In low-energy phases (PMS/period), they can support you by offering extra rest, soothing comfort, or helping with daily tasks.';
-  }
-
-  if (lower.includes('sleep') || lower.includes('tired') || lower.includes('rest') || lower.includes('insomnia') || lower.includes('fatigue')) {
-    if (context.phase === 'luteal' || context.phase === 'pms') {
-      return 'Fatigue is common in the luteal/PMS phase due to rising progesterone and dropping estrogen. Try creating a winding-down routine, keeping your room cool, and avoiding caffeine in the afternoon.';
+    if (phase === 'pms' || phase === 'luteal') {
+      return "In your luteal phase, energy tends to dip and your body needs more recovery time. Swap high-intensity sessions for Pilates, swimming, or a peaceful walk. It's not giving up \u2014 it's training smart with your cycle. \u{1F9D8}";
     }
-    return 'Aim for 7-9 hours of quality sleep. Fatigue can vary across your cycle, especially dropping right before your period. Prioritize consistent sleep times and relaxing evening rituals.';
+    if (phase === 'follicular') {
+      return "Yes girl, this is your moment! \u{1F525} Rising estrogen in your follicular phase boosts strength, coordination, and endurance. It's literally the best time to try a new class, push harder in the gym, or go for that long run you've been thinking about.";
+    }
+    if (phase === 'ovulation' || phase === 'fertile') {
+      return 'Peak performance phase! \u{1F4AA} Estrogen is at its highest right now, meaning your pain tolerance is up and your energy is peaking. Strength training, HIIT, dancing \u2014 anything high-energy is your friend this week. Enjoy it!';
+    }
+    return 'Syncing your workouts with your cycle is a total game changer. High-energy phases (follicular/ovulation) love strength and intensity, while the luteal and period phases thrive with gentle, restorative movement. Listen to your body \u2014 it always knows. \u{1F319}';
   }
 
-  if (lower.includes('mood') || lower.includes('sad') || lower.includes('emotional') || lower.includes('anxious') || lower.includes('irrit')) {
-    return 'Hormonal shifts, especially the drop in estrogen and progesterone during the PMS phase, can cause mood swings, anxiety, or irritability. Regular rest, mindfulness, and self-compassion can help navigate these waves.';
+  // ── SLEEP & FATIGUE ───────────────────────────────────────────────────────
+  if (lower.includes('sleep') || lower.includes('tired') || lower.includes('rest') || lower.includes('insomnia') || lower.includes('fatigue') || lower.includes('exhausted') || lower.includes('energy')) {
+    if (phase === 'luteal' || phase === 'pms') {
+      return "Oh luv, that drained feeling in your luteal phase is 100% real \u2014 rising progesterone makes your body run warmer and your sleep lighter. Try a consistent wind-down routine, keep your room cool, limit screen time before bed, and go easy on caffeine after 2pm. You're not lazy, your hormones are just extra active right now. \u{1F49C}";
+    }
+    if (phase === 'period') {
+      return "It makes total sense that you're exhausted on period days, babe. Blood loss + cramping + hormonal shifts = a lot. Prioritize sleep, nap if you can, and don't feel guilty about a slower day. Iron-rich foods can help replenish your energy too. \u{1FAF6}";
+    }
+    if (phase === 'follicular' || phase === 'ovulation') {
+      return "Your energy should be rising right now as estrogen climbs! \u{2728} If you're still feeling fatigued, make sure you're getting 7\u20139 hours of quality sleep, eating enough protein, and drinking enough water. Low iron or dehydration can zap energy even during your high-energy phases.";
+    }
+    return 'Aim for 7\u20139 hours of quality sleep throughout your cycle \u2014 but know that your sleep quality naturally shifts. Progesterone in the luteal phase can cause restless nights, while the follicular phase tends to bring deeper, more refreshing sleep. Consistency is key. \u{1F634}';
   }
 
-  if (lower.includes('cramp') || lower.includes('pain') || lower.includes('hurt') || lower.includes('ache')) {
-    return 'Mild cramps right before or during your period are normal as the uterus contracts. Applying heat, drinking warm tea, or taking gentle walks can help. If pain is severe, constant, or disruptive, please consult a healthcare professional.';
+  // ── MOOD & EMOTIONS ───────────────────────────────────────────────────────
+  if (lower.includes('mood') || lower.includes('sad') || lower.includes('emotional') || lower.includes('anxious') || lower.includes('irrit') || lower.includes('cry') || lower.includes('overwhelm') || lower.includes('angry') || lower.includes('depress')) {
+    if (phase === 'pms' || phase === 'luteal') {
+      return "Oh babe, I hear you. \u{1F497} The emotional intensity before your period is so valid \u2014 it's not 'just being dramatic.' The drop in estrogen and progesterone in your luteal/PMS phase directly affects your serotonin levels. That's a REAL chemical shift. Be extra gentle with yourself, lean into comfort, and know this wave will pass.";
+    }
+    if (phase === 'period') {
+      return "Feeling emotionally tender during your period? Completely makes sense. Hormones are at their lowest point right now, and that can bring heavy feelings. Give yourself the grace to feel it, rest in it, and not push through it. You don't have to be productive every day. \u{1F327}\uFE0F\u{1F49C}";
+    }
+    if (phase === 'follicular' || phase === 'ovulation') {
+      return "This phase usually brings a natural mood lift! Rising estrogen boosts your serotonin and confidence. If you're still feeling low, check in on your sleep, hydration, and stress levels \u2014 those can all work against your natural hormone highs. \u{1F338}";
+    }
+    return "Your moods across the cycle are hormone-driven and deeply real. In the luteal and PMS phases especially, emotional sensitivity rises. Journaling, movement, rest, and connection with people who get you can all help. You're not 'too much' \u2014 you're cyclical, and that's a superpower. \u{1F49C}";
   }
 
-  if (lower.includes('fertile') || lower.includes('ovulation') || lower.includes('pregnancy') || lower.includes('conceive')) {
-    return context.phase === 'fertile' || context.phase === 'ovulation'
-      ? 'Based on your logs, you are currently in or near your fertile window. Ovulation is the day the egg is released, usually about 14 days before your next period.'
-      : 'Your fertile window spans the 5 days before ovulation and the day of ovulation itself. This is estimated based on your average cycle length and recent logs.';
+  // ── CRAMPS & PAIN ─────────────────────────────────────────────────────────
+  if (lower.includes('cramp') || lower.includes('pain') || lower.includes('hurt') || lower.includes('ache') || lower.includes('breast') || lower.includes('sore')) {
+    if (lower.includes('breast') || lower.includes('boob') || lower.includes('chest')) {
+      return "Breast tenderness is super common in the luteal and PMS phases, babe \u2014 rising progesterone causes fluid retention in breast tissue. A supportive bra and reducing caffeine and salt can help ease the discomfort. If it's severe, always worth a check-in with your OBGYN. \u{1F495}";
+    }
+    return 'Mild cramps before or during your period are normal as your uterus contracts. A heating pad, warm ginger or chamomile tea, or a gentle walk can all bring real relief. \u{1F33F} That said, babe \u2014 if your cramps are severe, stopping you from daily activities, or getting worse over time, please check in with your OBGYN. You deserve to not be in pain.';
   }
 
+  // ── BLOATING ─────────────────────────────────────────────────────────────
+  if (lower.includes('bloat') || lower.includes('puffy') || lower.includes('swollen') || lower.includes('full')) {
+    return "Ugh, bloating before and during your period is SO uncomfortable! \u{1F629} Estrogen and progesterone shifts cause your body to retain water and slow digestion. Warm herbal teas (peppermint, ginger), cutting back on salty foods, and light movement like walking or yoga can genuinely help. You're not imagining it \u2014 your hormones are literally affecting your gut.";
+  }
+
+  // ── FERTILITY & OVULATION ─────────────────────────────────────────────────
+  if (lower.includes('fertile') || lower.includes('ovulation') || lower.includes('pregnancy') || lower.includes('conceive') || lower.includes('baby') || lower.includes('ttc')) {
+    if (phase === 'fertile' || phase === 'ovulation') {
+      return "Based on your logs, you're currently in or near your fertile window! \u{1F31F} Ovulation is when the egg is released \u2014 usually around 14 days before your next period. This is your body's natural conception peak. If you're TTC, now is a great time!";
+    }
+    return 'Your fertile window spans the 5 days before ovulation plus the day of ovulation itself. Tracking BBT (basal body temperature) or cervical mucus changes alongside your log data gives you the clearest picture. Keep logging and your predictions will sharpen! \u{1F95A}';
+  }
+
+  // ── DISCHARGE & CERVICAL MUCUS ────────────────────────────────────────────
+  if (lower.includes('discharge') || lower.includes('mucus') || lower.includes('cervical') || lower.includes('spotting') || lower.includes('brown')) {
+    if (lower.includes('brown') || lower.includes('spotting')) {
+      return "Brown discharge or light spotting around your period is usually just old blood leaving your uterus \u2014 completely normal, babe! Mid-cycle spotting can sometimes signal ovulation. That said, if spotting is heavy, painful, or frequent, it's worth a quick check-in with your doctor. \u{1F495}";
+    }
+    return 'Changes in discharge throughout your cycle are normal and actually tell you a lot! Around ovulation, discharge becomes clear, slippery, and stretchy \u2014 like egg whites \u2014 signalling your fertile window. Post-ovulation it becomes thicker and white. Your body is communicating with you. \u{1F338}';
+  }
+
+  // ── SKIN & ACNE ───────────────────────────────────────────────────────────
+  if (lower.includes('skin') || lower.includes('acne') || lower.includes('breakout') || lower.includes('pimple') || lower.includes('glow')) {
+    if (phase === 'pms' || phase === 'luteal') {
+      return "Hormonal breakouts before your period are so common and SO frustrating! \u{1F629} Rising progesterone increases oil production, clogging pores. Keep your routine gentle \u2014 harsh products can make it worse. Staying hydrated, reducing sugar, and managing stress all help. And remember, it clears after your period starts! \u{2728}";
+    }
+    if (phase === 'follicular' || phase === 'ovulation') {
+      return 'Your skin is probably glowing right now! \u{1F31F} Rising estrogen boosts collagen and reduces oiliness. This is a great time for nourishing face masks \u2014 your skin will absorb them beautifully.';
+    }
+    return 'Your skin changes throughout your cycle because of shifting hormones. Expect clearer, more radiant skin during the follicular and ovulation phases, and more oiliness or breakouts in the luteal and PMS phases. A consistent, gentle skincare routine goes a long way. \u{1F4A7}';
+  }
+
+  // ── STRESS & MENTAL HEALTH ────────────────────────────────────────────────
+  if (lower.includes('stress') || lower.includes('burnout') || lower.includes('mental') || lower.includes('panic') || lower.includes('anxiety')) {
+    if (phase === 'pms' || phase === 'luteal') {
+      return "Stress and anxiety can genuinely amplify in the luteal/PMS phase \u2014 your body is already in a low-estrogen state and stress hormones pile on top. Even short bursts of calm (5 minutes of deep breathing, a walk, journaling) can break the spiral. You got this, babe. \u{1F49C}";
+    }
+    return 'Chronic stress can actually delay or disrupt your period by affecting cortisol and throwing off ovulation timing. Taking rest seriously is literally cycle health. Little rituals \u2014 5 minutes of stillness, a warm bath, or creative time \u2014 add up more than you know. \u{1F319}';
+  }
+
+  // ── HEADACHE & MIGRAINE ───────────────────────────────────────────────────
+  if (lower.includes('headache') || lower.includes('migraine') || lower.includes('nausea')) {
+    if (phase === 'period' || phase === 'pms') {
+      return "Hormonal headaches just before your period are caused by the sharp drop in estrogen. Staying well hydrated, keeping caffeine consistent, and resting can all help. If migraines are severe or recurring, please mention them to your OBGYN \u2014 hormonal migraines are very treatable. \u{1F495}";
+    }
+    return 'Headaches can pop up around ovulation and PMS due to estrogen fluctuations. Staying hydrated, keeping a regular sleep schedule, and managing stress are your first lines of defense. Track when they happen \u2014 the pattern might tell you a lot. \u{1F50D}';
+  }
+
+  // ── MISSED / LATE / IRREGULAR PERIOD ─────────────────────────────────────
+  if (lower.includes('miss') || lower.includes('late') || lower.includes('irregular') || lower.includes('no period') || lower.includes('skipped')) {
+    return "Babe, a late or missed period can happen for lots of reasons beyond pregnancy \u2014 high stress, under-eating, intense exercise, illness, or hormonal shifts can all delay things. If it's been more than 6\u20138 weeks or has been irregular for several cycles, please check in with your OBGYN. You deserve proper care and answers. \u{1F497}";
+  }
+
+  // ── WEIGHT & WATER RETENTION ──────────────────────────────────────────────
+  if (lower.includes('weight') || lower.includes('water retention') || lower.includes('retain')) {
+    return "Feeling heavier before your period? That's water retention caused by progesterone, and it's super common. The scale can shift 2\u20135 lbs just from fluid changes across your cycle \u2014 that is NOT fat gain. Reducing salt, drinking more water, and cutting refined carbs can help you feel less puffy. \u{1F4A7}";
+  }
+
+  // ── LIBIDO & INTIMACY ─────────────────────────────────────────────────────
+  if (lower.includes('libido') || lower.includes('sex') || lower.includes('desire') || lower.includes('intimacy') || lower.includes('intimate')) {
+    if (phase === 'ovulation' || phase === 'fertile') {
+      return "Your libido is probably naturally higher right now \u2014 estrogen and testosterone both peak around ovulation! \u{1F338} This is a great time to feel deeply connected with your partner. Enjoy that energy, babe.";
+    }
+    if (phase === 'pms' || phase === 'luteal' || phase === 'period') {
+      return "Lower desire during your luteal/PMS/period phases is completely normal. Dropping hormones naturally pull your libido down. Being honest with yourself and your partner about where you're at is always the kindest thing. No pressure, babe. \u{1F49C}";
+    }
+    return "Libido naturally ebbs and flows across your cycle! It tends to peak around ovulation and dip in the luteal and period phases. This is completely normal and doesn't reflect anything about your relationship \u2014 it's just hormones doing their thing.";
+  }
+
+  // ── PARTNER SUPPORT ───────────────────────────────────────────────────────
+  if (lower.includes('partner') || lower.includes('husband') || lower.includes('boyfriend') || lower.includes('girlfriend') || lower.includes('spouse')) {
+    return "Sharing your cycle with your partner is such a beautiful form of vulnerability! \u{1F495} When they understand that your energy, mood, and needs genuinely shift throughout the month, it takes so much pressure off both of you. During low phases (PMS/period), they can show up with warmth and patience. During your high phases, you'll probably be the one pouring energy right back in!";
+  }
+
+  // ── TRACKING & LOGGING ────────────────────────────────────────────────────
+  if (lower.includes('track') || lower.includes('log') || lower.includes('record') || lower.includes('period start') || lower.includes('period end')) {
+    return "Yay, you're logging! \u{1F4DD} The more consistently you track \u2014 period dates, flow, symptoms, mood \u2014 the smarter your predictions become. Even just 2\u20133 cycles of data will give you much clearer patterns. You're building a personalised map of your body, and that's genuinely powerful.";
+  }
+
+  // ── CYCLE LENGTH & REGULARITY ─────────────────────────────────────────────
+  if (lower.includes('cycle length') || lower.includes('regular') || lower.includes('average') || lower.includes('how long') || lower.includes('normal cycle')) {
+    return "The average cycle is 28 days, but healthy cycles range from 21 to 35 days. What matters most is that YOUR cycle is consistent for you. Small variations of 1\u20133 days are normal. Bigger or more frequent irregularities are worth mentioning to your doctor. \u{1F495}";
+  }
+
+  // ── SELF CARE ─────────────────────────────────────────────────────────────
+  if (lower.includes('self care') || lower.includes('selfcare') || lower.includes('wellness') || lower.includes('relax') || lower.includes('bath') || lower.includes('pamper') || lower.includes('warm')) {
+    if (phase === 'period' || phase === 'pms') {
+      return "This is peak self-care season, babe! \u{1F6C1} A warm bath with Epsom salts, a heating pad for cramps, your favourite comfort show, herbal tea, and soft lighting. Your body is doing a lot right now \u2014 honour that by slowing down. You deserve to be held gently, even if just by yourself. \u{1F497}";
+    }
+    return "Self-care isn't a luxury \u2014 it's literally cycle support! Rest, nourishment, gentle movement, and joy all feed your hormonal health. Whatever helps you feel safe, seen, and restored is exactly right for you. \u{1F338}";
+  }
+
+  // ── VITAMINS & SUPPLEMENTS ────────────────────────────────────────────────
+  if (lower.includes('vitamin') || lower.includes('supplement') || lower.includes('iron') || lower.includes('magnesium') || lower.includes('omega')) {
+    return "Great question! Magnesium can ease PMS symptoms, omega-3s help reduce inflammation and cramps, and iron is key to replenish after your period. That said, babe \u2014 always talk to your OBGYN or a nutritionist before starting supplements, because the right dose matters. \u{1F495}";
+  }
+
+  // ── BBT & TEMPERATURE ─────────────────────────────────────────────────────
+  if (lower.includes('temperature') || lower.includes('bbt') || lower.includes('basal')) {
+    return "Basal Body Temperature (BBT) tracking is so powerful! \u{1F321}\uFE0F Your temperature dips slightly before ovulation, then rises and stays elevated for the rest of your luteal phase. Tracking it every morning before getting up \u2014 even a 0.1\u20130.2\u00b0C shift matters \u2014 can confirm exactly when you ovulated.";
+  }
+
+  // ── ABOUT LUNA ────────────────────────────────────────────────────────────
+  if (lower.includes('luna') || lower.includes('how do you') || lower.includes('what can you') || lower.includes('what do you know')) {
+    return "Hey luv! \u{1F497} I'm Luna, your cycle-tracking bestie inside Gedwey Ignasia. I can help you understand your cycle phases, suggest self-care tips, talk through symptoms, mood patterns, nutrition, sleep, exercise, and so much more. The more you log, the more personalised I get. What's on your mind today?";
+  }
+
+  // ── LOGGED INSIGHTS ───────────────────────────────────────────────────────
   if (context.insights?.length) {
-    return `Here is a pattern from your logged data: ${context.insights[0]}`;
+    return `Oh, I noticed something from your logged data, babe! \u{1F4A1} ${context.insights[0]} Patterns like these are exactly why consistent tracking is so powerful \u2014 your body is speaking and you're learning to hear it. \u{1F338}`;
   }
 
-  return 'I am currently operating in offline mode. Ask a question about symptoms, mood, diet, exercise, partner support, or sleep to get smart cycle recommendations!';
+  // ── PHASE-AWARE GENERIC FALLBACK ──────────────────────────────────────────
+  if (phase === 'period') {
+    return "You're in your period phase right now, luv. \u{1F319} It's a time for rest, warmth, and nourishment. Is there something specific you're feeling or wondering about? I'm here to help \u2014 whether it's cramps, mood, food, or just needing to talk it through. \u{1F497}";
+  }
+  if (phase === 'pms' || phase === 'luteal') {
+    return "You're in your luteal/PMS phase \u2014 energy often dips and emotions can feel bigger right now. That's completely real and valid. What are you experiencing? Ask me about self-care, mood, cravings, sleep, or anything else on your mind. \u{1F49C}";
+  }
+  if (phase === 'ovulation' || phase === 'fertile') {
+    return "You're in your fertile/ovulation window! \u{2728} Energy and confidence tend to be higher around now. What's on your mind \u2014 fertility, energy, mood, or something else? I'm here, babe!";
+  }
+  if (phase === 'follicular') {
+    return "You're in your follicular phase \u2014 a fresh start after your period! \u{1F338} Estrogen is rising and your body is rebuilding. What would you like to know? Diet, exercise, mood, skin \u2014 I'm ready to chat!";
+  }
+
+  return "Hey babe! I'm here for you \u{1F497} Try asking me about cramps, bloating, mood, sleep, diet, exercise, skin, your fertile window, or how to make the most of your current phase. The more you share, the better I can support you! \u{1F319}";
 }
+
