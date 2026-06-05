@@ -88,7 +88,7 @@ export default function JournalCreateScreen() {
       if (selectedPhoto) {
         // Upload image to Supabase Storage
         const bytes = await uriToUint8Array(selectedPhoto);
-        const path = `journal/${userId}/entry-${Date.now()}.jpg`;
+        const path = `${userId}/journal/entry-${Date.now()}.jpg`;
         const { error: uploadError } = await supabase.storage
           .from('profile-images')
           .upload(path, bytes, {
