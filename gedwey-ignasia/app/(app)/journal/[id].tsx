@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React from 'react';
 import {
   View,
   Text,
@@ -12,75 +12,86 @@ import { useJournalEntry } from '../../../lib/queries/journal';
 import { Button } from '../../../components/Button';
 import { Card } from '../../../components/Card';
 import { Skeleton } from '../../../components/Skeleton';
+import { ScreenShell } from '../../../components/ScreenShell';
+import { VoicePlaybackBubble } from '../../../components/VoicePlaybackBubble';
 import { formatLongDate } from '../../../lib/dateUtils';
+import { useTheme } from '../../../lib/hooks/useTheme';
 
 export default function JournalDetailScreen() {
   const router = useRouter();
   const { id } = useLocalSearchParams<{ id: string }>();
+  const { theme, isDark } = useTheme();
   
   const { data: entry, isLoading, error } = useJournalEntry(id ?? '');
 
   if (isLoading) {
     return (
-      <SafeAreaView className="flex-1 bg-background">
-        <View className="flex-1 px-4">
-          <Skeleton width={80} height={20} className="mt-2.5 mb-2 py-1" />
-          
-          <View className="pt-2.5 mb-4">
-            <Skeleton width="80%" height={28} className="mb-3" />
-            <View className="flex-row justify-between">
-              <Skeleton width={140} height={14} />
-              <Skeleton width={100} height={14} />
+      <ScreenShell className="flex-1">
+        <SafeAreaView className="flex-1">
+          <View className="flex-1 px-4">
+            <Skeleton width={80} height={20} className="mt-2.5 mb-2 py-1" />
+            
+            <View className="pt-2.5 mb-4">
+              <Skeleton width="80%" height={28} className="mb-3" />
+              <View className="flex-row justify-between">
+                <Skeleton width={140} height={14} />
+                <Skeleton width={100} height={14} />
+              </View>
+            </View>
+            <View className="h-[1px] w-full mb-5" style={{ backgroundColor: theme.border }} />
+
+            <View className="gap-2.5">
+              <Skeleton width="95%" height={16} />
+              <Skeleton width="98%" height={16} />
+              <Skeleton width="90%" height={16} />
+              <Skeleton width="40%" height={16} />
             </View>
           </View>
-          <View className="h-[1px] bg-slate-200 w-full mb-5" />
-
-          <View className="gap-2.5">
-            <Skeleton width="95%" height={16} />
-            <Skeleton width="98%" height={16} />
-            <Skeleton width="90%" height={16} />
-            <Skeleton width="40%" height={16} />
-          </View>
-        </View>
-      </SafeAreaView>
+        </SafeAreaView>
+      </ScreenShell>
     );
   }
 
   if (error || !entry) {
     return (
-      <SafeAreaView className="flex-1 bg-background">
-        <View className="flex-1 px-4">
-          <TouchableOpacity className="self-start py-2 mt-2 mb-2" onPress={() => router.back()}>
-            <Text className="text-primary-600 text-sm font-semibold">← Back</Text>
-          </TouchableOpacity>
-          <View className="flex-1 justify-center items-center px-6 pb-12">
-            <Text className="text-5xl mb-4">⚠️</Text>
-            <Text className="text-xl font-bold text-text-primary mb-2 text-center">Failed to load memory</Text>
-            <Text className="text-sm text-text-secondary text-center leading-relaxed mb-6 px-4">
-              {error?.message || 'The requested journal entry could not be found.'}
-            </Text>
-            <Button
-              title="Back to Journal"
-              onPress={() => router.replace('/journal')}
-              className="w-full"
-            />
+      <ScreenShell className="flex-1">
+        <SafeAreaView className="flex-1">
+          <View className="flex-1 px-4">
+            <TouchableOpacity className="self-start py-2 mt-2 mb-2" onPress={() => router.back()}>
+              <Text style={{ color: theme.accent }} className="text-sm font-semibold">← Back</Text>
+            </TouchableOpacity>
+            <View className="flex-1 justify-center items-center px-6 pb-12">
+              <Text className="text-5xl mb-4">⚠️</Text>
+              <Text className="text-xl font-bold text-text-primary mb-2 text-center" style={{ color: theme.textPrimary }}>Failed to load memory</Text>
+              <Text className="text-sm text-text-secondary text-center leading-relaxed mb-6 px-4" style={{ color: theme.textSecondary }}>
+                {error?.message || 'The requested journal entry could not be found.'}
+              </Text>
+              <Button
+                title="Back to Journal"
+                onPress={() => router.replace('/journal')}
+                className="w-full"
+              />
+            </View>
           </View>
-        </View>
-      </SafeAreaView>
+        </SafeAreaView>
+      </ScreenShell>
     );
   }
 
-  const formattedDate = formatLongDate(entry?.created_at);
+  const formattedDate = formatLongDate(entry.created_at);
 
-  const rawProfiles = entry?.profiles;
+  const rawProfiles = entry.profiles;
   const profilesObj = Array.isArray(rawProfiles) ? rawProfiles[0] : rawProfiles;
   const creatorName = profilesObj?.display_name || 'Partner';
 
-  // Parse mock voice note metadata
-  const voiceMatch = entry?.content ? entry.content.match(/\[voice:(\d+:\d+)\]/) : null;
-  const displayContent = entry?.content ? entry.content.replace(/\[voice:\d+:\d+\]/g, '').trim() : '';
+  const moodsMap: Record<string, string> = {
+    happy: '😊 Happy',
+    peaceful: '😌 Peaceful',
+    nostalgic: '💖 Nostalgic',
+    intimate: '🥰 Intimate',
+    moody: '😔 Moody',
+  };
 
-  // Deterministic random rotation based on entry ID hash
   const getRotationAngle = (idStr?: string) => {
     if (!idStr) return '0deg';
     let hash = 0;
@@ -91,108 +102,73 @@ export default function JournalDetailScreen() {
     return `${angle}deg`;
   };
 
-  // Mock voice note player state
-  const [isPlaying, setIsPlaying] = useState(false);
-  const [playProgress, setPlayProgress] = useState(0);
-  const [timerText, setTimerText] = useState('00:00');
-
-  useEffect(() => {
-    let interval: NodeJS.Timeout;
-    if (isPlaying && voiceMatch) {
-      const [maxMin, maxSec] = voiceMatch[1].split(':').map(Number);
-      const totalSeconds = maxMin * 60 + maxSec;
-      
-      interval = setInterval(() => {
-        setPlayProgress((prev: number) => {
-          const next = prev + (1 / totalSeconds);
-          if (next >= 1) {
-            setIsPlaying(false);
-            setTimerText(`00:${maxSec < 10 ? '0' : ''}${maxSec}`);
-            return 1;
-          }
-          const currentSeconds = Math.floor(next * totalSeconds);
-          setTimerText(`00:${currentSeconds < 10 ? '0' : ''}${currentSeconds}`);
-          return next;
-        });
-      }, 1000);
-    }
-    return () => clearInterval(interval);
-  }, [isPlaying, voiceMatch]);
-
-  const handlePlayToggle = () => {
-    if (!isPlaying && playProgress >= 1) {
-      setPlayProgress(0);
-      setTimerText('00:00');
-    }
-    setIsPlaying(!isPlaying);
-  };
-
   return (
-    <SafeAreaView className="flex-1 bg-background">
-      <View className="flex-1 px-4">
-        <TouchableOpacity className="self-start py-2 mt-2 mb-2" onPress={() => router.back()}>
-          <Text className="text-primary-600 text-sm font-semibold">← Back</Text>
-        </TouchableOpacity>
+    <ScreenShell className="flex-1">
+      <SafeAreaView className="flex-1">
+        <View className="flex-1 px-4">
+          <TouchableOpacity className="self-start py-2 mt-2 mb-2" onPress={() => router.back()}>
+            <Text style={{ color: theme.accent }} className="text-sm font-semibold">← Back</Text>
+          </TouchableOpacity>
 
-        <ScrollView contentContainerStyle={{ flexGrow: 1, paddingBottom: 40 }} showsVerticalScrollIndicator={false}>
-          {/* Header section */}
-          <View className="pt-2.5 mb-4">
-            <Text className="text-2xl font-bold text-text-primary mb-3 leading-normal">{entry?.title || 'Untitled Memory'}</Text>
-            <View className="flex-row justify-between items-center flex-wrap gap-2">
-              <Text className="text-xs font-semibold text-primary-600">{formattedDate}</Text>
-              <Text className="text-xs text-text-muted font-medium">Written by {creatorName}</Text>
-            </View>
-          </View>
-
-          {/* Divider */}
-          <View className="h-[1px] bg-slate-200 w-full mb-5" />
-
-          {/* Polaroid Scrapbook Grid Section */}
-          {entry?.image_url && (
-            <View className="items-center mb-6">
-              <View 
-                style={{ 
-                  transform: [{ rotate: getRotationAngle(entry?.id) }] 
-                }}
-                className="bg-white border border-slate-200 p-3 pb-10 shadow-lg rounded-sm w-[90%] max-w-[320px]"
-              >
-                <View className="w-full h-64 bg-slate-100 overflow-hidden rounded-sm">
-                  <Image source={{ uri: entry.image_url }} className="w-full h-full" resizeMode="cover" />
-                </View>
-              </View>
-            </View>
-          )}
-
-          {/* Custom Interactive Voice Player Widget */}
-          {voiceMatch && (
-            <Card className="p-4 mb-6 border border-pink-100 bg-pink-50/15">
-              <Text className="text-xs font-bold text-pink-600 mb-2">🎙️ Voice Capsule</Text>
-              <View className="flex-row items-center gap-3">
-                <TouchableOpacity
-                  onPress={handlePlayToggle}
-                  className="w-12 h-12 bg-pink-500 rounded-full justify-center items-center active:bg-pink-400"
-                >
-                  <Text className="text-white text-lg font-bold">
-                    {isPlaying ? '⏸️' : '▶️'}
+          <ScrollView contentContainerStyle={{ flexGrow: 1, paddingBottom: 40 }} showsVerticalScrollIndicator={false}>
+            <Card glass className="p-6 border shadow-md flex-col gap-4">
+              {/* Header section */}
+              <View>
+                <Text className="text-2xl font-bold text-text-primary mb-2 leading-normal" style={{ color: theme.textPrimary }}>
+                  {entry.title}
+                </Text>
+                
+                <View className="flex-row justify-between items-center flex-wrap gap-2">
+                  <Text className="text-xs font-semibold" style={{ color: theme.accent }}>
+                    {formattedDate}
                   </Text>
-                </TouchableOpacity>
-                <View className="flex-1">
-                  <View className="h-1.5 bg-slate-200 rounded-full overflow-hidden mb-1">
-                    <View style={{ width: `${playProgress * 100}%` }} className="h-full bg-pink-500 rounded-full" />
+                  <Text className="text-xs text-text-muted font-medium" style={{ color: theme.textTertiary }}>
+                    Written by {creatorName}
+                  </Text>
+                </View>
+                
+                {entry.mood && moodsMap[entry.mood] && (
+                  <View className="self-start mt-2 px-2.5 py-1 rounded-full bg-slate-100 border border-slate-200/50" style={{ backgroundColor: isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.04)', borderColor: 'transparent' }}>
+                    <Text className="text-2xs font-bold" style={{ color: theme.textPrimary }}>
+                      Feeling: {moodsMap[entry.mood]}
+                    </Text>
                   </View>
-                  <View className="flex-row justify-between">
-                    <Text className="text-[10px] text-text-secondary">{timerText}</Text>
-                    <Text className="text-[10px] text-text-secondary">{voiceMatch[1]}</Text>
+                )}
+              </View>
+
+              {/* Divider */}
+              <View className="h-[1px] w-full" style={{ backgroundColor: theme.border }} />
+
+              {/* Polaroid Photo Section */}
+              {entry.image_url && (
+                <View className="items-center my-2">
+                  <View 
+                    style={{ transform: [{ rotate: getRotationAngle(entry.id) }] }}
+                    className="bg-white border border-slate-200 p-3 pb-8 shadow-lg rounded-sm w-full max-w-[280px]"
+                  >
+                    <View className="w-full h-56 bg-slate-100 overflow-hidden rounded-sm">
+                      <Image source={{ uri: entry.image_url }} className="w-full h-full" resizeMode="cover" />
+                    </View>
                   </View>
                 </View>
-              </View>
-            </Card>
-          )}
+              )}
 
-          {/* Content Body */}
-          <Text className="text-sm text-text-secondary leading-6 text-left">{displayContent}</Text>
-        </ScrollView>
-      </View>
-    </SafeAreaView>
+              {/* Content Body */}
+              <Text className="text-sm text-text-secondary leading-6 text-left" style={{ color: theme.textSecondary }}>
+                {entry.content}
+              </Text>
+
+              {/* Real Voice Playback bubble */}
+              {entry.voice_url && (
+                <View className="mt-2">
+                  <Text className="text-xs font-bold text-pink-600 mb-2">🎙️ Voice Capsule</Text>
+                  <VoicePlaybackBubble url={entry.voice_url} duration={entry.voice_duration} />
+                </View>
+              )}
+            </Card>
+          </ScrollView>
+        </View>
+      </SafeAreaView>
+    </ScreenShell>
   );
 }

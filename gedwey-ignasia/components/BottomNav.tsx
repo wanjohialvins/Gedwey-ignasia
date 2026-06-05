@@ -5,6 +5,7 @@ import { AppIcon } from './AppIcon';
 import { NAV_ICONS, type IconName } from '../lib/navigationIcons';
 import { useAuthStore } from '../lib/store/authStore';
 import { useUserProfile } from '../lib/queries/profile';
+import { useTheme } from '../lib/hooks/useTheme';
 
 type Tab = { route: string; label: string; icon: IconName; iconActive: IconName };
 
@@ -29,10 +30,17 @@ export const BottomNav = () => {
   const pathname = usePathname();
   const { user } = useAuthStore();
   const { data: profile } = useUserProfile(user?.id ?? '');
+  const { theme, isDark } = useTheme();
   const items = profile?.couple_id ? pairedTabs : unpairedTabs;
 
   return (
-    <View className="absolute bottom-0 left-0 right-0 bg-white/95 border-t border-indigo-100 px-2 pt-2 pb-4 flex-row justify-between shadow-lg">
+    <View
+      className="absolute bottom-6 left-4 right-4 flex-row justify-between p-2 rounded-3xl border shadow-xl items-center"
+      style={{
+        backgroundColor: isDark ? 'rgba(15, 23, 42, 0.8)' : 'rgba(255, 255, 255, 0.82)',
+        borderColor: isDark ? 'rgba(255, 255, 255, 0.08)' : 'rgba(0, 0, 0, 0.05)',
+      }}
+    >
       {items.map((item) => {
         const active =
           pathname === item.route || (item.route !== '/' && pathname.startsWith(item.route));
@@ -40,11 +48,27 @@ export const BottomNav = () => {
           <TouchableOpacity
             key={item.route}
             onPress={() => router.push(item.route as any)}
-            className={`items-center justify-center rounded-2xl py-2 px-1.5 min-w-[58px] flex-1 ${active ? 'bg-indigo-50' : ''}`}
+            className="items-center justify-center rounded-2xl py-2 px-1 flex-1"
+            style={{
+              backgroundColor: active
+                ? isDark
+                  ? 'rgba(255, 255, 255, 0.08)'
+                  : 'rgba(79, 70, 229, 0.08)'
+                : 'transparent',
+            }}
             activeOpacity={0.8}
           >
-            <AppIcon name={active ? item.iconActive : item.icon} size={22} color={active ? '#4F46E5' : '#94A3B8'} />
-            <Text className={`text-[10px] font-semibold mt-0.5 ${active ? 'text-indigo-600' : 'text-text-secondary'}`}>
+            <AppIcon
+              name={active ? item.iconActive : item.icon}
+              size={20}
+              color={active ? theme.accent : isDark ? '#64748B' : '#94A3B8'}
+            />
+            <Text
+              className="text-[10px] font-semibold mt-0.5"
+              style={{
+                color: active ? theme.accent : isDark ? '#CBD5E1' : '#475569',
+              }}
+            >
               {item.label}
             </Text>
           </TouchableOpacity>

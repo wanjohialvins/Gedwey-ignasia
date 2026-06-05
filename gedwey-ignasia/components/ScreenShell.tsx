@@ -1,5 +1,5 @@
 import React from 'react';
-import { View, ViewProps } from 'react-native';
+import { StyleSheet, View, ViewProps } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useTheme } from '../lib/hooks/useTheme';
 
@@ -19,27 +19,15 @@ export const ScreenShell = ({ children, className = '', variant = 'default', ...
     ? [theme.surface, theme.background]
     : [theme.accentLight, theme.background];
 
-  if (variant === 'hero') {
-    return (
-      <View className={`flex-1 ${className}`} style={{ backgroundColor: theme.background }} {...props}>
-        <LinearGradient
-          colors={heroColors as [string, string, ...string[]]}
-          start={{ x: 0, y: 0 }}
-          end={{ x: 1, y: 1 }}
-          style={{ position: 'absolute', left: 0, right: 0, top: 0, height: 280 }}
-        />
-        {children}
-      </View>
-    );
-  }
+  const colors = variant === 'hero' ? heroColors : defaultColors;
 
   return (
     <View className={`flex-1 ${className}`} style={{ backgroundColor: theme.background }} {...props}>
       <LinearGradient
-        colors={defaultColors as [string, string, ...string[]]}
+        colors={colors as [string, string, ...string[]]}
         start={{ x: 0, y: 0 }}
         end={{ x: 0, y: 1 }}
-        style={{ position: 'absolute', left: 0, right: 0, top: 0, height: 120 }}
+        style={StyleSheet.absoluteFillObject}
       />
       {children}
     </View>

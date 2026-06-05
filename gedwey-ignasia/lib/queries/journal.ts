@@ -13,6 +13,9 @@ export interface JournalEntry {
   title: string;
   content: string;
   image_url: string | null;
+  voice_url: string | null;
+  voice_duration: number | null;
+  mood: string | null;
   profiles?: {
     display_name: string | null;
   };
@@ -69,9 +72,18 @@ export const useCreateJournalEntry = () => {
   return useMutation<
     JournalEntry,
     Error,
-    { coupleId: string; creatorId: string; title: string; content: string; imageUrl?: string }
+    {
+      coupleId: string;
+      creatorId: string;
+      title: string;
+      content: string;
+      imageUrl?: string;
+      voiceUrl?: string;
+      voiceDuration?: number;
+      mood?: string;
+    }
   >({
-    mutationFn: async ({ coupleId, creatorId, title, content, imageUrl }) => {
+    mutationFn: async ({ coupleId, creatorId, title, content, imageUrl, voiceUrl, voiceDuration, mood }) => {
       try {
         const { data, error } = await supabase
           .from('journal_entries')
@@ -81,6 +93,9 @@ export const useCreateJournalEntry = () => {
             title,
             content,
             image_url: imageUrl || null,
+            voice_url: voiceUrl || null,
+            voice_duration: voiceDuration || null,
+            mood: mood || null,
           })
           .select('*, profiles:creator_id(display_name)')
           .single();
@@ -105,8 +120,23 @@ export const useCreateJournalEntry = () => {
             title,
             content,
             image_url: imageUrl || null,
+            voice_url: voiceUrl || null,
+            voice_duration: voiceDuration || null,
+            mood: mood || null,
           });
-          return { id: `temp-${Date.now()}`, created_at: new Date().toISOString(), updated_at: new Date().toISOString(), couple_id: coupleId, creator_id: creatorId, title, content, image_url: imageUrl || null } as JournalEntry;
+          return {
+            id: `temp-${Date.now()}`,
+            created_at: new Date().toISOString(),
+            updated_at: new Date().toISOString(),
+            couple_id: coupleId,
+            creator_id: creatorId,
+            title,
+            content,
+            image_url: imageUrl || null,
+            voice_url: voiceUrl || null,
+            voice_duration: voiceDuration || null,
+            mood: mood || null,
+          } as JournalEntry;
         }
         throw err instanceof Error ? err : new Error(message);
       }
