@@ -6,6 +6,10 @@
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
+    "notification": {
+      "icon": "./assets/icon.png",
+      "color": "#4F46E5"
+    },
     "userInterfaceStyle": "automatic",
     "splash": {
       "image": "./assets/splash.png",

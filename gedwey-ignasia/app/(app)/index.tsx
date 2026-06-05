@@ -348,25 +348,46 @@ export default function HomeScreen() {
               : 'Pair with your partner first, then get a new shared question every single day.'}
           </Text>
           <View className="flex-row gap-3">
-            <TouchableOpacity
-              className={`flex-1 bg-primary-600 rounded-xl h-12 items-center justify-center active:bg-primary-500 ${!isPaired ? 'opacity-60' : ''}`}
-              onPress={() => {
-                if (isPaired) router.push('/session/start');
-                else Alert.alert('Pairing Required', 'Pair with your partner in settings before opening.');
-              }}
-              activeOpacity={0.85}
-            >
-              <Text className="text-white text-sm font-bold">
-                {isDailyCompletedToday ? 'View Answers' : isDailyPending ? 'Answer Daily Question' : 'Check Status'}
-              </Text>
-            </TouchableOpacity>
-            <TouchableOpacity
-              className="flex-1 bg-primary-100 rounded-xl h-12 items-center justify-center active:bg-blue-200"
-              onPress={() => setIsDrawerOpen(true)}
-              activeOpacity={0.85}
-            >
-              <Text className="text-primary-600 text-sm font-bold">Open Menu</Text>
-            </TouchableOpacity>
+            {isPaired && (isDailyCompletedToday || hasAnsweredActive) ? (
+              <>
+                <TouchableOpacity
+                  className="flex-1 bg-primary-600 rounded-xl h-12 items-center justify-center active:bg-primary-500"
+                  onPress={() => router.push('/answers')}
+                  activeOpacity={0.85}
+                >
+                  <Text className="text-white text-sm font-bold">View Answers</Text>
+                </TouchableOpacity>
+                <TouchableOpacity
+                  className="flex-1 bg-primary-100 rounded-xl h-12 items-center justify-center active:bg-blue-200"
+                  onPress={() => router.push('/session/deck')}
+                  activeOpacity={0.85}
+                >
+                  <Text className="text-primary-600 text-sm font-bold">Tackle New</Text>
+                </TouchableOpacity>
+              </>
+            ) : (
+              <>
+                <TouchableOpacity
+                  className={`flex-1 bg-primary-600 rounded-xl h-12 items-center justify-center active:bg-primary-500 ${!isPaired ? 'opacity-60' : ''}`}
+                  onPress={() => {
+                    if (isPaired) router.push('/session/start');
+                    else Alert.alert('Pairing Required', 'Pair with your partner in settings before opening.');
+                  }}
+                  activeOpacity={0.85}
+                >
+                  <Text className="text-white text-sm font-bold">
+                    {isDailyCompletedToday ? 'View Answers' : isDailyPending ? 'Answer Daily Question' : 'Check Status'}
+                  </Text>
+                </TouchableOpacity>
+                <TouchableOpacity
+                  className="flex-1 bg-primary-100 rounded-xl h-12 items-center justify-center active:bg-blue-200"
+                  onPress={() => setIsDrawerOpen(true)}
+                  activeOpacity={0.85}
+                >
+                  <Text className="text-primary-600 text-sm font-bold">Open Menu</Text>
+                </TouchableOpacity>
+              </>
+            )}
           </View>
         </Card>
 
