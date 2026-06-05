@@ -36,6 +36,7 @@ function InitialLayout() {
   const segments = useSegments();
   const router = useRouter();
   const { updateAvailable, setUpdateAvailable } = useAppUpdates();
+  const [animationFinished, setAnimationFinished] = React.useState(false);
 
   console.log('[InitialLayout] Rendering, loading:', loading, 'session:', !!session, 'segments:', segments);
 
@@ -102,8 +103,14 @@ function InitialLayout() {
 
   // Loading state matching design rules (No default spinner, but since it's initial bootstrap,
   // we'll show a clean background matching design colors)
-  if (loading) {
-    return <GedweyLoader subtitle="connecting your session..." />;
+  if (loading || !animationFinished) {
+    return (
+      <GedweyLoader
+        subtitle="connecting your session..."
+        mode="determinate"
+        onFinished={() => setAnimationFinished(true)}
+      />
+    );
   }
 
   return (
