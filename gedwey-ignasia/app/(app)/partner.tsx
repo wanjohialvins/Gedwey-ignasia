@@ -40,68 +40,84 @@ export default function PartnerProfileScreen() {
 
   return (
     <ScreenShell variant="hero" className="flex-1">
-      <ScrollView contentContainerStyle={{ paddingHorizontal: 16, paddingTop: 56, paddingBottom: 112 }}>
-        <TouchableOpacity onPress={() => router.back()} className="mb-5 flex-row items-center gap-1">
-          <AppIcon name="arrow-back" size={16} color={theme.accent} />
-          <Text className="text-sm font-bold" style={{ color: theme.accent }}>Back</Text>
-        </TouchableOpacity>
+      <ScrollView contentContainerStyle={{ paddingHorizontal: 16, paddingTop: 56, paddingBottom: 120 }} showsVerticalScrollIndicator={false}>
+        {/* ── Standardized Header ───────────────────────────────────── */}
+        <View className="flex-row items-center justify-between mb-6">
+          <TouchableOpacity
+            onPress={() => router.back()}
+            className="w-10 h-10 bg-indigo-50/60 items-center justify-center rounded-full active:opacity-75"
+          >
+            <AppIcon name="arrow-back" size={20} color="#4F46E5" />
+          </TouchableOpacity>
+          <View className="flex-row items-center gap-2">
+            <AppIcon name={NAV_ICONS.partner} size={22} color="#4F46E5" />
+            <Text className="text-lg font-extrabold text-text-primary">Partner Space</Text>
+          </View>
+          <View className="w-10" />
+        </View>
 
-        <View className="items-center mb-6">
-          <ProfileAvatar uri={partner.avatar_url} name={partner.display_name} size={96} />
-          <Text className="text-2xl font-bold capitalize mt-4" style={{ color: theme.textPrimary }}>
+        {/* ── Profile Header Section ──────────────────────────────── */}
+        <View className="items-center mb-6 bg-white border border-indigo-50/40 rounded-3xl p-6 shadow-2xs">
+          <ProfileAvatar uri={partner.avatar_url} name={partner.display_name} size={90} />
+          <Text className="text-xl font-extrabold capitalize mt-4 text-text-primary">
             {partner.display_name || 'Partner'}
           </Text>
-          <Text className="text-sm mt-1" style={{ color: theme.textSecondary }}>
-            Connected {connectedDays} day{connectedDays !== 1 ? 's' : ''}
+          <Text className="text-xs text-text-secondary mt-1 font-semibold">
+            Connected for {connectedDays} day{connectedDays !== 1 ? 's' : ''}
           </Text>
         </View>
 
-        <Card className="p-5 mb-4">
-          <Text className="text-sm font-bold mb-3" style={{ color: theme.textPrimary }}>About</Text>
-          <Text className="text-sm leading-normal" style={{ color: theme.textSecondary }}>
+        {/* ── About Bio Card ───────────────────────────────────────── */}
+        <Card className="p-4 mb-4 border border-indigo-50/40 bg-white">
+          <Text className="text-3xs font-bold text-slate-450 text-slate-400 uppercase tracking-widest mb-2 px-0.5">About</Text>
+          <Text className="text-sm leading-relaxed text-text-secondary font-medium px-0.5">
             {partner.bio || 'No bio shared yet.'}
           </Text>
         </Card>
 
+        {/* ── Love Language Card ────────────────────────────────────── */}
         {partner.love_language ? (
-          <Card className="p-5 mb-4">
-            <Text className="text-sm font-bold mb-2" style={{ color: theme.textPrimary }}>Love Language</Text>
-            <Text className="text-sm" style={{ color: theme.accent }}>{partner.love_language}</Text>
+          <Card className="p-4 mb-4 border border-indigo-50/40 bg-white">
+            <Text className="text-3xs font-bold text-slate-400 uppercase tracking-widest mb-2 px-0.5">Love Language</Text>
+            <Text className="text-sm font-bold text-indigo-600 px-0.5">{partner.love_language}</Text>
           </Card>
         ) : null}
 
+        {/* ── Birthday Card ─────────────────────────────────────────── */}
         {partner.birthday ? (
-          <Card className="p-5 mb-4">
-            <Text className="text-sm font-bold mb-2" style={{ color: theme.textPrimary }}>Birthday</Text>
-            <Text className="text-sm" style={{ color: theme.textSecondary }}>
+          <Card className="p-4 mb-4 border border-indigo-50/40 bg-white">
+            <Text className="text-3xs font-bold text-slate-400 uppercase tracking-widest mb-2 px-0.5">Birthday</Text>
+            <Text className="text-sm font-semibold text-text-primary px-0.5">
               {formatMonthDay(partner.birthday + 'T00:00:00', 'long')}
             </Text>
           </Card>
         ) : null}
 
-        <Card className="p-5 mb-4">
-          <Text className="text-sm font-bold mb-2" style={{ color: theme.textPrimary }}>Relationship Stage</Text>
-          <Text className="text-sm capitalize" style={{ color: theme.textSecondary }}>
+        {/* ── Stage Card ────────────────────────────────────────────── */}
+        <Card className="p-4 mb-5 border border-indigo-50/40 bg-white">
+          <Text className="text-3xs font-bold text-slate-400 uppercase tracking-widest mb-2 px-0.5">Relationship Stage</Text>
+          <Text className="text-sm font-semibold text-text-primary capitalize px-0.5">
             {(partner.relationship_stage || 'couples').replace('_', ' ')}
           </Text>
         </Card>
 
+        {/* ── Bottom Routing Shortcut Tiles ─────────────────────────── */}
         <View className="flex-row gap-3">
           <TouchableOpacity
             onPress={() => router.push('/answers')}
-            className="flex-1 p-4 rounded-2xl items-center border"
-            style={{ backgroundColor: theme.accentLight, borderColor: theme.border }}
+            className="flex-1 p-4 rounded-2xl items-center border bg-indigo-50/20 border-indigo-100 active:bg-indigo-150"
+            activeOpacity={0.8}
           >
-            <AppIcon name={NAV_ICONS.session} size={22} color={theme.accent} />
-            <Text className="text-xs font-bold mt-2" style={{ color: theme.accent }}>Shared Answers</Text>
+            <AppIcon name={NAV_ICONS.session} size={22} color="#4F46E5" />
+            <Text className="text-xs font-bold text-indigo-600 mt-2">Shared Answers</Text>
           </TouchableOpacity>
           <TouchableOpacity
             onPress={() => router.push('/dates')}
-            className="flex-1 p-4 rounded-2xl items-center border"
-            style={{ backgroundColor: theme.accentLight, borderColor: theme.border }}
+            className="flex-1 p-4 rounded-2xl items-center border bg-indigo-50/20 border-indigo-100 active:bg-indigo-150"
+            activeOpacity={0.8}
           >
-            <AppIcon name={NAV_ICONS.milestone} size={22} color={theme.accent} />
-            <Text className="text-xs font-bold mt-2" style={{ color: theme.accent }}>Important Dates</Text>
+            <AppIcon name={NAV_ICONS.milestone} size={22} color="#4F46E5" />
+            <Text className="text-xs font-bold text-indigo-600 mt-2">Important Dates</Text>
           </TouchableOpacity>
         </View>
       </ScrollView>

@@ -70,31 +70,43 @@ export default function ImportantDatesScreen() {
   };
 
   return (
-    <ScreenShell className="flex-1">
-      <ScrollView contentContainerStyle={{ paddingHorizontal: 16, paddingTop: 56, paddingBottom: 112 }}>
-        <TouchableOpacity onPress={() => router.back()} className="mb-5 flex-row items-center gap-1">
-          <AppIcon name="arrow-back" size={16} color={theme.accent} />
-          <Text className="text-sm font-bold" style={{ color: theme.accent }}>Back</Text>
-        </TouchableOpacity>
-
-        <View className="flex-row items-center gap-2 mb-2">
-          <AppIcon name={NAV_ICONS.milestone} size={24} color={theme.accent} />
-          <Text className="text-2xl font-bold" style={{ color: theme.textPrimary }}>Important Dates</Text>
+    <ScreenShell variant="hero" className="flex-1">
+      <ScrollView contentContainerStyle={{ paddingHorizontal: 16, paddingTop: 56, paddingBottom: 120 }} showsVerticalScrollIndicator={false}>
+        {/* ── Standardized Header ───────────────────────────────────── */}
+        <View className="flex-row items-center justify-between mb-6">
+          <TouchableOpacity
+            onPress={() => router.back()}
+            className="w-10 h-10 bg-indigo-50/60 items-center justify-center rounded-full active:opacity-75"
+          >
+            <AppIcon name="arrow-back" size={20} color="#4F46E5" />
+          </TouchableOpacity>
+          <View className="flex-row items-center gap-2">
+            <AppIcon name={NAV_ICONS.milestone} size={22} color="#4F46E5" />
+            <Text className="text-lg font-extrabold text-text-primary">Important Dates</Text>
+          </View>
+          <View className="w-10" />
         </View>
-        <Text className="text-sm mb-5" style={{ color: theme.textSecondary }}>
+
+        <Text className="text-xs text-text-secondary leading-relaxed mb-5 px-1">
           Anniversaries, birthdays, and milestones — shared and visible to both partners.
         </Text>
 
-        <Card className="p-5 mb-5">
+        {/* ── Add New Date Form Card ────────────────────────────────── */}
+        <Card className="p-4 mb-5 border border-indigo-50/40 bg-white">
           <Input label="Title" placeholder="e.g. First date anniversary" value={title} onChangeText={setTitle} />
           <Input label="Date (YYYY-MM-DD)" placeholder="2024-06-15" value={eventDate} onChangeText={setEventDate} autoCapitalize="none" />
-          <Input label="Notes (optional)" placeholder="How you celebrate..." value={notes} onChangeText={setNotes} />
-          <Button title="Add date" onPress={addDate} loading={createDate.isPending} />
+          <Input label="Notes (optional)" placeholder="How you celebrate..." value={notes} onChangeText={setNotes} className="mb-2" />
+          <Button title="Save Shared Date" onPress={addDate} loading={createDate.isPending} />
         </Card>
 
+        {/* ── Date Listing Timeline ─────────────────────────────────── */}
+        <Text className="text-3xs font-bold text-slate-400 uppercase tracking-widest px-1 mb-3">Our Anniversaries & Milestones</Text>
+
         {sorted.length === 0 ? (
-          <Card className="p-5">
-            <Text className="text-sm" style={{ color: theme.textSecondary }}>No dates yet. Add your first anniversary or milestone above.</Text>
+          <Card className="p-5 border border-indigo-50/60 bg-white">
+            <Text className="text-2xs text-text-secondary text-center font-semibold leading-relaxed">
+              No dates yet. Add your first anniversary or milestone above.
+            </Text>
           </Card>
         ) : (
           sorted.map((d) => {
@@ -104,23 +116,30 @@ export default function ImportantDatesScreen() {
                 ? 'You'
                 : d.profiles?.display_name || partnerProfile?.display_name || 'Partner';
             return (
-              <Card key={d.id} className="p-4 mb-3">
+              <Card key={d.id} className="p-4 mb-3.5 border border-indigo-50/40 bg-white">
                 <View className="flex-row justify-between items-start">
                   <View className="flex-1 pr-3">
-                    <Text className="text-base font-bold" style={{ color: theme.textPrimary }}>{d.title}</Text>
-                    <Text className="text-sm mt-1" style={{ color: theme.textSecondary }}>
+                    <Text className="text-sm font-bold text-text-primary">{d.title}</Text>
+                    
+                    <Text className="text-2xs text-indigo-600 font-extrabold mt-1">
                       {formatMonthDay(d.event_date + 'T00:00:00', 'long')}
                       {d.repeats_yearly ? ' (yearly)' : ''}
                     </Text>
-                    <Text className="text-xs mt-1" style={{ color: theme.textTertiary }}>
+                    
+                    <Text className="text-3xs text-text-secondary mt-1.5 font-semibold">
                       Added by {addedBy}
-                      {days >= 0 ? ` · ${days === 0 ? 'Today!' : `In ${days} days`}` : ''}
+                      {days >= 0 ? ` · ${days === 0 ? 'Today! 🎉' : `In ${days} days ⏳`}` : ''}
                     </Text>
+                    
                     {d.notes ? (
-                      <Text className="text-xs mt-2 italic" style={{ color: theme.textSecondary }}>{d.notes}</Text>
+                      <View className="mt-3 bg-slate-50 border border-slate-100 rounded-lg p-2.5">
+                        <Text className="text-3xs text-text-secondary italic leading-relaxed">"{d.notes}"</Text>
+                      </View>
                     ) : null}
                   </View>
+                  
                   <TouchableOpacity
+                    className="w-8 h-8 rounded-lg bg-red-50/80 items-center justify-center border border-red-100 active:bg-red-100"
                     onPress={() =>
                       Alert.alert('Remove date?', d.title, [
                         { text: 'Cancel', style: 'cancel' },
@@ -133,7 +152,7 @@ export default function ImportantDatesScreen() {
                       ])
                     }
                   >
-                    <AppIcon name="trash-outline" size={18} color="#EF4444" />
+                    <AppIcon name="trash-outline" size={15} color="#EF4444" />
                   </TouchableOpacity>
                 </View>
               </Card>

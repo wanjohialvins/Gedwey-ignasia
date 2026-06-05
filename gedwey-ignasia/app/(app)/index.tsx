@@ -208,37 +208,52 @@ export default function HomeScreen() {
 
   type SidebarRow = { label: string; detail: string; icon: typeof NAV_ICONS.dashboard; action: () => void };
 
-  const sidebarItems: SidebarRow[] = [
-    { label: 'Cat Care', detail: 'Daily streak tasks', icon: NAV_ICONS.play, action: () => navigateFromDrawer('/cat-care') },
-    { label: 'All Answers', detail: 'Shared game & session answers', icon: NAV_ICONS.session, action: () => navigateFromDrawer('/answers') },
-    { label: 'Shared Lists', detail: 'To-dos and bucket goals', icon: NAV_ICONS.lists, action: () => navigateFromDrawer('/lists') },
+  const sidebarSections: { title: string; items: SidebarRow[] }[] = [
     {
-      label: 'Time Capsules',
-      detail: capsulesCount ? `${capsulesCount} saved` : 'Future memories',
-      icon: NAV_ICONS.capsule,
-      action: () => {
-        if (!isPaired) {
-          Alert.alert('Pairing Required', 'Pair with your partner first.');
-          return;
-        }
-        navigateFromDrawer('/capsule');
-      },
+      title: 'Daily Companion',
+      items: [
+        { label: 'Cat Care', detail: 'Daily streak tasks', icon: NAV_ICONS.play, action: () => navigateFromDrawer('/cat-care') },
+        { label: 'Music', detail: 'Our soundtrack', icon: NAV_ICONS.music, action: () => navigateFromDrawer('/music') },
+        { label: 'Shared Lists', detail: 'To-dos and bucket goals', icon: NAV_ICONS.lists, action: () => navigateFromDrawer('/lists') },
+      ],
     },
-    { label: 'Important Dates', detail: 'Anniversaries & milestones', icon: NAV_ICONS.milestone, action: () => navigateFromDrawer('/dates') },
-    { label: 'Music', detail: 'Our soundtrack', icon: NAV_ICONS.music, action: () => navigateFromDrawer('/music') },
-    { label: 'History Logs', detail: 'Activity timeline', icon: NAV_ICONS.history, action: () => navigateFromDrawer('/history') },
     {
-      label: 'Relationship Health',
-      detail: isHealthUnlocked ? 'Weekly alignment' : `Unlock ${completedSessionsCount}/10`,
-      icon: NAV_ICONS.health,
-      action: () =>
-        handleLockedRoute(
-          '/health',
-          isHealthUnlocked,
-          `Complete 10 Daily Questions to unlock relationship health. Progress: ${completedSessionsCount}/10.`
-        ),
+      title: 'Memories & Timeline',
+      items: [
+        { label: 'All Answers', detail: 'Shared game & session answers', icon: NAV_ICONS.session, action: () => navigateFromDrawer('/answers') },
+        {
+          label: 'Time Capsules',
+          detail: capsulesCount ? `${capsulesCount} saved` : 'Future memories',
+          icon: NAV_ICONS.capsule,
+          action: () => {
+            if (!isPaired) {
+              Alert.alert('Pairing Required', 'Pair with your partner first.');
+              return;
+            }
+            navigateFromDrawer('/capsule');
+          },
+        },
+        { label: 'Important Dates', detail: 'Anniversaries & milestones', icon: NAV_ICONS.milestone, action: () => navigateFromDrawer('/dates') },
+        { label: 'History Logs', detail: 'Activity timeline', icon: NAV_ICONS.history, action: () => navigateFromDrawer('/history') },
+      ],
     },
-    { label: 'Settings & Pairing', detail: 'Profile preferences', icon: NAV_ICONS.settings, action: () => navigateFromDrawer('/settings') },
+    {
+      title: 'Relationship Health',
+      items: [
+        {
+          label: 'Relationship Health',
+          detail: isHealthUnlocked ? 'Weekly alignment' : `Unlock ${completedSessionsCount}/10`,
+          icon: NAV_ICONS.health,
+          action: () =>
+            handleLockedRoute(
+              '/health',
+              isHealthUnlocked,
+              `Complete 10 Daily Questions to unlock relationship health. Progress: ${completedSessionsCount}/10.`
+            ),
+        },
+        { label: 'Settings & Pairing', detail: 'Profile preferences', icon: NAV_ICONS.settings, action: () => navigateFromDrawer('/settings') },
+      ],
+    },
   ];
 
   // Quick-access tiles (slim strip — 4 tiles)
@@ -569,23 +584,32 @@ export default function HomeScreen() {
 
             {/* Drawer menu items */}
             <ScrollView showsVerticalScrollIndicator={false} className="flex-1">
-              <View className="gap-2 pb-5">
-                {sidebarItems.map((item) => (
-                  <TouchableOpacity
-                    key={item.label}
-                    onPress={item.action}
-                    className="py-3 px-3.5 rounded-xl border border-indigo-50 bg-indigo-50/30 active:bg-indigo-100 flex-row items-center gap-3"
-                    activeOpacity={0.85}
-                  >
-                    <View className="w-9 h-9 rounded-xl bg-white items-center justify-center border border-indigo-100">
-                      <AppIcon name={item.icon} size={18} color="#4F46E5" />
+              <View className="pb-5">
+                {sidebarSections.map((section, secIdx) => (
+                  <View key={section.title} className={secIdx > 0 ? 'mt-5' : ''}>
+                    <Text className="text-3xs font-bold text-slate-400 uppercase tracking-widest px-1 mb-2">
+                      {section.title}
+                    </Text>
+                    <View className="gap-2">
+                      {section.items.map((item) => (
+                        <TouchableOpacity
+                          key={item.label}
+                          onPress={item.action}
+                          className="py-2.5 px-3 rounded-xl border border-indigo-50/50 bg-indigo-50/10 active:bg-indigo-100 flex-row items-center gap-3"
+                          activeOpacity={0.85}
+                        >
+                          <View className="w-8 h-8 rounded-lg bg-white items-center justify-center border border-indigo-50 shadow-2xs">
+                            <AppIcon name={item.icon} size={16} color="#4F46E5" />
+                          </View>
+                          <View className="flex-1">
+                            <Text className="text-xs font-bold text-text-primary">{item.label}</Text>
+                            <Text className="text-3xs text-text-secondary mt-0.5">{item.detail}</Text>
+                          </View>
+                          <AppIcon name={NAV_ICONS.chevron} size={14} color="#CBD5E1" />
+                        </TouchableOpacity>
+                      ))}
                     </View>
-                    <View className="flex-1">
-                      <Text className="text-sm font-bold text-text-primary">{item.label}</Text>
-                      <Text className="text-2xs text-text-secondary mt-0.5">{item.detail}</Text>
-                    </View>
-                    <AppIcon name={NAV_ICONS.chevron} size={16} color="#CBD5E1" />
-                  </TouchableOpacity>
+                  </View>
                 ))}
               </View>
             </ScrollView>

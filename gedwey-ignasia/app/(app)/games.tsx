@@ -160,159 +160,218 @@ export default function GamesScreen() {
 
   return (
     <ScreenShell variant="hero" className="flex-1">
-      <ScrollView contentContainerStyle={{ paddingHorizontal: 16, paddingTop: 56, paddingBottom: 112 }}>
-        <View className="flex-row items-center justify-between mb-5">
-          <TouchableOpacity onPress={() => router.back()} className="bg-indigo-100 px-3 py-2 rounded-xl flex-row items-center gap-1">
-            <AppIcon name="arrow-back" size={16} color="#4F46E5" />
-            <Text className="text-sm font-bold text-indigo-600">Back</Text>
+      <ScrollView contentContainerStyle={{ paddingHorizontal: 16, paddingTop: 56, paddingBottom: 120 }} showsVerticalScrollIndicator={false}>
+        {/* ── Standardized Header ───────────────────────────────────── */}
+        <View className="flex-row items-center justify-between mb-6">
+          <TouchableOpacity
+            onPress={() => router.back()}
+            className="w-10 h-10 bg-indigo-50/60 items-center justify-center rounded-full active:opacity-75"
+          >
+            <AppIcon name="arrow-back" size={20} color="#4F46E5" />
           </TouchableOpacity>
-          <View className="items-center flex-row gap-2">
+          <View className="flex-row items-center gap-2">
             <AppIcon name={NAV_ICONS.playActive} size={22} color="#4F46E5" />
-            <Text className="text-xl font-bold text-text-primary">Play</Text>
+            <Text className="text-lg font-extrabold text-text-primary">Play Space</Text>
             <DevBadge />
           </View>
-          <TouchableOpacity onPress={() => router.push('/answers')} className="bg-indigo-100 px-2 py-2 rounded-xl">
-            <Text className="text-[10px] font-bold text-indigo-600">Answers</Text>
+          <TouchableOpacity
+            onPress={() => router.push('/answers')}
+            className="bg-indigo-50/60 px-3.5 py-2 rounded-full active:opacity-70"
+          >
+            <Text className="text-2xs font-extrabold text-indigo-600 uppercase tracking-wider">Answers</Text>
           </TouchableOpacity>
         </View>
 
         {DEV_MODE && category === 'mature' ? (
-          <View className="bg-amber-50 border border-amber-200 rounded-xl px-3 py-2 mb-4">
-            <Text className="text-xs text-amber-800">Dev mode — age gate bypassed for testing.</Text>
+          <View className="bg-amber-50 border border-amber-200/50 rounded-xl px-3 py-2.5 mb-4">
+            <Text className="text-2xs text-amber-800 font-medium">Dev mode — age gate bypassed for testing.</Text>
           </View>
         ) : null}
 
         {!isOnline ? (
-          <View className="bg-amber-50 border border-amber-200 rounded-xl px-3 py-2 mb-4">
-            <Text className="text-xs text-amber-900 text-center">Offline — using saved or built-in prompts</Text>
+          <View className="bg-amber-50 border border-amber-200/50 rounded-xl px-3 py-2.5 mb-4">
+            <Text className="text-2xs text-amber-900 font-medium text-center">Offline — using saved or built-in prompts</Text>
           </View>
         ) : null}
 
-        <ScrollView horizontal showsHorizontalScrollIndicator={false} className="mb-4">
-          {GAME_MODES.map((item) => (
-            <TouchableOpacity
-              key={item.id}
-              onPress={() => setMode(item.id)}
-              className={`w-[170px] mr-3 rounded-2xl border p-4 ${mode === item.id ? 'bg-primary-600 border-primary-600' : 'bg-white border-neutral-border'}`}
-            >
-              <Text className={`text-sm font-bold mb-1 ${mode === item.id ? 'text-white' : 'text-text-primary'}`}>{item.title}</Text>
-              <Text className={`text-xs leading-normal ${mode === item.id ? 'text-blue-100' : 'text-text-secondary'}`}>{item.subtitle}</Text>
-            </TouchableOpacity>
-          ))}
+        {/* ── Game Modes Slider ────────────────────────────────────── */}
+        <Text className="text-3xs font-bold text-slate-400 uppercase tracking-widest px-1 mb-2.5">Choose a game mode</Text>
+        <ScrollView horizontal showsHorizontalScrollIndicator={false} className="mb-5">
+          {GAME_MODES.map((item) => {
+            const active = mode === item.id;
+            return (
+              <TouchableOpacity
+                key={item.id}
+                onPress={() => setMode(item.id)}
+                className={`w-[160px] mr-3 rounded-2xl border p-4 active:opacity-90 ${
+                  active ? 'bg-primary-600 border-primary-600 shadow-md shadow-primary-600/10' : 'bg-white border-indigo-50/60'
+                }`}
+              >
+                <Text className={`text-xs font-extrabold mb-1 ${active ? 'text-white' : 'text-text-primary'}`}>
+                  {item.title}
+                </Text>
+                <Text className={`text-3xs leading-normal ${active ? 'text-blue-100/80' : 'text-text-secondary'}`} numberOfLines={2}>
+                  {item.subtitle}
+                </Text>
+              </TouchableOpacity>
+            );
+          })}
         </ScrollView>
 
+        {/* ── Truth or Dare Sub-Selector ───────────────────────────── */}
         {mode === 'truth_or_dare' ? (
-          <View className="flex-row gap-2 mb-4">
-            {(['any', 'truth', 'dare'] as const).map((item) => (
-              <TouchableOpacity
-                key={item}
-                onPress={() => setTruthOrDareChoice(item)}
-                className={`flex-1 py-2.5 rounded-xl border items-center ${truthOrDareChoice === item ? 'bg-primary-600 border-primary-600' : 'bg-white border-neutral-border'}`}
-              >
-                <Text className={`text-xs font-bold capitalize ${truthOrDareChoice === item ? 'text-white' : 'text-text-secondary'}`}>{item}</Text>
-              </TouchableOpacity>
-            ))}
+          <View className="flex-row gap-2 mb-4 bg-slate-100/80 p-1 rounded-xl">
+            {(['any', 'truth', 'dare'] as const).map((item) => {
+              const active = truthOrDareChoice === item;
+              return (
+                <TouchableOpacity
+                  key={item}
+                  onPress={() => setTruthOrDareChoice(item)}
+                  className={`flex-1 py-2 rounded-lg items-center ${active ? 'bg-white shadow-xs' : ''}`}
+                >
+                  <Text className={`text-2xs font-extrabold capitalize ${active ? 'text-primary-600' : 'text-text-secondary'}`}>
+                    {item}
+                  </Text>
+                </TouchableOpacity>
+              );
+            })}
           </View>
         ) : null}
 
+        {/* ── Category Tags ────────────────────────────────────────── */}
+        <Text className="text-3xs font-bold text-slate-400 uppercase tracking-widest px-1 mb-2">Select prompt theme</Text>
         <View className="flex-row flex-wrap gap-2 mb-5">
-          {(['all', 'fun', 'deep', 'playful', 'mature'] as const).map((item) => (
-            <TouchableOpacity
-              key={item}
-              onPress={() => {
-                if (item === 'mature') {
-                  if (!matureConfirmed) enableMature();
+          {(['all', 'fun', 'deep', 'playful', 'mature'] as const).map((item) => {
+            const active = category === item;
+            return (
+              <TouchableOpacity
+                key={item}
+                onPress={() => {
+                  if (item === 'mature') {
+                    if (!matureConfirmed) enableMature();
+                    setCategory(item);
+                    return;
+                  }
                   setCategory(item);
-                  return;
-                }
-                setCategory(item);
-              }}
-              className={`px-3 py-2 rounded-xl border ${category === item ? 'bg-blue-50 border-primary-600' : 'bg-white border-neutral-border'}`}
-            >
-              <Text className={`text-xs font-bold ${category === item ? 'text-primary-600' : 'text-text-secondary'}`}>
-                {item === 'all' ? 'All' : CATEGORY_LABELS[item]}
-              </Text>
-            </TouchableOpacity>
-          ))}
+                }}
+                className={`px-3 py-1.5 rounded-full border ${
+                  active ? 'bg-primary-50 border-primary-600' : 'bg-white border-indigo-50/60'
+                }`}
+              >
+                <Text className={`text-3xs font-bold uppercase tracking-wider ${active ? 'text-primary-600' : 'text-text-secondary'}`}>
+                  {item === 'all' ? 'All' : CATEGORY_LABELS[item]}
+                </Text>
+              </TouchableOpacity>
+            );
+          })}
         </View>
 
+        {/* ── Prompt Card Content ──────────────────────────────────── */}
         {cardsLoading ? (
           <View className="min-h-[260px] items-center justify-center">
             <ActivityIndicator size="large" color="#4F46E5" />
           </View>
         ) : cards.length === 0 ? (
-          <View className="min-h-[200px] items-center justify-center bg-white rounded-2xl border border-dashed border-indigo-200 p-6">
-            <Text className="text-sm text-text-secondary text-center mb-4">Run game card SQL seeds in Supabase, then retry.</Text>
+          <View className="min-h-[200px] items-center justify-center bg-white rounded-2xl border border-dashed border-indigo-200/50 p-6 mb-5">
+            <Text className="text-2xs text-text-secondary text-center mb-4 font-medium">Run game card SQL seeds in Supabase, then retry.</Text>
             <Button title="Retry" onPress={() => refetch()} variant="secondary" />
           </View>
         ) : (
           <>
             <GamePromptCard card={prompt ?? null} mode={mode} cardKey={cardKey} />
 
-            <Card className="p-5 mt-4 border border-indigo-100">
+            <Card className="p-5 mt-4 border border-indigo-50/60 bg-white">
               {mySaved && !partnerSaved && (
-                <View className="bg-amber-50 border border-amber-200 rounded-xl p-3 mb-4 flex-row items-center gap-2">
-                  <Text className="text-base">⏳</Text>
-                  <Text className="text-xs text-amber-900 flex-1 font-medium">
-                    You have already completed this activity! Waiting for your partner.
+                <View className="bg-amber-50 border border-amber-100 rounded-xl p-3 mb-4 flex-row items-center gap-2">
+                  <Text className="text-xs">⏳</Text>
+                  <Text className="text-3xs text-amber-800 flex-1 font-bold">
+                    You have answered! Waiting for your partner's response.
                   </Text>
                 </View>
               )}
-              <Text className="text-sm font-bold text-text-primary mb-3">Your answer</Text>
+
+              <Text className="text-2xs font-extrabold text-text-secondary uppercase tracking-widest mb-3">Your answer</Text>
+
               {prompt?.option_a && prompt?.option_b ? (
                 <View className="flex-row gap-2 mb-3">
                   {(['a', 'b'] as const).map((key) => {
                     const label = key === 'a' ? prompt.option_a! : prompt.option_b!;
+                    const active = selectedChoice === key;
                     return (
                       <TouchableOpacity
                         key={key}
                         onPress={() => setSelectedChoice(key)}
-                        className={`flex-1 py-3 px-2 rounded-xl border ${selectedChoice === key ? 'bg-primary-600 border-primary-600' : 'bg-white border-neutral-border'}`}
+                        className={`flex-1 py-3 px-2 rounded-xl border active:opacity-90 ${
+                          active ? 'bg-primary-600 border-primary-600' : 'bg-white border-neutral-border'
+                        }`}
                       >
-                        <Text className={`text-xs font-bold text-center ${selectedChoice === key ? 'text-white' : 'text-text-secondary'}`}>{label}</Text>
+                        <Text className={`text-2xs font-bold text-center ${active ? 'text-white' : 'text-text-secondary'}`}>
+                          {label}
+                        </Text>
                       </TouchableOpacity>
                     );
                   })}
                 </View>
               ) : null}
+
               <TextInput
-                className="min-h-[80px] border border-neutral-border rounded-xl p-3 text-base text-text-primary bg-white mb-3"
+                className="min-h-[80px] border border-neutral-border rounded-xl p-3 text-sm text-text-primary bg-white mb-3"
                 placeholder="Type your answer..."
+                placeholderTextColor="#94A3B8"
                 multiline
                 value={myAnswer}
                 onChangeText={setMyAnswer}
               />
-              <Button title={mySaved ? 'Update answer' : 'Submit answer'} onPress={submitAnswer} loading={submitGameAnswer.isPending} />
+              
+              <Button
+                title={mySaved ? 'Update Answer' : 'Submit Answer'}
+                onPress={submitAnswer}
+                loading={submitGameAnswer.isPending}
+              />
 
+              {/* Shared Responses Reveal */}
               <View className="mt-5 pt-4 border-t border-slate-100">
-                <Text className="text-xs font-bold text-primary-600 uppercase tracking-widest mb-3">Both answers</Text>
-                {[mySaved, partnerSaved].filter(Boolean).map((item) => (
-                  <View key={item!.id} className="flex-row gap-3 mb-3">
-                    <ProfileAvatar
-                      uri={item!.user_id === user?.id ? profile?.avatar_url : partnerProfile?.avatar_url}
-                      name={item!.profiles?.display_name}
-                      size={36}
-                    />
-                    <View className="flex-1 bg-slate-50 rounded-xl p-3">
-                      <Text className="text-xs font-bold text-text-primary capitalize">
-                        {item!.profiles?.display_name || (item!.user_id === user?.id ? 'You' : 'Partner')}
-                      </Text>
-                      <Text className="text-sm text-text-secondary mt-1">{item!.answer_text}</Text>
+                <Text className="text-3xs font-bold text-slate-400 uppercase tracking-widest mb-3">Answers Timeline</Text>
+                
+                {[mySaved, partnerSaved].filter(Boolean).map((item) => {
+                  const isMe = item!.user_id === user?.id;
+                  return (
+                    <View key={item!.id} className="flex-row gap-3 mb-3.5">
+                      <ProfileAvatar
+                        uri={isMe ? profile?.avatar_url : partnerProfile?.avatar_url}
+                        name={item!.profiles?.display_name}
+                        size={32}
+                      />
+                      <View className="flex-1 bg-slate-50 border border-slate-100/50 rounded-xl p-3">
+                        <Text className="text-2xs font-bold text-text-primary capitalize">
+                          {item!.profiles?.display_name || (isMe ? 'You' : 'Partner')}
+                        </Text>
+                        <Text className="text-xs text-text-secondary mt-1 leading-normal font-medium">
+                          {item!.answer_text}
+                        </Text>
+                      </View>
                     </View>
-                  </View>
-                ))}
+                  );
+                })}
+
                 {!mySaved && !partnerSaved ? (
-                  <Text className="text-xs text-text-secondary">No answers yet — be the first.</Text>
+                  <Text className="text-3xs text-text-muted italic">No answers yet — submit yours to reveal.</Text>
                 ) : null}
+                
                 {mySaved && !partnerSaved ? (
-                  <Text className="text-xs text-amber-700 mt-2">Waiting for your partner&apos;s answer.</Text>
+                  <Text className="text-3xs text-amber-700 font-bold mt-1">Waiting for your partner to complete their answer.</Text>
                 ) : null}
               </View>
             </Card>
           </>
         )}
 
-        <Button title="Randomize Prompt" onPress={nextPrompt} className="mt-5" disabled={!cards.length || cardsLoading} />
+        <Button
+          title="Randomize Prompt"
+          onPress={nextPrompt}
+          className="mt-5 bg-indigo-50 border border-indigo-100 text-indigo-600"
+          disabled={!cards.length || cardsLoading}
+        />
       </ScrollView>
       <BottomNav />
     </ScreenShell>

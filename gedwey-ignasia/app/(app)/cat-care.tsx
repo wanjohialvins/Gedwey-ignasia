@@ -102,13 +102,24 @@ export default function CatCareScreen() {
 
   return (
     <ScreenShell variant="hero" className="flex-1">
-      <ScrollView contentContainerStyle={{ paddingHorizontal: 16, paddingTop: 56, paddingBottom: 112 }}>
-        <TouchableOpacity onPress={() => router.back()} className="mb-5 flex-row items-center gap-1">
-          <AppIcon name="arrow-back" size={16} color={theme.accent} />
-          <Text className="text-sm font-bold" style={{ color: theme.accent }}>Back</Text>
-        </TouchableOpacity>
+      <ScrollView contentContainerStyle={{ paddingHorizontal: 16, paddingTop: 56, paddingBottom: 120 }} showsVerticalScrollIndicator={false}>
+        {/* ── Standardized Header ───────────────────────────────────── */}
+        <View className="flex-row items-center justify-between mb-6">
+          <TouchableOpacity
+            onPress={() => router.back()}
+            className="w-10 h-10 bg-indigo-50/60 items-center justify-center rounded-full active:opacity-75"
+          >
+            <AppIcon name="arrow-back" size={20} color="#4F46E5" />
+          </TouchableOpacity>
+          <View className="flex-row items-center gap-2">
+            <AppIcon name={NAV_ICONS.playActive} size={22} color="#4F46E5" />
+            <Text className="text-lg font-extrabold text-text-primary">Cat Care</Text>
+          </View>
+          <View className="w-10" />
+        </View>
 
-        <View className="items-center mb-2 relative">
+        {/* Cat Avatar Container */}
+        <View className="items-center mb-4 relative bg-white border border-indigo-50/40 rounded-3xl p-6 shadow-2xs">
           <MotiView
             animate={{
               scale: petBounce ? [1, 1.08, 0.98, 1] : 1,
@@ -116,7 +127,7 @@ export default function CatCareScreen() {
             }}
             transition={{ type: 'timing', duration: 700 }}
           >
-            <Image source={PET_IMAGE} className="w-40 h-40" resizeMode="contain" />
+            <Image source={PET_IMAGE} className="w-36 h-36" resizeMode="contain" />
           </MotiView>
 
           {/* Main activity emoji float */}
@@ -126,7 +137,7 @@ export default function CatCareScreen() {
               from={{ opacity: 1, translateY: 10, scale: 0.8 }}
               animate={{ opacity: 0, translateY: -60, scale: 1.4 }}
               transition={{ type: 'timing', duration: 1400 }}
-              className="absolute top-0"
+              className="absolute top-8"
             >
               <Text className="text-4xl">{activeTask.animEmoji}</Text>
             </MotiView>
@@ -142,7 +153,7 @@ export default function CatCareScreen() {
                   animate={{ opacity: 0, translateY: 20, translateX: (i - 1) * 10, scale: 1.1 }}
                   transition={{ type: 'timing', duration: 1000, delay: i * 200 }}
                   className="absolute"
-                  style={{ top: 40 }}
+                  style={{ top: 50 }}
                 >
                   <Text className="text-2xl">{i % 2 === 0 ? '🐟' : '🍗'}</Text>
                 </MotiView>
@@ -160,7 +171,7 @@ export default function CatCareScreen() {
                   animate={{ opacity: 0, translateY: -50, translateX: -20 + i * 14 + (i % 2 === 0 ? 10 : -10), scale: 1.2 }}
                   transition={{ type: 'timing', duration: 1200, delay: i * 150 }}
                   className="absolute"
-                  style={{ top: 20 }}
+                  style={{ top: 30 }}
                 >
                   <Text className="text-xl">{['💕', '❤️', '💗', '😻'][i]}</Text>
                 </MotiView>
@@ -178,7 +189,7 @@ export default function CatCareScreen() {
                   animate={{ opacity: 0, translateY: -40 - i * 8 }}
                   transition={{ type: 'timing', duration: 1000, delay: i * 100 }}
                   className="absolute"
-                  style={{ top: 55 + (i % 2) * 12 }}
+                  style={{ top: 60 + (i % 2) * 12 }}
                 >
                   <Text className="text-xl">{i % 2 === 0 ? '🫧' : '💦'}</Text>
                 </MotiView>
@@ -194,34 +205,37 @@ export default function CatCareScreen() {
               animate={{ opacity: 0, translateY: -20, scale: 1.1 }}
               transition={{ type: 'timing', duration: 2000, delay: 400 }}
               className="absolute"
-              style={{ bottom: -8 }}
+              style={{ bottom: 12 }}
             >
-              <Text className="text-base font-bold" style={{ color: theme.accent }}>{statusText}</Text>
+              <Text className="text-sm font-extrabold text-indigo-600">{statusText}</Text>
             </MotiView>
           ) : null}
         </View>
 
-        <Text className="text-2xl font-bold text-center mb-1" style={{ color: theme.textPrimary }}>
+        <Text className="text-xl font-extrabold text-center text-text-primary mb-1">
           {pet?.name || 'Your Cat'}
         </Text>
+        
         {petMood ? (
-          <Text className="text-sm text-center mb-2 px-4" style={{ color: theme.textSecondary }}>
+          <Text className="text-xs text-center text-text-secondary mb-2 px-4 font-semibold">
             {petMood.emoji} {petMood.message}
           </Text>
         ) : null}
+        
         {careHint ? (
-          <Text className="text-xs text-center mb-5 px-6 italic" style={{ color: theme.accent }}>
+          <Text className="text-2xs text-center text-indigo-600 font-bold mb-5 px-6 italic">
             {careHint}
           </Text>
         ) : (
-          <Text className="text-sm text-center mb-5 px-4" style={{ color: theme.textSecondary }}>
+          <Text className="text-2xs text-center text-text-secondary mb-5 px-4">
             Daily care boosts your streak. Both partners see live stats and get reminders.
           </Text>
         )}
 
-        <Card className="p-5 mb-5">
+        {/* ── Care Progress Stats ──────────────────────────────────── */}
+        <Card className="p-5 mb-5 border border-indigo-50/50 bg-white">
           {isLoading || !pet ? (
-            <Text className="text-sm text-center" style={{ color: theme.textSecondary }}>Loading cat...</Text>
+            <Text className="text-xs text-center text-text-secondary italic">Loading shared cat...</Text>
           ) : (
             <>
               <StatBar label="Hunger" value={pet.hunger} color="#F59E0B" />
@@ -231,22 +245,24 @@ export default function CatCareScreen() {
           )}
         </Card>
 
+        {/* ── Co-op Owner Avatars ─────────────────────────────────── */}
         <View className="flex-row justify-center gap-6 mb-6">
           <View className="items-center">
-            <ProfileAvatar uri={profile?.avatar_url} name={profile?.display_name} size={48} />
-            <Text className="text-xs font-bold mt-1 capitalize" style={{ color: theme.textPrimary }}>You</Text>
+            <ProfileAvatar uri={profile?.avatar_url} name={profile?.display_name} size={40} />
+            <Text className="text-3xs font-extrabold text-text-secondary mt-1.5 capitalize">You</Text>
           </View>
           <View className="items-center">
-            <ProfileAvatar uri={partnerProfile?.avatar_url} name={partnerProfile?.display_name} size={48} />
-            <Text className="text-xs font-bold mt-1 capitalize" style={{ color: theme.textPrimary }}>
+            <ProfileAvatar uri={partnerProfile?.avatar_url} name={partnerProfile?.display_name} size={40} />
+            <Text className="text-3xs font-extrabold text-text-secondary mt-1.5 capitalize">
               {partnerProfile?.display_name || 'Partner'}
             </Text>
           </View>
         </View>
 
+        {/* ── Tasks Action Cards ───────────────────────────────────── */}
         {TASKS.map((task) => (
-          <Card key={task.id} className="p-4 mb-3">
-            <View className="flex-row items-center gap-3 mb-3">
+          <Card key={task.id} className="p-4 mb-3 border border-indigo-50/40 bg-white">
+            <View className="flex-row items-center gap-3.5">
               <MotiView
                 animate={activeAnim === task.id ? { scale: [1, 1.3, 1], rotate: ['0deg', '12deg', '-8deg', '0deg'] } : { scale: 1 }}
                 transition={{ type: 'timing', duration: 600 }}
@@ -254,7 +270,7 @@ export default function CatCareScreen() {
                 <Text className="text-3xl">{task.emoji}</Text>
               </MotiView>
               <View className="flex-1">
-                <Text className="text-base font-bold" style={{ color: theme.textPrimary }}>{task.label}</Text>
+                <Text className="text-sm font-extrabold text-text-primary">{task.label}</Text>
                 {activeAnim === task.id ? (
                   <MotiView
                     key={`label-${animKey}-${task.id}`}
@@ -262,17 +278,18 @@ export default function CatCareScreen() {
                     animate={{ opacity: 1, translateX: 0 }}
                     transition={{ type: 'timing', duration: 300 }}
                   >
-                    <Text className="text-xs font-bold" style={{ color: theme.accent }}>{task.statusText}</Text>
+                    <Text className="text-3xs font-bold text-indigo-600">{task.statusText}</Text>
                   </MotiView>
-                ) : null}
+                ) : (
+                  <Text className="text-3xs text-text-secondary mt-0.5">Increases {task.stat} by 20%</Text>
+                )}
               </View>
               <TouchableOpacity
                 onPress={() => handleCare(task.id)}
                 disabled={petCare.isPending}
-                className="px-4 py-2.5 rounded-xl"
-                style={{ backgroundColor: theme.accent }}
+                className="px-4 py-2 bg-primary-600 rounded-xl active:bg-primary-500"
               >
-                <Text className="text-xs font-bold text-white">Do it</Text>
+                <Text className="text-2xs font-extrabold text-white uppercase tracking-wider">Do It</Text>
               </TouchableOpacity>
             </View>
           </Card>

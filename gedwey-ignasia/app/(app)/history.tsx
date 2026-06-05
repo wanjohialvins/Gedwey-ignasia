@@ -100,78 +100,78 @@ export default function HistoryScreen() {
   }, [logs]);
 
   return (
-    <ScreenShell className="flex-1">
-      <ScrollView contentContainerStyle={{ paddingHorizontal: 16, paddingTop: 56, paddingBottom: 112 }}>
-        <View className="flex-row items-center justify-between mb-5">
-          <TouchableOpacity 
-            onPress={() => router.back()} 
-            style={{ backgroundColor: theme.accentLight }}
-            className="px-3 py-2 rounded-xl flex-row items-center gap-1 active:opacity-80"
+    <ScreenShell variant="hero" className="flex-1">
+      <ScrollView contentContainerStyle={{ paddingHorizontal: 16, paddingTop: 56, paddingBottom: 120 }} showsVerticalScrollIndicator={false}>
+        {/* ── Standardized Header ───────────────────────────────────── */}
+        <View className="flex-row items-center justify-between mb-6">
+          <TouchableOpacity
+            onPress={() => router.back()}
+            className="w-10 h-10 bg-indigo-50/60 items-center justify-center rounded-full active:opacity-75"
           >
-            <AppIcon name="arrow-back" size={16} color={theme.accent} />
-            <Text style={{ color: theme.accent }} className="text-sm font-bold">Back</Text>
+            <AppIcon name="arrow-back" size={20} color="#4F46E5" />
           </TouchableOpacity>
           <View className="flex-row items-center gap-2">
-            <AppIcon name="notifications-outline" size={22} color={theme.accent} />
-            <ThemedText className="text-xl font-bold">Notifications</ThemedText>
+            <AppIcon name="notifications-outline" size={22} color="#4F46E5" />
+            <Text className="text-lg font-extrabold text-text-primary">Timeline Logs</Text>
           </View>
-          <View className="w-[58px]" />
+          <View className="w-10" />
         </View>
 
+        {/* ── Filters Horizontal Scroll Bar ────────────────────────── */}
         <ScrollView horizontal showsHorizontalScrollIndicator={false} className="mb-5">
-          {['all', 'session', 'game', 'todo', 'bucket', 'music'].map((item) => (
-            <TouchableOpacity
-              key={item}
-              onPress={() => setFilter(item)}
-              style={{
-                backgroundColor: filter === item ? theme.accent : theme.surface,
-                borderColor: filter === item ? theme.accent : theme.border,
-              }}
-              className="px-4 py-2 rounded-xl border mr-2 active:opacity-80"
-            >
-              <Text 
-                style={{ color: filter === item ? '#fff' : theme.textSecondary }}
-                className="text-xs font-bold capitalize"
+          {['all', 'session', 'game', 'todo', 'bucket', 'music'].map((item) => {
+            const active = filter === item;
+            return (
+              <TouchableOpacity
+                key={item}
+                onPress={() => setFilter(item)}
+                className={`px-4 py-1.5 rounded-full border mr-2 active:opacity-85 ${
+                  active ? 'bg-primary-600 border-primary-600' : 'bg-white border-indigo-50/60'
+                }`}
               >
-                {item}
-              </Text>
-            </TouchableOpacity>
-          ))}
+                <Text
+                  className={`text-3xs font-bold uppercase tracking-wider ${active ? 'text-white' : 'text-text-secondary'}`}
+                >
+                  {item}
+                </Text>
+              </TouchableOpacity>
+            );
+          })}
         </ScrollView>
 
+        {/* ── Timeline List ────────────────────────────────────────── */}
         {!profile?.couple_id ? (
-          <Card className="p-5">
-            <ThemedText className="text-base font-bold mb-1">Pair to start logging</ThemedText>
-            <ThemedText type="secondary" className="text-sm leading-normal">
-              Your shared timeline appears after you connect with a partner.
-            </ThemedText>
+          <Card className="p-5 border border-indigo-50/60 bg-white">
+            <Text className="text-sm font-bold text-text-primary">Pair to start logging</Text>
+            <Text className="text-xs text-text-secondary mt-1">
+              Your shared timeline will appear after you connect with a partner.
+            </Text>
           </Card>
         ) : Object.keys(grouped).length ? (
           Object.entries(grouped).map(([hour, items]) => (
             <View key={hour} className="mb-5">
-              <Text style={{ color: theme.accent }} className="text-xs font-bold uppercase tracking-widest mb-2">{hour}</Text>
+              <Text className="text-3xs font-extrabold text-primary-600 uppercase tracking-widest mb-3 px-1">{hour}</Text>
               {items.map((item) => {
                 const meta = ACTIVITY_ICONS[item.activity_type] || ACTIVITY_ICONS.profile;
                 return (
                   <TouchableOpacity
                     key={item.id}
                     onPress={() => handleItemPress(item.activity_type, item.metadata)}
-                    className="active:opacity-80 mb-2"
+                    className="active:opacity-90 mb-3"
+                    activeOpacity={0.9}
                   >
-                    <Card className="p-4">
-                      <View className="flex-row items-start gap-3">
-                        <View className={`w-9 h-9 rounded-full items-center justify-center ${meta.color}`}>
+                    <Card className="p-4 border border-indigo-50/40 bg-white">
+                      <View className="flex-row items-center gap-3.5">
+                        <View className={`w-9 h-9 rounded-xl items-center justify-center ${meta.color} border border-white`}>
                           <AppIcon name={meta.icon} size={18} color={meta.iconColor} />
                         </View>
                         <View className="flex-1">
-                          <ThemedText className="text-sm font-bold">{item.title}</ThemedText>
-                          <ThemedText type="secondary" className="text-xs mt-1 capitalize">
-                            {item.activity_type} · by {nameForUser(item.user_id, item)}
-                          </ThemedText>
+                          <Text className="text-sm font-bold text-text-primary leading-normal">{item.title}</Text>
+                          <Text className="text-3xs text-text-secondary font-semibold mt-1 uppercase tracking-wide">
+                            {item.activity_type} · By {nameForUser(item.user_id, item)}
+                          </Text>
                         </View>
-                        <View style={{ alignSelf: 'center' }}>
-                          <AppIcon name={NAV_ICONS.chevron} size={14} color={theme.textTertiary} />
-                        </View>
+                        <AppIcon name={NAV_ICONS.chevron} size={14} color="#CBD5E1" />
                       </View>
                     </Card>
                   </TouchableOpacity>
@@ -180,12 +180,12 @@ export default function HistoryScreen() {
             </View>
           ))
         ) : (
-          <Card className="p-5 items-center">
-            <AppIcon name="notifications-outline" size={32} color={theme.textTertiary} />
-            <ThemedText className="text-base font-bold mb-1 mt-3">No activity logs yet</ThemedText>
-            <ThemedText type="secondary" className="text-sm leading-normal text-center">
-              Games, lists, sessions, and music will appear here.
-            </ThemedText>
+          <Card className="p-6 items-center border border-indigo-50/60 bg-white">
+            <AppIcon name="notifications-outline" size={28} color="#94A3B8" />
+            <Text className="text-sm font-bold text-text-primary mt-3">No activity logs yet</Text>
+            <Text className="text-xs text-center text-text-secondary mt-1.5 leading-relaxed">
+              Games, lists, sessions, and shared music updates will appear here.
+            </Text>
           </Card>
         )}
       </ScrollView>

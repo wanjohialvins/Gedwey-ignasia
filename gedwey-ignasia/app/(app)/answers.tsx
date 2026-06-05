@@ -42,87 +42,98 @@ export default function AnswersArchiveScreen() {
   const isLoading = gameAnswers.isLoading || sessionAnswers.isLoading;
 
   return (
-    <ScreenShell className="flex-1">
-      <ScrollView contentContainerStyle={{ paddingHorizontal: 16, paddingTop: 56, paddingBottom: 112 }}>
-        <View className="flex-row items-center justify-between mb-5">
-          <TouchableOpacity onPress={() => router.back()} className="bg-indigo-100 px-3 py-2 rounded-xl flex-row items-center gap-1">
-            <AppIcon name="arrow-back" size={16} color={theme.accent} />
-            <Text className="text-sm font-bold" style={{ color: theme.accent }}>Back</Text>
+    <ScreenShell variant="hero" className="flex-1">
+      <ScrollView contentContainerStyle={{ paddingHorizontal: 16, paddingTop: 56, paddingBottom: 120 }} showsVerticalScrollIndicator={false}>
+        {/* ── Standardized Header ───────────────────────────────────── */}
+        <View className="flex-row items-center justify-between mb-6">
+          <TouchableOpacity
+            onPress={() => router.back()}
+            className="w-10 h-10 bg-indigo-50/60 items-center justify-center rounded-full active:opacity-75"
+          >
+            <AppIcon name="arrow-back" size={20} color="#4F46E5" />
           </TouchableOpacity>
           <View className="flex-row items-center gap-2">
-            <AppIcon name={NAV_ICONS.session} size={22} color={theme.accent} />
-            <Text className="text-xl font-bold" style={{ color: theme.textPrimary }}>All Answers</Text>
+            <AppIcon name={NAV_ICONS.session} size={22} color="#4F46E5" />
+            <Text className="text-lg font-extrabold text-text-primary">Answers Hub</Text>
           </View>
-          <View className="w-[58px]" />
+          <View className="w-10" />
         </View>
 
-        <Text className="text-sm mb-4 leading-normal" style={{ color: theme.textSecondary }}>
+        <Text className="text-xs text-text-secondary leading-relaxed mb-5 px-1">
           Every answer from games and sessions — visible to both of you, sorted by day and category.
         </Text>
 
-        <ScrollView horizontal showsHorizontalScrollIndicator={false} className="mb-5">
-          {(['all', 'game', 'session'] as const).map((item) => (
-            <TouchableOpacity
-              key={item}
-              onPress={() => setFilter(item)}
-              className="px-4 py-2 rounded-xl border mr-2"
-              style={{
-                backgroundColor: filter === item ? theme.accent : theme.surface,
-                borderColor: filter === item ? theme.accent : theme.border,
-              }}
-            >
-              <Text className="text-xs font-bold capitalize" style={{ color: filter === item ? '#fff' : theme.textSecondary }}>
-                {item}
-              </Text>
-            </TouchableOpacity>
-          ))}
-        </ScrollView>
+        {/* ── Tabs Selector ────────────────────────────────────────── */}
+        <View className="flex-row bg-slate-100 p-1 rounded-xl mb-5 border border-slate-200/50">
+          {(['all', 'game', 'session'] as const).map((item) => {
+            const active = filter === item;
+            return (
+              <TouchableOpacity
+                key={item}
+                onPress={() => setFilter(item)}
+                className={`flex-1 py-2 rounded-lg items-center capitalize ${active ? 'bg-white shadow-xs' : ''}`}
+                activeOpacity={0.8}
+              >
+                <Text className={`text-2xs font-extrabold ${active ? 'text-primary-600' : 'text-text-secondary'}`}>
+                  {item === 'all' ? 'All Activities' : `${item}s`}
+                </Text>
+              </TouchableOpacity>
+            );
+          })}
+        </View>
 
+        {/* ── Responses List ───────────────────────────────────────── */}
         {!profile?.couple_id ? (
-          <Card className="p-5">
-            <Text className="text-base font-bold" style={{ color: theme.textPrimary }}>Pair to see shared answers</Text>
-            <Text className="text-sm mt-1" style={{ color: theme.textSecondary }}>Connect with your partner first.</Text>
+          <Card className="p-5 border border-indigo-50/60">
+            <Text className="text-sm font-bold text-text-primary">Pair to see shared answers</Text>
+            <Text className="text-xs text-text-secondary mt-1">Connect with your partner first in settings.</Text>
           </Card>
         ) : isLoading ? (
-          <Text className="text-sm text-center" style={{ color: theme.textSecondary }}>Loading answers...</Text>
+          <View className="py-8 items-center">
+            <Text className="text-xs text-text-secondary italic">Loading shared archive...</Text>
+          </View>
         ) : grouped.length === 0 ? (
-          <Card className="p-5 items-center">
-            <Text className="text-base font-bold" style={{ color: theme.textPrimary }}>No answers yet</Text>
-            <Text className="text-sm text-center mt-1" style={{ color: theme.textSecondary }}>
-              Play a game or complete a session — answers appear here for both of you.
+          <Card className="p-6 items-center border border-indigo-50/60">
+            <Text className="text-sm font-bold text-text-primary">No answers yet</Text>
+            <Text className="text-xs text-center text-text-secondary mt-1.5 leading-relaxed">
+              Play a game or complete a session — answers will automatically appear here for both of you.
             </Text>
           </Card>
         ) : (
           grouped.map((group) => (
             <View key={group.day} className="mb-6">
-              <Text className="text-xs font-bold uppercase tracking-widest mb-3" style={{ color: theme.accent }}>
+              <Text className="text-3xs font-extrabold text-primary-600 uppercase tracking-widest mb-3.5 px-1">
                 {group.day}
               </Text>
               {group.items.map((item) => (
-                <Card key={item.id} className="p-4 mb-3">
-                  <View className="flex-row items-center gap-2 mb-2">
-                    <View className="px-2 py-0.5 rounded-full" style={{ backgroundColor: theme.accentLight }}>
-                      <Text className="text-[10px] font-bold capitalize" style={{ color: theme.accent }}>
+                <Card key={item.id} className="p-4 mb-4 border border-indigo-50/40 bg-white">
+                  <View className="flex-row items-center gap-2 mb-2.5">
+                    <View className="px-2 py-0.5 rounded-md bg-indigo-55/10 bg-indigo-50">
+                      <Text className="text-[9px] font-bold text-indigo-600 uppercase tracking-wide">
                         {item.source === 'game' ? CATEGORY_LABELS[item.category as keyof typeof CATEGORY_LABELS] || item.category : item.category.replace('_', ' ')}
                       </Text>
                     </View>
-                    <Text className="text-[10px] font-bold uppercase" style={{ color: theme.textTertiary }}>
+                    <Text className="text-[9px] font-extrabold text-text-muted uppercase tracking-wider">
                       {item.source}
                     </Text>
                   </View>
-                  <Text className="text-sm font-bold mb-3 leading-normal" style={{ color: theme.textPrimary }}>
-                    {item.prompt}
+                  
+                  <Text className="text-sm font-bold text-text-primary mb-4 leading-normal px-0.5">
+                    "{item.prompt}"
                   </Text>
-                  {item.answers.map((ans, idx) => (
-                    <View key={idx} className="mb-2 last:mb-0 pl-3 border-l-2" style={{ borderColor: theme.accent + '60' }}>
-                      <Text className="text-xs font-bold capitalize mb-0.5" style={{ color: theme.accent }}>
-                        {ans.name}{ans.mood ? ` · ${ans.mood}` : ''}
-                      </Text>
-                      <Text className="text-sm leading-normal" style={{ color: theme.textSecondary }}>
-                        {ans.answer}
-                      </Text>
-                    </View>
-                  ))}
+                  
+                  <View className="gap-3 border-l-2 border-indigo-100 pl-3">
+                    {item.answers.map((ans, idx) => (
+                      <View key={idx} className="mb-1 last:mb-0">
+                        <Text className="text-3xs font-bold text-primary-600 uppercase tracking-wider mb-0.5">
+                          {ans.name}{ans.mood ? ` · ${ans.mood}` : ''}
+                        </Text>
+                        <Text className="text-xs text-text-secondary leading-relaxed">
+                          {ans.answer}
+                        </Text>
+                      </View>
+                    ))}
+                  </View>
                 </Card>
               ))}
             </View>
