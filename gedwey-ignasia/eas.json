@@ -1,9 +1,6 @@
 {
   "cli": {
-    "version": ">= 9.0.0",
-    "env": {
-      "EAS_SKIP_AUTO_FINGERPRINT": "1"
-    }
+    "version": ">= 9.0.0"
   },
   "build": {
     "development": {
