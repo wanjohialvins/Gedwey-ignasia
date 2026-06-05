@@ -65,10 +65,8 @@ export const MusicPlayer = ({ moodId, customUrl = '', onNowPlaying }: Props) => 
   const showTitle = title || displayTrack.title;
   const showSubtitle = subtitle || displayTrack.artist;
 
-  const youtubeHtml = youtubeEmbedUrl
-    ? `<!DOCTYPE html><html><head><meta name="viewport" content="width=device-width,initial-scale=1"/>
-<style>*{margin:0;padding:0}body{background:#000}iframe{width:100%;height:100vh;border:0}</style></head>
-<body><iframe src="${youtubeEmbedUrl}&autoplay=1&rel=0&modestbranding=1" allow="autoplay; encrypted-media; picture-in-picture" allowfullscreen></iframe></body></html>`
+  const embedUrl = youtubeEmbedUrl
+    ? `${youtubeEmbedUrl}&autoplay=1&mute=0&rel=0&modestbranding=1`
     : null;
 
   return (
@@ -120,10 +118,10 @@ export const MusicPlayer = ({ moodId, customUrl = '', onNowPlaying }: Props) => 
         </View>
       </View>
 
-      {youtubeHtml && isPlaying ? (
+      {embedUrl && isPlaying ? (
         <View className="h-56 rounded-2xl overflow-hidden border border-neutral-border mb-4 bg-black">
           <WebView
-            source={{ html: youtubeHtml }}
+            source={{ uri: embedUrl }}
             allowsInlineMediaPlayback
             mediaPlaybackRequiresUserAction={false}
             javaScriptEnabled

@@ -2,6 +2,8 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '../supabase';
 import { isNetworkError, markOffline, markOnline } from '../networkStatus';
 import { enqueueMutation } from '../offlineQueue';
+import { broadcastCoupleEvent } from '../notifications';
+import { getCyclePrediction } from '../cycleIntelligence';
 
 export type ImportantDate = {
   id: string;
@@ -53,6 +55,13 @@ export const useCreateImportantDate = () => {
           .select('*, profiles:created_by(display_name)')
           .single();
         if (error) throw new Error(error.message);
+        
+        // Broadcast realtime event to partner
+        broadcastCoupleEvent(p.coupleId, p.userId, 'date_created', {
+          title: 'Important Dates 📅',
+          body: `Your partner added a new date: "${p.title}".`,
+        }).catch((err) => console.error('[Dates] Broadcast failed:', err));
+
         markOnline();
         return data as ImportantDate;
       } catch (err) {
@@ -78,9 +87,15 @@ export const useCreateImportantDate = () => {
 export const useDeleteImportantDate = () => {
   const qc = useQueryClient();
   return useMutation<void, Error, { id: string; coupleId: string }>({
-    mutationFn: async ({ id }) => {
+    mutationFn: async ({ id, coupleId }) => {
       const { error } = await supabase.from('important_dates').delete().eq('id', id);
       if (error) throw new Error(error.message);
+
+      // Broadcast realtime event to partner
+      broadcastCoupleEvent(coupleId, '', 'date_deleted', {
+        title: 'Important Dates 📅',
+        body: `An important date was removed.`,
+      }).catch((err) => console.error('[Dates] Broadcast failed:', err));
     },
     onSuccess: (_, v) => qc.invalidateQueries({ queryKey: ['importantDates', v.coupleId] }),
   });
@@ -167,6 +182,13 @@ export const useUpsertCycleLog = () => {
           .select('*, profiles:user_id(display_name)')
           .single();
         if (error) throw new Error(error.message);
+
+        // Broadcast realtime event to partner
+        broadcastCoupleEvent(p.coupleId, p.userId, 'cycle_updated', {
+          title: 'Cycle Tracker 🌸',
+          body: `Your partner updated the cycle log.`,
+        }).catch((err) => console.error('[Cycle] Broadcast failed:', err));
+
         markOnline();
         return data as CycleLog;
       } catch (err) {
@@ -302,6 +324,12 @@ export const usePetCare = () => {
       const { error } = await supabase.from('couple_pets').update(updates).eq('couple_id', coupleId);
       if (error) throw new Error(error.message);
       await supabase.from('pet_care_logs').insert({ couple_id: coupleId, user_id: userId, care_type: careType });
+      
+      // Broadcast realtime event to partner
+      broadcastCoupleEvent(coupleId, userId, 'pet_cared', {
+        title: 'Cat Care 🐱',
+        body: `Your partner fed or played with your cat!`,
+      }).catch((err) => console.error('[Pet] Broadcast failed:', err));
       try {
         await supabase.rpc('increment_couple_streak', { p_couple_id: coupleId });
       } catch {
@@ -313,18 +341,5 @@ export const usePetCare = () => {
 };
 
 export const predictNextCycle = (logs: CycleLog[]): string | null => {
-  const sorted = [...logs].filter((l) => l.flow_strength === 'medium' || l.flow_strength === 'heavy').sort(
-    (a, b) => new Date(a.log_date).getTime() - new Date(b.log_date).getTime()
-  );
-  if (sorted.length < 2) return null;
-  const gaps: number[] = [];
-  for (let i = 1; i < sorted.length; i++) {
-    gaps.push(
-      (new Date(sorted[i].log_date).getTime() - new Date(sorted[i - 1].log_date).getTime()) / 86400000
-    );
-  }
-  const avg = gaps.reduce((a, b) => a + b, 0) / gaps.length;
-  const last = new Date(sorted[sorted.length - 1].log_date);
-  last.setDate(last.getDate() + Math.round(avg));
-  return last.toISOString().slice(0, 10);
+  return getCyclePrediction(logs)?.nextPeriod ?? null;
 };

@@ -5,6 +5,7 @@ import {
   TouchableOpacity,
   FlatList,
   SafeAreaView,
+  Image,
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useAuthStore } from '../../../lib/store/authStore';
@@ -126,7 +127,7 @@ export default function JournalListScreen() {
             {item.image_url && (
               <View className="w-16 h-18 bg-white border border-slate-200 p-1 pb-4 shadow-sm rounded-sm">
                 <View className="w-full h-11 bg-slate-100 overflow-hidden">
-                  <Text className="text-center text-xs mt-3">📸</Text>
+                  <Image source={{ uri: item.image_url }} className="w-full h-full" resizeMode="cover" />
                 </View>
               </View>
             )}

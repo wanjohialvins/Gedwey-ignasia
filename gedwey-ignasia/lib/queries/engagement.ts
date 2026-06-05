@@ -3,7 +3,8 @@ import { supabase } from '../supabase';
 import { CACHE_KEYS, getCache, setCache } from '../offlineCache';
 import { isNetworkError, markOffline, markOnline } from '../networkStatus';
 import { enqueueMutation } from '../offlineQueue';
-import { sendPushNotification } from '../notifications';
+import { sendPushNotification, broadcastCoupleEvent } from '../notifications';
+import { partnerWantsNotifications } from '../notificationPrefs';
 
 export type ActivityLog = {
   id: string;
@@ -69,11 +70,11 @@ export const useLogActivity = () => {
         if (error) throw new Error(error.message);
         markOnline();
 
-        // Automatically trigger push notification to the partner
+        // Automatically trigger push notification and realtime event to the partner
         if (coupleId && userId) {
           const { data: partnerProfiles, error: partnerErr } = await supabase
             .from('profiles')
-            .select('expo_push_token, notification_prefs, display_name')
+            .select('expo_push_token, preferences, display_name')
             .eq('couple_id', coupleId)
             .neq('id', userId)
             .limit(1);
@@ -83,20 +84,27 @@ export const useLogActivity = () => {
             const partnerToken = partner.expo_push_token;
             
             // Check if partner wants partner notifications (default is true or check preferences)
-            const notifPrefs = partner.notification_prefs as Record<string, boolean> | null;
-            const wantsNotif = notifPrefs?.partnerActivity !== false;
+            const wantsNotif = partnerWantsNotifications(partner as any);
+
+            const { data: myProfile } = await supabase
+              .from('profiles')
+              .select('display_name')
+              .eq('id', userId)
+              .single();
+
+            const myName = myProfile?.display_name || 'Your partner';
+            const notifTitle = `New Partner Activity 💖`;
+            const notifBody = `${myName} did an activity: ${title}`;
+
+            // Broadcast realtime event for foreground updates & local sound
+            broadcastCoupleEvent(coupleId, userId, 'activity', {
+              title: notifTitle,
+              body: notifBody,
+              activity_type: activityType,
+              title_payload: title,
+            }).catch((err) => console.error('[Engagement] Realtime broadcast failed:', err));
 
             if (partnerToken && wantsNotif && !partnerToken.includes('MockToken')) {
-              const { data: myProfile } = await supabase
-                .from('profiles')
-                .select('display_name')
-                .eq('id', userId)
-                .single();
-
-              const myName = myProfile?.display_name || 'Your partner';
-              const notifTitle = `New Partner Activity 💖`;
-              const notifBody = `${myName} did an activity: ${title}`;
-
               await sendPushNotification(partnerToken, notifTitle, notifBody, {
                 type: 'activity',
                 activity_type: activityType,
@@ -106,6 +114,7 @@ export const useLogActivity = () => {
             }
           }
         }
+
       } catch (err) {
         const message = err instanceof Error ? err.message : String(err);
         if (isNetworkError(message)) {
@@ -165,6 +174,13 @@ export const useCreateSharedItem = () => {
           .select()
           .single();
         if (error) throw new Error(error.message);
+        
+        // Broadcast realtime event to partner
+        broadcastCoupleEvent(coupleId, userId, itemType === 'todo' ? 'todo_updated' : 'bucket_updated', {
+          title: itemType === 'todo' ? 'To-Do List 📝' : 'Bucket List ✈️',
+          body: `Your partner added a new item: "${title}".`,
+        }).catch((err) => console.error('[Engagement] Broadcast failed:', err));
+
         markOnline();
         return data as SharedItem;
       } catch (err) {
@@ -200,6 +216,13 @@ export const useToggleSharedItem = () => {
           .select()
           .single();
         if (error) throw new Error(error.message);
+
+        // Broadcast realtime event to partner
+        broadcastCoupleEvent(item.couple_id, item.creator_id || '', item.item_type === 'todo' ? 'todo_updated' : 'bucket_updated', {
+          title: item.item_type === 'todo' ? 'To-Do List 📝' : 'Bucket List ✈️',
+          body: `Your partner marked "${item.title}" as ${completed ? 'completed' : 'incomplete'}.`,
+        }).catch((err) => console.error('[Engagement] Broadcast failed:', err));
+
         markOnline();
         return data as SharedItem;
       } catch (err) {

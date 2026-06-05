@@ -2,6 +2,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '../supabase';
 import { isNetworkError, markOffline, markOnline } from '../networkStatus';
 import { enqueueMutation } from '../offlineQueue';
+import { broadcastCoupleEvent } from '../notifications';
 
 export interface TimeCapsule {
   id: string;
@@ -87,6 +88,13 @@ export const useCreateTimeCapsule = () => {
           .single();
 
         if (error) throw new Error(error.message);
+
+        // Broadcast realtime event to partner
+        broadcastCoupleEvent(coupleId, creatorId, 'capsule_created', {
+          title: 'Time Capsule Locked ⏳',
+          body: `Your partner locked a new capsule: "${title}".`,
+        }).catch((err) => console.error('[Capsules] Realtime broadcast failed:', err));
+
         markOnline();
         return data as TimeCapsule;
       } catch (err) {
@@ -128,6 +136,13 @@ export const useOpenTimeCapsule = () => {
       if (error) {
         throw new Error(error.message);
       }
+
+      // Broadcast realtime event to partner
+      broadcastCoupleEvent(data.couple_id, data.creator_id, 'capsule_opened', {
+        title: 'Time Capsule Unlocked 🎉',
+        body: `Your partner opened the capsule: "${data.title}"!`,
+      }).catch((err) => console.error('[Capsules] Realtime broadcast failed:', err));
+
       return data as TimeCapsule;
     },
     onSuccess: (data, variables) => {

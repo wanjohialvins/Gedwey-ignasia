@@ -2,6 +2,7 @@ import React, { useEffect, useRef } from 'react';
 import { Stack, useRouter, useSegments } from 'expo-router';
 import { View, Text, AppState } from 'react-native';
 import * as Notifications from 'expo-notifications';
+import { useQueryClient } from '@tanstack/react-query';
 import { ThemeProvider } from '../../lib/hooks/useTheme';
 import { useUserProfile, useUpdateProfile } from '../../lib/queries/profile';
 import { useAuthStore } from '../../lib/store/authStore';
@@ -13,11 +14,13 @@ import { GlobalMusicFAB } from '../../components/GlobalMusicFAB';
 import { initMusicStoreSync } from '../../lib/store/musicStore';
 import { Audio } from 'expo-av';
 import { getCachedAudioUri } from '../../lib/audioCache';
+import { supabase } from '../../lib/supabase';
 
 export default function AppLayout() {
   const { user } = useAuthStore();
   const segments = useSegments();
   const router = useRouter();
+  const queryClient = useQueryClient();
 
   // Fetch user profile via React Query
   const { data: profile, isLoading, error } = useUserProfile(user?.id ?? '');
@@ -67,6 +70,74 @@ export default function AppLayout() {
 
     setupNotifications();
   }, [profile?.id, profile?.expo_push_token, user?.id]);
+
+  // 1.5. Realtime couple event listener for foreground sync & local push emulation
+  useEffect(() => {
+    const coupleId = profile?.couple_id;
+    if (!coupleId || !user?.id) return;
+
+    const channelId = `couple_events:${coupleId}`;
+    const channel = supabase.channel(channelId);
+
+    channel
+      .on('broadcast', { event: 'couple_event' }, async ({ payload }) => {
+        console.log('[AppLayout] Realtime event received:', payload);
+        if (payload.senderId === user.id) return; // Ignore our own events
+
+        const { event, title, body } = payload;
+        
+        // Map of events to their React Query invalidations
+        const eventInvalidations: Record<string, string[][]> = {
+          session_started: [['activeSession', coupleId]],
+          session_answered: [
+            ['activeSession', coupleId],
+            ['sessionHistory', coupleId],
+            ['couple', coupleId]
+          ],
+          todo_updated: [['sharedItems', coupleId, 'todo']],
+          bucket_updated: [['sharedItems', coupleId, 'bucket']],
+          journal_created: [['journalEntries', coupleId]],
+          capsule_created: [['timeCapsules', coupleId]],
+          capsule_opened: [['timeCapsules', coupleId]],
+          pet_cared: [['couplePet', coupleId]],
+          date_created: [['importantDates', coupleId]],
+          date_deleted: [['importantDates', coupleId]],
+          cycle_updated: [['cycleLogs', coupleId]],
+        };
+
+        // Invalidate queries to refresh the screen data immediately
+        const keysToInvalidate = eventInvalidations[event];
+        if (keysToInvalidate) {
+          keysToInvalidate.forEach(queryKey => {
+            queryClient.invalidateQueries({ queryKey });
+          });
+        }
+
+        // Schedule local notification to pop up a banner & play a sound
+        if (title && body) {
+          try {
+            await Notifications.scheduleNotificationAsync({
+              content: {
+                title,
+                body,
+                sound: true,
+                data: payload,
+              },
+              trigger: null, // show immediately
+            });
+          } catch (err) {
+            console.warn('[AppLayout] Failed to show foreground local notification:', err);
+          }
+        }
+      })
+      .subscribe((status) => {
+        console.log(`[AppLayout] Realtime event channel status for ${channelId}:`, status);
+      });
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [profile?.couple_id, user?.id, queryClient]);
 
   // 2. Route when user taps a notification + play raindrop sound on foreground alerts
   useEffect(() => {

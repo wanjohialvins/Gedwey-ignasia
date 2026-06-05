@@ -43,13 +43,14 @@ export const LivePartnerWidget = ({ coupleId, myId, partnerProfile }: Props) => 
 
   const broadcastActivity = async (action: string, detail: string) => {
     const channel = supabase.channel(`live:${coupleId}`);
-    await channel.subscribe();
+    if (channel.state !== 'joined') {
+      await channel.subscribe();
+    }
     await channel.send({
       type: 'broadcast',
       event: 'activity',
       payload: { senderId: myId, action, detail, timestamp: new Date().toISOString() },
     });
-    supabase.removeChannel(channel);
   };
 
   if (!partnerProfile) return null;
@@ -105,17 +106,22 @@ export const LivePartnerWidget = ({ coupleId, myId, partnerProfile }: Props) => 
 
 export const broadcastLiveActivity = async (coupleId: string, myId: string, action: string, detail: string) => {
   const channel = supabase.channel(`live:${coupleId}`);
-  await new Promise<void>((resolve) => {
-    channel.subscribe(async (status) => {
-      if (status === 'SUBSCRIBED') {
-        await channel.send({
-          type: 'broadcast',
-          event: 'activity',
-          payload: { senderId: myId, action, detail, timestamp: new Date().toISOString() },
-        });
-        resolve();
-      }
+  
+  if (channel.state !== 'joined') {
+    await new Promise<void>((resolve, reject) => {
+      channel.subscribe((status) => {
+        if (status === 'SUBSCRIBED') {
+          resolve();
+        } else if (status === 'CHANNEL_ERROR' || status === 'TIMED_OUT') {
+          reject(new Error(`Live activity subscription error: ${status}`));
+        }
+      });
     });
+  }
+  
+  await channel.send({
+    type: 'broadcast',
+    event: 'activity',
+    payload: { senderId: myId, action, detail, timestamp: new Date().toISOString() },
   });
-  supabase.removeChannel(channel);
 };

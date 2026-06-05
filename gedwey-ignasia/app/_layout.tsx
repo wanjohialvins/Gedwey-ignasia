@@ -88,10 +88,12 @@ function InitialLayout() {
       });
 
     // Listen to auth changes
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
-      console.log('[InitialLayout] Auth state changed event:', _event, 'session found:', !!session);
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+      console.log('[InitialLayout] Auth state changed event:', event, 'session found:', !!session);
       setSession(session);
-      setLoading(false);
+      if (event === 'SIGNED_IN' || event === 'SIGNED_OUT') {
+        setLoading(false);
+      }
     });
 
     return () => {

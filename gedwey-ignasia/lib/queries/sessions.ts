@@ -1,7 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '../supabase';
 import { Card } from './cards';
-import { sendPushNotification } from '../notifications';
+import { sendPushNotification, broadcastCoupleEvent } from '../notifications';
 import { incrementStreak } from './streak';
 import { partnerWantsNotifications } from '../notificationPrefs';
 
@@ -93,6 +93,13 @@ export const useCreateSession = () => {
         .single();
 
       if (error) throw new Error(error.message);
+
+      // Broadcast realtime couple event
+      broadcastCoupleEvent(coupleId, userId, 'session_started', {
+        title: 'New Session Started 🎴',
+        body: 'Your partner has started a new question session!',
+      }).catch((err) => console.error('[Sessions] Realtime broadcast failed:', err));
+
       return data as CoupleSession;
     },
     onSuccess: (data) => {
@@ -164,8 +171,20 @@ export const useSubmitSessionAnswer = () => {
 
       if (error) throw new Error(error.message);
 
-      // Trigger notification to partner asynchronously
+      // Trigger notification and realtime event to partner asynchronously
       try {
+        const title = 'Moments';
+        const body = data.completed
+          ? 'Both of you have answered! Tap to reveal the answers.'
+          : "Your partner has answered today's session. Your turn!";
+
+        // Broadcast realtime couple event for foreground sync & local sound
+        broadcastCoupleEvent(coupleId, userId, 'session_answered', {
+          title,
+          body,
+          sessionId: data.id,
+        }).catch((err) => console.error('[Sessions] Realtime broadcast failed:', err));
+
         const { data: myProfile } = await supabase
           .from('profiles')
           .select('partner_id')
@@ -182,10 +201,6 @@ export const useSubmitSessionAnswer = () => {
 
           if (partnerProfile?.expo_push_token && partnerWantsNotifications(partnerProfile)) {
             const partnerToken = partnerProfile.expo_push_token;
-            const title = 'Moments';
-            const body = data.completed
-              ? 'Both of you have answered! Tap to reveal the answers.'
-              : "Your partner has answered today's session. Your turn!";
 
             sendPushNotification(partnerToken, title, body, {
               type: 'session_answered',
@@ -198,6 +213,7 @@ export const useSubmitSessionAnswer = () => {
       }
 
       return data as CoupleSession;
+
     },
     onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ['activeSession', data.couple_id] });

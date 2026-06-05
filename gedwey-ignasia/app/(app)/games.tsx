@@ -250,6 +250,14 @@ export default function GamesScreen() {
             <GamePromptCard card={prompt ?? null} mode={mode} cardKey={cardKey} />
 
             <Card className="p-5 mt-4 border border-indigo-100">
+              {mySaved && !partnerSaved && (
+                <View className="bg-amber-50 border border-amber-200 rounded-xl p-3 mb-4 flex-row items-center gap-2">
+                  <Text className="text-base">⏳</Text>
+                  <Text className="text-xs text-amber-900 flex-1 font-medium">
+                    You have already completed this activity! Waiting for your partner.
+                  </Text>
+                </View>
+              )}
               <Text className="text-sm font-bold text-text-primary mb-3">Your answer</Text>
               {prompt?.option_a && prompt?.option_b ? (
                 <View className="flex-row gap-2 mb-3">

@@ -119,24 +119,30 @@ export default function HomeScreen() {
 
     try {
       const channel = supabase.channel(`nudges:${profile.couple_id}`);
-      await new Promise<void>((resolve, reject) => {
-        channel.subscribe(async (status) => {
-          if (status === 'SUBSCRIBED') {
-            await channel.send({
-              type: 'broadcast',
-              event: 'nudge',
-              payload: {
-                sender: profile.display_name || 'Your Partner',
-                senderId: user?.id,
-              },
-            });
-            resolve();
-          } else if (status === 'CHANNEL_ERROR') {
-            reject(new Error('Channel error'));
-          }
+      
+      // If the channel is not yet subscribed, wait for subscription
+      if (channel.state !== 'joined') {
+        await new Promise<void>((resolve, reject) => {
+          channel.subscribe((status) => {
+            if (status === 'SUBSCRIBED') {
+              resolve();
+            } else if (status === 'CHANNEL_ERROR' || status === 'TIMED_OUT') {
+              reject(new Error(`Realtime channel status: ${status}`));
+            }
+          });
         });
+      }
+      
+      const sendResult = await channel.send({
+        type: 'broadcast',
+        event: 'nudge',
+        payload: {
+          sender: profile.display_name || 'Your Partner',
+          senderId: user?.id,
+        },
       });
-      supabase.removeChannel(channel);
+      console.log('[handleSendNudge] Broadcast send result:', sendResult);
+
 
       if (partnerProfile?.expo_push_token && partnerWantsNotifications(partnerProfile)) {
         await sendPushNotification(

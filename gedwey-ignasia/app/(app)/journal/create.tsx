@@ -8,8 +8,10 @@ import {
   SafeAreaView,
   TouchableOpacity,
   Alert,
+  Image,
 } from 'react-native';
 import { useRouter } from 'expo-router';
+import * as ImagePicker from 'expo-image-picker';
 import Animated, {
   useSharedValue,
   useAnimatedStyle,
@@ -24,13 +26,8 @@ import { useSessionSoundscape } from '../../../lib/hooks/useSessionSoundscape';
 import { Button } from '../../../components/Button';
 import { Input } from '../../../components/Input';
 import { Card } from '../../../components/Card';
-
-const MOCK_PHOTOS = [
-  { id: 'p1', emoji: '🌅', label: 'Sunset Beach' },
-  { id: 'p2', emoji: '☕', label: 'Coffee Date' },
-  { id: 'p3', emoji: '🏕️', label: 'Starlit Camp' },
-  { id: 'p4', emoji: '🌹', label: 'Romantic Rose' },
-];
+import { supabase } from '../../../lib/supabase';
+import { uriToUint8Array } from '../../../lib/fileUtils';
 
 export default function JournalCreateScreen() {
   const router = useRouter();
@@ -45,6 +42,24 @@ export default function JournalCreateScreen() {
   
   // Custom States
   const [selectedPhoto, setSelectedPhoto] = useState<string | null>(null);
+  const [isUploadingImage, setIsUploadingImage] = useState(false);
+
+  const handlePickImage = async () => {
+    const permission = await ImagePicker.requestMediaLibraryPermissionsAsync();
+    if (!permission.granted) {
+      Alert.alert('Photo Access Needed', 'Enable photo library access to upload a picture.');
+      return;
+    }
+
+    const result = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: ['images'],
+      allowsEditing: true,
+      quality: 0.8,
+    });
+
+    if (result.canceled) return;
+    setSelectedPhoto(result.assets[0].uri);
+  };
   
   // Recording states
   const [isRecording, setIsRecording] = useState(false);
@@ -120,21 +135,43 @@ export default function JournalCreateScreen() {
       finalContent += `\n\n[voice:${voiceDuration}]`;
     }
 
+    setIsUploadingImage(true);
+    let publicImageUrl: string | undefined = undefined;
+
     try {
+      if (selectedPhoto) {
+        // Upload real image to Supabase Storage
+        const bytes = await uriToUint8Array(selectedPhoto);
+        const path = `journal/${userId}/entry-${Date.now()}.jpg`;
+        const { error: uploadError } = await supabase.storage
+          .from('profile-images')
+          .upload(path, bytes, {
+            contentType: 'image/jpeg',
+            upsert: true,
+          });
+
+        if (uploadError) throw uploadError;
+
+        const { data } = supabase.storage.from('profile-images').getPublicUrl(path);
+        publicImageUrl = data.publicUrl;
+      }
+
       await createEntry.mutateAsync({
         coupleId,
         creatorId: userId,
         title: title.trim(),
         content: finalContent,
-        imageUrl: selectedPhoto ? 'mock-polaroid-image' : undefined,
+        imageUrl: publicImageUrl,
       });
       router.replace('/journal');
     } catch (err: any) {
       Alert.alert('Error', err.message || 'Could not save your journal entry.');
+    } finally {
+      setIsUploadingImage(false);
     }
   };
 
-  const isPending = createEntry.isPending;
+  const isPending = createEntry.isPending || isUploadingImage;
 
   // Animated Styles
   const micAnimatedStyle = useAnimatedStyle(() => ({
@@ -187,26 +224,28 @@ export default function JournalCreateScreen() {
               className="h-32 text-left py-3.5"
             />
 
-            {/* Premium Polaroid Scrapbook Image Selector Carousel */}
+            {/* Real Polaroid Scrapbook Image Selector */}
             <View>
-              <Text className="text-xs font-semibold text-text-secondary mb-2">📸 Attach Polaroid Memory (Optional)</Text>
-              <ScrollView horizontal showsHorizontalScrollIndicator={false} className="flex-row gap-2 py-1">
-                {MOCK_PHOTOS.map((photo) => {
-                  const isSelected = selectedPhoto === photo.id;
-                  return (
-                    <TouchableOpacity
-                      key={photo.id}
-                      onPress={() => setSelectedPhoto(isSelected ? null : photo.id)}
-                      className={`mr-2.5 p-3 rounded-2xl border bg-white flex-col items-center w-24 ${
-                        isSelected ? 'border-primary-600 bg-blue-50/20' : 'border-neutral-border'
-                      }`}
-                    >
-                      <Text className="text-3xl mb-1">{photo.emoji}</Text>
-                      <Text className="text-[10px] text-text-primary font-medium text-center">{photo.label}</Text>
-                    </TouchableOpacity>
-                  );
-                })}
-              </ScrollView>
+              <Text className="text-xs font-semibold text-text-secondary mb-2">📸 Attach Memory Picture (Optional)</Text>
+              {selectedPhoto ? (
+                <View className="relative w-36 h-36 rounded-2xl overflow-hidden border border-neutral-border bg-slate-50">
+                  <Image source={{ uri: selectedPhoto }} className="w-full h-full" resizeMode="cover" />
+                  <TouchableOpacity
+                    onPress={() => setSelectedPhoto(null)}
+                    className="absolute top-1.5 right-1.5 w-6 h-6 bg-slate-950/60 rounded-full items-center justify-center active:bg-slate-950/80"
+                  >
+                    <Text className="text-white text-xs font-bold mt-[-2px]">✕</Text>
+                  </TouchableOpacity>
+                </View>
+              ) : (
+                <TouchableOpacity
+                  onPress={handlePickImage}
+                  className="w-36 h-36 rounded-2xl border border-dashed border-indigo-200 bg-white justify-center items-center active:bg-indigo-50/10"
+                >
+                  <Text className="text-3xl mb-1">📷</Text>
+                  <Text className="text-[10px] text-text-secondary font-bold">Add Picture</Text>
+                </TouchableOpacity>
+              )}
             </View>
 
             {/* Premium Visual Microphone Soundwave Mock Recorder */}

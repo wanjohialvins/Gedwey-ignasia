@@ -2,6 +2,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '../supabase';
 import { isNetworkError, markOffline, markOnline } from '../networkStatus';
 import { enqueueMutation } from '../offlineQueue';
+import { broadcastCoupleEvent } from '../notifications';
 
 export interface JournalEntry {
   id: string;
@@ -85,6 +86,13 @@ export const useCreateJournalEntry = () => {
           .single();
 
         if (error) throw new Error(error.message);
+
+        // Broadcast realtime event to partner
+        broadcastCoupleEvent(coupleId, creatorId, 'journal_created', {
+          title: 'Shared Scrapbook 📸',
+          body: 'Your partner added a new memory to your shared journal!',
+        }).catch((err) => console.error('[Journal] Realtime broadcast failed:', err));
+
         markOnline();
         return data as JournalEntry;
       } catch (err) {

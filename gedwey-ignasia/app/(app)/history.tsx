@@ -57,7 +57,11 @@ export default function HistoryScreen() {
         router.push('/session/reveal');
         break;
       case 'game':
-        router.push('/games');
+        if (metadata && metadata.catCare) {
+          router.push('/cat-care');
+        } else {
+          router.push('/games');
+        }
         break;
       case 'todo':
         router.push({ pathname: '/lists', params: { tab: 'todo' } } as any);

@@ -1,6 +1,7 @@
 import { Platform } from 'react-native';
 import * as Notifications from 'expo-notifications';
 import * as Device from 'expo-device';
+import { supabase } from './supabase';
 
 export const NOTIFICATION_CHANNELS = {
   default: 'default',
@@ -189,5 +190,37 @@ export async function cancelScheduledNotification(identifier: string): Promise<v
     await Notifications.cancelScheduledNotificationAsync(identifier);
   } catch {
     // ignore
+  }
+}
+
+export async function broadcastCoupleEvent(
+  coupleId: string,
+  userId: string,
+  event: string,
+  payload: { title?: string; body?: string; [key: string]: any }
+): Promise<void> {
+  if (!coupleId) return;
+  try {
+    const channelId = `couple_events:${coupleId}`;
+    const channel = supabase.channel(channelId);
+    
+    // Subscribe if not already subscribed
+    if (channel.state !== 'joined') {
+      channel.subscribe();
+    }
+    
+    const sendResult = await channel.send({
+      type: 'broadcast',
+      event: 'couple_event',
+      payload: {
+        senderId: userId,
+        event,
+        ...payload,
+        timestamp: new Date().toISOString(),
+      },
+    });
+    console.log(`[broadcastCoupleEvent] Broadcast event '${event}' send result:`, sendResult);
+  } catch (err) {
+    console.error('[broadcastCoupleEvent] Failed to send broadcast event:', err);
   }
 }

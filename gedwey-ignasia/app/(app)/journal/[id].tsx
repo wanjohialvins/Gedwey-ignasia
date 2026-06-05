@@ -5,6 +5,7 @@ import {
   ScrollView,
   SafeAreaView,
   TouchableOpacity,
+  Image,
 } from 'react-native';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import { useJournalEntry } from '../../../lib/queries/journal';
@@ -156,10 +157,8 @@ export default function JournalDetailScreen() {
                 }}
                 className="bg-white border border-slate-200 p-3 pb-10 shadow-lg rounded-sm w-[90%] max-w-[320px]"
               >
-                <View className="w-full h-64 bg-slate-100 items-center justify-center overflow-hidden rounded-sm">
-                  {/* Since image URL might be standard mock text, render a beautiful visual card placeholder */}
-                  <Text className="text-7xl mb-4">📸</Text>
-                  <Text className="text-xs font-bold text-slate-500 uppercase tracking-widest">Our Captured Moment</Text>
+                <View className="w-full h-64 bg-slate-100 overflow-hidden rounded-sm">
+                  <Image source={{ uri: entry.image_url }} className="w-full h-full" resizeMode="cover" />
                 </View>
               </View>
             </View>
