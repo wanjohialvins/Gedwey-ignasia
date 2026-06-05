@@ -27,7 +27,7 @@
       "package": "com.wanjohialvins.gedweyignasia",
       "adaptiveIcon": {
         "foregroundImage": "./assets/adaptive-icon.png",
-        "backgroundColor": "#EFF6FF"
+        "backgroundColor": "#2C070B"
       }
     },
     "web": {
