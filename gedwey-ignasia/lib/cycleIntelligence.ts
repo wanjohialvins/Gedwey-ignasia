@@ -261,17 +261,55 @@ export function generateReminders(prediction: CyclePrediction | null) {
 
 export function respondToCycleQuery(query: string, context: { phase?: CyclePhase; insights?: string[] }) {
   const lower = query.toLowerCase();
-  if ((lower.includes('tired') || lower.includes('fatigue')) && (context.phase === 'luteal' || context.phase === 'pms')) {
-    return 'Fatigue can be common in the luteal and PMS phases because progesterone rises after ovulation.';
+
+  if (lower.includes('diet') || lower.includes('food') || lower.includes('eat') || lower.includes('nutrition')) {
+    if (context.phase === 'period') {
+      return 'During your period, focus on iron-rich foods (leafy greens, lean meats), vitamin C to aid absorption, and anti-inflammatory foods like ginger or dark chocolate to ease cramps. Stay hydrated!';
+    }
+    if (context.phase === 'pms' || context.phase === 'luteal') {
+      return 'In your luteal/PMS phase, complex carbs (oats, sweet potatoes) can help stabilize blood sugar and mood. Healthy fats and magnesium-rich foods (bananas, pumpkin seeds) can curb cravings.';
+    }
+    return 'For general cycle wellness, prioritize whole foods, healthy fats (avocado, nuts), lean proteins, and plenty of water. Adjusting nutrition to your cycle phase can help support natural hormone fluctuations.';
   }
-  if (lower.includes('cramp')) {
-    return 'Cramps can happen around period days. If pain is severe, unusual, or disruptive, it is worth checking in with a clinician.';
+
+  if (lower.includes('exercise') || lower.includes('workout') || lower.includes('gym') || lower.includes('run')) {
+    if (context.phase === 'period' || context.phase === 'pms') {
+      return 'When energy is lower during PMS and period days, gentle movement like yoga, walking, or light stretching is ideal. Listen to your body and prioritize rest over intense workouts.';
+    }
+    if (context.phase === 'fertile' || context.phase === 'ovulation' || context.phase === 'follicular') {
+      return 'During follicular and ovulation phases, estrogen rises, boosting your energy and strength. This is a great window for high-intensity workouts, strength training, or challenging runs!';
+    }
+    return 'Tune your workouts to your energy levels. High-energy phases (follicular/ovulation) are great for strength and intensity, while low-energy phases (luteal/period) benefit from restorative exercises like walking or yoga.';
   }
-  if (lower.includes('fertile') || lower.includes('ovulation')) {
+
+  if (lower.includes('partner') || lower.includes('couple') || lower.includes('husband') || lower.includes('boyfriend') || lower.includes('help')) {
+    return 'Sharing your cycle with your partner helps them understand your emotional and physical changes. In low-energy phases (PMS/period), they can support you by offering extra rest, soothing comfort, or helping with daily tasks.';
+  }
+
+  if (lower.includes('sleep') || lower.includes('tired') || lower.includes('rest') || lower.includes('insomnia') || lower.includes('fatigue')) {
+    if (context.phase === 'luteal' || context.phase === 'pms') {
+      return 'Fatigue is common in the luteal/PMS phase due to rising progesterone and dropping estrogen. Try creating a winding-down routine, keeping your room cool, and avoiding caffeine in the afternoon.';
+    }
+    return 'Aim for 7-9 hours of quality sleep. Fatigue can vary across your cycle, especially dropping right before your period. Prioritize consistent sleep times and relaxing evening rituals.';
+  }
+
+  if (lower.includes('mood') || lower.includes('sad') || lower.includes('emotional') || lower.includes('anxious') || lower.includes('irrit')) {
+    return 'Hormonal shifts, especially the drop in estrogen and progesterone during the PMS phase, can cause mood swings, anxiety, or irritability. Regular rest, mindfulness, and self-compassion can help navigate these waves.';
+  }
+
+  if (lower.includes('cramp') || lower.includes('pain') || lower.includes('hurt') || lower.includes('ache')) {
+    return 'Mild cramps right before or during your period are normal as the uterus contracts. Applying heat, drinking warm tea, or taking gentle walks can help. If pain is severe, constant, or disruptive, please consult a healthcare professional.';
+  }
+
+  if (lower.includes('fertile') || lower.includes('ovulation') || lower.includes('pregnancy') || lower.includes('conceive')) {
     return context.phase === 'fertile' || context.phase === 'ovulation'
-      ? 'You appear to be in or near the fertility window based on recent cycle data.'
-      : 'Your fertility window is estimated from ovulation, usually about 14 days before the next period.';
+      ? 'Based on your logs, you are currently in or near your fertile window. Ovulation is the day the egg is released, usually about 14 days before your next period.'
+      : 'Your fertile window spans the 5 days before ovulation and the day of ovulation itself. This is estimated based on your average cycle length and recent logs.';
   }
-  if (context.insights?.length) return context.insights[0];
-  return 'I need more logged cycle and symptom data to give a useful pattern.';
+
+  if (context.insights?.length) {
+    return `Here is a pattern from your logged data: ${context.insights[0]}`;
+  }
+
+  return 'I am currently operating in offline mode. Ask a question about symptoms, mood, diet, exercise, partner support, or sleep to get smart cycle recommendations!';
 }

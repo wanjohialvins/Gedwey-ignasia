@@ -250,7 +250,8 @@ export default function CycleCalendarScreen() {
         mood,
       });
       setAssistantResponse(answer);
-    } catch {
+    } catch (err: any) {
+      console.warn('[CycleAssistant] OpenAI/Edge function failed, falling back to local responder:', err?.message || err);
       setAssistantResponse(
         respondToCycleQuery(query, {
           phase: prediction?.phase,

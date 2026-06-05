@@ -13,7 +13,7 @@ const pairedTabs: Tab[] = [
   { route: '/', label: 'Home', icon: NAV_ICONS.home, iconActive: NAV_ICONS.homeActive },
   { route: '/games', label: 'Play', icon: NAV_ICONS.play, iconActive: NAV_ICONS.playActive },
   { route: '/journal', label: 'Journal', icon: NAV_ICONS.journal, iconActive: NAV_ICONS.journalActive },
-  { route: '/music', label: 'Music', icon: NAV_ICONS.music, iconActive: NAV_ICONS.musicActive },
+  { route: '/cycle', label: 'Cycle', icon: NAV_ICONS.cycle, iconActive: NAV_ICONS.cycleActive },
   { route: '/settings', label: 'Profile', icon: NAV_ICONS.profile, iconActive: NAV_ICONS.profileActive },
 ];
 
@@ -21,7 +21,7 @@ const unpairedTabs: Tab[] = [
   { route: '/', label: 'Home', icon: NAV_ICONS.home, iconActive: NAV_ICONS.homeActive },
   { route: '/discovery', label: 'Discover', icon: NAV_ICONS.discovery, iconActive: NAV_ICONS.discoveryActive },
   { route: '/games', label: 'Play', icon: NAV_ICONS.play, iconActive: NAV_ICONS.playActive },
-  { route: '/music', label: 'Music', icon: NAV_ICONS.music, iconActive: NAV_ICONS.musicActive },
+  { route: '/cycle', label: 'Cycle', icon: NAV_ICONS.cycle, iconActive: NAV_ICONS.cycleActive },
   { route: '/settings', label: 'Profile', icon: NAV_ICONS.profile, iconActive: NAV_ICONS.profileActive },
 ];
 

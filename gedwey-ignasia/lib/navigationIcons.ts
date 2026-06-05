@@ -26,6 +26,8 @@ export const NAV_ICONS = {
   history: 'time-outline' as IconName,
   capsule: 'hourglass-outline' as IconName,
   health: 'pulse-outline' as IconName,
+  cycle: 'calendar-outline' as IconName,
+  cycleActive: 'calendar' as IconName,
   dashboard: 'grid-outline' as IconName,
   streak: 'flame-outline' as IconName,
   partner: 'people-outline' as IconName,

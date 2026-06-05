@@ -21,8 +21,7 @@ import { Button } from '../../components/Button';
 import { Card } from '../../components/Card';
 import { Skeleton } from '../../components/Skeleton';
 import NudgeOverlay from '../../components/NudgeOverlay';
-import { NAV_ICONS, QUICK_TILES } from '../../lib/navigationIcons';
-import { useTheme } from '../../lib/hooks/useTheme';
+import { NAV_ICONS } from '../../lib/navigationIcons';
 import { preCacheTracks } from '../../lib/audioCache';
 import { MOOD_TRACKS } from '../../lib/musicTracks';
 
@@ -119,7 +118,7 @@ export default function HomeScreen() {
 
     try {
       const channel = supabase.channel(`nudges:${profile.couple_id}`);
-      
+
       // If the channel is not yet subscribed, wait for subscription
       if (channel.state !== 'joined') {
         await new Promise<void>((resolve, reject) => {
@@ -132,7 +131,7 @@ export default function HomeScreen() {
           });
         });
       }
-      
+
       const sendResult = await channel.send({
         type: 'broadcast',
         event: 'nudge',
@@ -142,7 +141,6 @@ export default function HomeScreen() {
         },
       });
       console.log('[handleSendNudge] Broadcast send result:', sendResult);
-
 
       if (partnerProfile?.expo_push_token && partnerWantsNotifications(partnerProfile)) {
         await sendPushNotification(
@@ -211,43 +209,9 @@ export default function HomeScreen() {
   type SidebarRow = { label: string; detail: string; icon: typeof NAV_ICONS.dashboard; action: () => void };
 
   const sidebarItems: SidebarRow[] = [
-    { label: 'Dashboard', detail: 'Home summary', icon: NAV_ICONS.dashboard, action: () => navigateFromDrawer('/') },
-    ...(!isPaired
-      ? [{ label: 'Discovery Mode', detail: 'Share and compare answers', icon: NAV_ICONS.discovery, action: () => navigateFromDrawer('/discovery') }]
-      : []),
-    {
-      label: 'Daily Question',
-      detail: isDailyCompletedToday
-        ? 'Completed today ✨'
-        : (activeSession && hasAnsweredActive)
-          ? 'Waiting for partner ⏳'
-          : 'Pending daily 🎴',
-      icon: NAV_ICONS.session,
-      action: () => {
-        if (isPaired) navigateFromDrawer('/session/start');
-        else Alert.alert('Pairing Required', 'Pair with your partner before starting Daily Questions.');
-      },
-    },
-    { label: 'Games', detail: 'Truth or Dare and more', icon: NAV_ICONS.games, action: () => navigateFromDrawer('/games') },
     { label: 'Cat Care', detail: 'Daily streak tasks', icon: NAV_ICONS.play, action: () => navigateFromDrawer('/cat-care') },
     { label: 'All Answers', detail: 'Shared game & session answers', icon: NAV_ICONS.session, action: () => navigateFromDrawer('/answers') },
-    { label: 'Cycle Calendar', detail: 'Period & mood tracking', icon: NAV_ICONS.health, action: () => navigateFromDrawer('/cycle') },
-    { label: 'Important Dates', detail: 'Anniversaries & milestones', icon: NAV_ICONS.milestone, action: () => navigateFromDrawer('/dates') },
-    { label: 'Partner Profile', detail: partnerProfile?.display_name || 'View partner', icon: NAV_ICONS.partner, action: () => navigateFromDrawer('/partner') },
     { label: 'Shared Lists', detail: 'To-dos and bucket goals', icon: NAV_ICONS.lists, action: () => navigateFromDrawer('/lists') },
-    { label: 'Music', detail: 'Our soundtrack', icon: NAV_ICONS.music, action: () => navigateFromDrawer('/music') },
-    { label: 'History', detail: 'Activity timeline', icon: NAV_ICONS.history, action: () => navigateFromDrawer('/history') },
-    {
-      label: 'Shared Journal',
-      detail: isJournalUnlocked ? 'Private memories' : `Unlock ${completedSessionsCount}/5`,
-      icon: NAV_ICONS.journal,
-      action: () =>
-        handleLockedRoute(
-          '/journal',
-          isJournalUnlocked,
-          `Complete 5 Daily Questions to unlock your shared journal. Progress: ${completedSessionsCount}/5.`
-        ),
-    },
     {
       label: 'Time Capsules',
       detail: capsulesCount ? `${capsulesCount} saved` : 'Future memories',
@@ -260,6 +224,9 @@ export default function HomeScreen() {
         navigateFromDrawer('/capsule');
       },
     },
+    { label: 'Important Dates', detail: 'Anniversaries & milestones', icon: NAV_ICONS.milestone, action: () => navigateFromDrawer('/dates') },
+    { label: 'Music', detail: 'Our soundtrack', icon: NAV_ICONS.music, action: () => navigateFromDrawer('/music') },
+    { label: 'History Logs', detail: 'Activity timeline', icon: NAV_ICONS.history, action: () => navigateFromDrawer('/history') },
     {
       label: 'Relationship Health',
       detail: isHealthUnlocked ? 'Weekly alignment' : `Unlock ${completedSessionsCount}/10`,
@@ -271,36 +238,43 @@ export default function HomeScreen() {
           `Complete 10 Daily Questions to unlock relationship health. Progress: ${completedSessionsCount}/10.`
         ),
     },
-    { label: 'Settings', detail: 'Profile and pairing', icon: NAV_ICONS.settings, action: () => navigateFromDrawer('/settings') },
+    { label: 'Settings & Pairing', detail: 'Profile preferences', icon: NAV_ICONS.settings, action: () => navigateFromDrawer('/settings') },
+  ];
+
+  // Quick-access tiles (slim strip — 4 tiles)
+  const quickTiles = [
+    { key: 'journal', label: 'Journal', icon: NAV_ICONS.journal, color: '#7F77DD', route: '/journal', locked: !isJournalUnlocked },
+    { key: 'capsule', label: 'Capsule', icon: NAV_ICONS.capsule, color: '#D4537E', route: '/capsule', locked: !isPaired },
+    { key: 'lists',   label: 'Lists',   icon: NAV_ICONS.lists,   color: '#10B981', route: '/lists',   locked: false },
+    { key: 'dates',   label: 'Dates',   icon: NAV_ICONS.milestone, color: '#F59E0B', route: '/dates', locked: false },
   ];
 
   return (
     <ScreenShell variant="hero" className="flex-1">
       <NudgeOverlay />
 
-      <ScrollView className="flex-1 px-4 pt-14" contentContainerStyle={{ paddingBottom: 100 }} showsVerticalScrollIndicator={false}>
-        <View className="flex-row items-center justify-between mb-6">
+      <ScrollView
+        className="flex-1 px-4 pt-14"
+        contentContainerStyle={{ paddingBottom: 100 }}
+        showsVerticalScrollIndicator={false}
+      >
+        {/* ── Top Bar ─────────────────────────────────────────────── */}
+        <View className="flex-row items-center justify-between mb-5">
           <TouchableOpacity
             className="w-11 h-11 bg-indigo-100 items-center justify-center rounded-full active:opacity-75"
             onPress={() => setIsDrawerOpen(true)}
           >
             <AppIcon name={NAV_ICONS.menu} size={24} color="#4F46E5" />
           </TouchableOpacity>
-          <View className="flex-1 ml-3 flex-row items-center gap-2">
-            <ProfileAvatar uri={profile.avatar_url} name={profile.display_name} size={44} />
-            {isPaired && partnerProfile ? (
-              <ProfileAvatar uri={partnerProfile.avatar_url} name={partnerProfile.display_name} size={44} />
-            ) : null}
-            <View className="flex-1">
-              <View className="flex-row items-center gap-2">
-                <DevBadge />
-              </View>
-              <Text className="text-sm font-semibold text-text-secondary mt-1">Welcome</Text>
-              <Text className="text-base font-bold text-text-primary capitalize">
-                {profile.display_name || user?.email?.split('@')[0]}
-              </Text>
-            </View>
+
+          <View className="flex-1 mx-3">
+            <DevBadge />
+            <Text className="text-xs text-text-secondary">Welcome back</Text>
+            <Text className="text-base font-extrabold text-text-primary capitalize leading-tight">
+              {profile.display_name || user?.email?.split('@')[0]}
+            </Text>
           </View>
+
           <TouchableOpacity
             className="w-10 h-10 bg-white border border-indigo-100 items-center justify-center rounded-full active:opacity-75 relative"
             onPress={() => router.push('/history')}
@@ -310,35 +284,74 @@ export default function HomeScreen() {
           </TouchableOpacity>
         </View>
 
+        {/* ── Live Partner Widget ──────────────────────────────────── */}
         {isPaired && profile.couple_id && user?.id ? (
           <LivePartnerWidget coupleId={profile.couple_id} myId={user.id} partnerProfile={partnerProfile} />
         ) : null}
 
-        <Card className="p-5 mb-5 border border-indigo-100 bg-indigo-50/40">
-          <View className="flex-row justify-between items-center mb-3">
-            <View className="flex-row items-center gap-2">
-              <AppIcon name={NAV_ICONS.streak} size={20} color="#4F46E5" />
-              <Text className="text-sm font-bold text-text-primary">Relationship Streak</Text>
+        {/* ── Hero Connection Card (Streak + Partner) ──────────────── */}
+        <Card className="p-4 mb-4 border border-indigo-100 bg-indigo-50/40">
+          <View className="flex-row items-center justify-between">
+            {/* Left: streak */}
+            <View className="flex-row items-center gap-3">
+              <View className="w-10 h-10 rounded-xl bg-white border border-indigo-100 items-center justify-center">
+                <AppIcon name={NAV_ICONS.streak} size={20} color="#4F46E5" />
+              </View>
+              <View>
+                <Text className="text-2xs text-text-secondary">Relationship Streak</Text>
+                <Text className="text-xl font-extrabold text-indigo-600">{coupleDetails?.streak || 0}
+                  <Text className="text-sm font-semibold"> days</Text>
+                </Text>
+              </View>
             </View>
-            <Text className="text-lg font-bold text-indigo-600">{coupleDetails?.streak || 0} days</Text>
+
+            {/* Right: partner pill or pair button */}
+            {isPaired && partnerProfile ? (
+              <TouchableOpacity
+                onPress={() => router.push('/partner')}
+                className="flex-row items-center gap-2 bg-white border border-indigo-100 rounded-xl px-3 py-2 active:bg-indigo-50"
+              >
+                <ProfileAvatar uri={partnerProfile.avatar_url} name={partnerProfile.display_name} size={28} />
+                <View>
+                  <Text className="text-2xs font-bold text-text-primary capitalize" numberOfLines={1}>
+                    {partnerProfile.display_name || 'Partner'}
+                  </Text>
+                  <Text className="text-3xs text-text-secondary">
+                    {partnerMoodText ? `Feeling ${partnerMoodText}` : 'No mood set'}
+                  </Text>
+                </View>
+              </TouchableOpacity>
+            ) : (
+              <TouchableOpacity
+                onPress={() => router.push('/settings')}
+                className="bg-primary-600 rounded-xl px-4 py-2 active:bg-primary-500"
+              >
+                <Text className="text-white text-xs font-bold">Pair Partner</Text>
+              </TouchableOpacity>
+            )}
           </View>
-          <Text className="text-xs text-text-secondary leading-normal">
-            {isPaired ? getAnniversaryText(coupleDetails?.created_at) : 'Pair with your partner to begin shared streaks and daily questions.'}
+
+          <Text className="text-2xs text-text-secondary mt-3 leading-relaxed">
+            {isPaired
+              ? getAnniversaryText(coupleDetails?.created_at)
+              : 'Pair with your partner to begin shared streaks and daily questions.'}
           </Text>
         </Card>
 
-        <Card className="p-5 mb-5 border border-indigo-100 bg-indigo-50/10 bg-white">
+        {/* ── Daily Question Card ──────────────────────────────────── */}
+        <Card className="p-5 mb-4 border border-indigo-100 bg-white">
           <View className="flex-row justify-between items-center mb-3">
             <Text className="text-sm font-bold text-text-primary">Today's Daily Question</Text>
             {isPaired && (
               <View className={`px-2.5 py-1 rounded-full ${isDailyCompletedToday ? 'bg-green-100' : isDailyPending ? 'bg-orange-100' : 'bg-blue-100'}`}>
                 <Text className={`text-2xs font-bold ${isDailyCompletedToday ? 'text-green-700' : isDailyPending ? 'text-orange-700' : 'text-blue-700'}`}>
-                  {isDailyCompletedToday ? 'Completed ✨' : isDailyPending ? 'Pending Daily 🎴' : 'Waiting for Partner ⏳'}
+                  {isDailyCompletedToday ? 'Completed ✨' : isDailyPending ? 'Pending 🎴' : 'Waiting ⏳'}
                 </Text>
               </View>
             )}
           </View>
-          <Text className="text-sm text-text-secondary leading-normal mb-4">
+
+          <Text className="text-sm text-text-secondary leading-relaxed mb-4">
             {isPaired
               ? isDailyCompletedToday
                 ? "You've both answered today's question! Tap below to view your revealed answers."
@@ -347,6 +360,7 @@ export default function HomeScreen() {
                   : "You've answered! Waiting for your partner to submit their response."
               : 'Pair with your partner first, then get a new shared question every single day.'}
           </Text>
+
           <View className="flex-row gap-3">
             {isPaired && (isDailyCompletedToday || hasAnsweredActive) ? (
               <>
@@ -376,7 +390,7 @@ export default function HomeScreen() {
                   activeOpacity={0.85}
                 >
                   <Text className="text-white text-sm font-bold">
-                    {isDailyCompletedToday ? 'View Answers' : isDailyPending ? 'Answer Daily Question' : 'Check Status'}
+                    {isDailyCompletedToday ? 'View Answers' : isDailyPending ? 'Answer Question' : 'Check Status'}
                   </Text>
                 </TouchableOpacity>
                 <TouchableOpacity
@@ -391,80 +405,88 @@ export default function HomeScreen() {
           </View>
         </Card>
 
-        <Card className="p-5 mb-5 border-violet-50">
-          <Text className="text-sm font-bold text-text-primary mb-3">Quick Access</Text>
-          <View className="flex-row flex-wrap gap-3">
-            {QUICK_TILES.map((tile) => {
-              const locked =
-                ('requiresPair' in tile && tile.requiresPair && !isPaired) ||
-                ('milestone' in tile && tile.milestone === 10 && !isHealthUnlocked);
-              return (
-                <TouchableOpacity
-                  key={tile.key}
-                  onPress={() => {
-                    if (locked) {
-                      Alert.alert(
-                        'Locked',
-                        isPaired ? 'Complete more sessions to unlock this feature.' : 'Pair with your partner first.'
-                      );
-                      return;
-                    }
-                    if ('params' in tile && tile.params) {
-                      router.push({ pathname: tile.route, params: tile.params } as any);
-                    } else {
-                      router.push(tile.route as any);
-                    }
-                  }}
-                  className={`w-[47%] ${tile.color} border border-white/80 rounded-2xl p-4 active:opacity-80`}
+        {/* ── Slim Quick-Access Strip ──────────────────────────────── */}
+        <Card className="p-4 mb-4 border border-violet-50">
+          <Text className="text-2xs font-bold text-text-secondary uppercase tracking-widest mb-3">Quick Access</Text>
+          <View className="flex-row justify-between">
+            {quickTiles.map((tile) => (
+              <TouchableOpacity
+                key={tile.key}
+                onPress={() => {
+                  if (tile.locked) {
+                    Alert.alert('Locked', isPaired ? 'Complete more sessions to unlock this feature.' : 'Pair with your partner first.');
+                    return;
+                  }
+                  router.push(tile.route as any);
+                }}
+                className="items-center flex-1 active:opacity-70"
+                activeOpacity={0.8}
+              >
+                <View
+                  className="w-12 h-12 rounded-2xl items-center justify-center mb-1.5"
+                  style={{ backgroundColor: tile.locked ? '#F1F5F9' : `${tile.color}18` }}
                 >
-                  <View className="w-9 h-9 rounded-xl bg-white/80 items-center justify-center mb-2">
-                    <AppIcon name={tile.icon} size={20} color={tile.iconColor} />
-                  </View>
-                  <Text className="text-sm font-bold text-text-primary">{tile.label}</Text>
-                </TouchableOpacity>
-              );
-            })}
-          </View>
-        </Card>
-
-        <Card className="p-5 mb-5">
-          <Text className="text-sm font-bold text-text-primary mb-3">Partner Status</Text>
-          {isPaired ? (
-            <TouchableOpacity onPress={() => router.push('/partner')} className="bg-slate-50 border border-slate-100 rounded-xl p-3 flex-row items-center gap-3">
-              <ProfileAvatar uri={partnerProfile?.avatar_url} name={partnerProfile?.display_name} size={40} />
-              <View className="flex-1">
-                <Text className="text-sm font-semibold text-text-primary capitalize">{partnerProfile?.display_name || 'Partner'}</Text>
-                <Text className="text-xs text-text-secondary mt-1">
-                  {partnerMoodText ? `Feeling ${partnerMoodText}` : 'No daily mood set yet'}
+                  <AppIcon name={tile.icon} size={22} color={tile.locked ? '#CBD5E1' : tile.color} />
+                </View>
+                <Text className={`text-2xs font-semibold ${tile.locked ? 'text-slate-300' : 'text-text-primary'}`}>
+                  {tile.label}
                 </Text>
+              </TouchableOpacity>
+            ))}
+          </View>
+        </Card>
+
+        {/* ── Milestones + Health Row ──────────────────────────────── */}
+        <View className="flex-row gap-3 mb-4">
+          {/* Milestones */}
+          <Card className="flex-1 p-4 border border-slate-100">
+            <Text className="text-2xs font-bold text-text-secondary uppercase tracking-widest mb-2">Milestones</Text>
+            <Text className="text-xl font-extrabold text-primary-600">
+              {progress}
+              <Text className="text-xs font-semibold text-text-secondary">/10</Text>
+            </Text>
+            <View className="w-full bg-slate-100 h-1.5 rounded-full overflow-hidden mt-2 mb-2">
+              <View className="bg-primary-600 h-full rounded-full" style={{ width: `${(progress / 10) * 100}%` }} />
+            </View>
+            <Text className="text-3xs text-text-secondary leading-normal">
+              {completedSessionsCount < 5
+                ? `${5 - completedSessionsCount} until Journal`
+                : completedSessionsCount < 10
+                ? `${10 - completedSessionsCount} until Health`
+                : 'All unlocked 🎉'}
+            </Text>
+          </Card>
+
+          {/* Health */}
+          <Card className="flex-1 p-4 border border-slate-100">
+            <Text className="text-2xs font-bold text-text-secondary uppercase tracking-widest mb-2">Health</Text>
+            <TouchableOpacity
+              onPress={() =>
+                handleLockedRoute(
+                  '/health',
+                  isHealthUnlocked,
+                  `Complete 10 Daily Questions to unlock. Progress: ${completedSessionsCount}/10.`
+                )
+              }
+              activeOpacity={0.8}
+            >
+              <View className="w-10 h-10 rounded-xl bg-rose-50 items-center justify-center mb-1.5">
+                <AppIcon name={NAV_ICONS.health} size={20} color={isHealthUnlocked ? '#D4537E' : '#CBD5E1'} />
               </View>
-              <AppIcon name={NAV_ICONS.chevron} size={16} color="#CBD5E1" />
+              <Text className={`text-xs font-bold ${isHealthUnlocked ? 'text-rose-600' : 'text-slate-300'}`}>
+                {isHealthUnlocked ? 'View Report' : 'Locked'}
+              </Text>
+              {!isHealthUnlocked && (
+                <Text className="text-3xs text-slate-300 mt-0.5">{completedSessionsCount}/10 sessions</Text>
+              )}
             </TouchableOpacity>
-          ) : (
-            <Button title="Pair with Partner" variant="secondary" onPress={() => router.push('/settings')} className="w-full" />
-          )}
-        </Card>
+          </Card>
+        </View>
 
-        <Card className="p-5 mb-5">
-          <View className="flex-row justify-between items-center mb-2">
-            <Text className="text-sm font-bold text-text-primary">Milestones</Text>
-            <Text className="text-xs font-bold text-primary-600">{progress}/10</Text>
-          </View>
-          <View className="w-full bg-slate-100 h-2.5 rounded-full overflow-hidden">
-            <View className="bg-primary-600 h-full rounded-full" style={{ width: `${(progress / 10) * 100}%` }} />
-          </View>
-          <Text className="text-xs text-text-secondary mt-3">
-            {completedSessionsCount < 5
-              ? `${5 - completedSessionsCount} Daily Questions until Shared Journal`
-              : completedSessionsCount < 10
-              ? `${10 - completedSessionsCount} Daily Questions until Relationship Health`
-              : 'All primary milestones are available'}
-          </Text>
-        </Card>
-
+        {/* ── Recent Moments ───────────────────────────────────────── */}
         {isPaired && sessionHistory && sessionHistory.length > 0 ? (
           <View className="mb-8">
-            <Text className="text-base font-bold text-text-primary mb-3">Recent Moments</Text>
+            <Text className="text-sm font-bold text-text-primary mb-3">Recent Moments</Text>
             <ScrollView horizontal showsHorizontalScrollIndicator={false}>
               {sessionHistory.slice(0, 5).map((session) => {
                 const isUser1 = session.user1_id === user?.id;
@@ -474,17 +496,22 @@ export default function HomeScreen() {
                 const partnerLabel = partnerProfile?.display_name || 'Partner';
 
                 return (
-                  <Card key={session.id} className="p-4 w-[260px] mr-3">
-                    <Text className="text-xs font-semibold text-primary-600 mb-2">Revealed</Text>
-                    <Text className="text-xs font-medium text-text-primary mb-2" numberOfLines={2}>
+                  <Card key={session.id} className="p-4 w-[240px] mr-3 border border-indigo-50">
+                    <View className="flex-row items-center gap-1.5 mb-2">
+                      <View className="w-1.5 h-1.5 rounded-full bg-primary-600" />
+                      <Text className="text-2xs font-bold text-primary-600 uppercase tracking-wide">Revealed</Text>
+                    </View>
+                    <Text className="text-xs font-semibold text-text-primary mb-2 leading-relaxed" numberOfLines={2}>
                       "{session.cards?.text || 'Relationship Question'}"
                     </Text>
-                    <Text className="text-3xs text-text-secondary italic mb-1" numberOfLines={2}>
-                      {myLabel}: "{myAnswer || 'No answer'}"
-                    </Text>
-                    <Text className="text-3xs text-text-secondary italic" numberOfLines={2}>
-                      {partnerLabel}: "{partnerAnswer || 'No answer'}"
-                    </Text>
+                    <View className="border-t border-slate-50 pt-2 gap-1">
+                      <Text className="text-3xs text-text-secondary italic" numberOfLines={2}>
+                        <Text className="font-semibold not-italic">{myLabel}: </Text>"{myAnswer || 'No answer'}"
+                      </Text>
+                      <Text className="text-3xs text-text-secondary italic" numberOfLines={2}>
+                        <Text className="font-semibold not-italic">{partnerLabel}: </Text>"{partnerAnswer || 'No answer'}"
+                      </Text>
+                    </View>
                   </Card>
                 );
               })}
@@ -493,6 +520,7 @@ export default function HomeScreen() {
         ) : null}
       </ScrollView>
 
+      {/* ── Nudge FAB ───────────────────────────────────────────────── */}
       {isPaired ? (
         <TouchableOpacity
           className="absolute bottom-24 right-6 bg-primary-600 w-14 h-14 rounded-full justify-center items-center shadow-lg active:bg-primary-500 z-40"
@@ -505,26 +533,41 @@ export default function HomeScreen() {
 
       <BottomNav />
 
+      {/* ── Sidebar Drawer ───────────────────────────────────────────── */}
       {drawerMounted ? (
         <View className="absolute inset-0 z-50 flex-row">
-          <Animated.View onTouchStart={() => setIsDrawerOpen(false)} className="absolute inset-0 bg-slate-950" style={backdropAnimatedStyle} />
-          <Animated.View className="w-[300px] h-full bg-white px-5 pt-16 pb-8 shadow-2xl border-r border-indigo-50" style={drawerAnimatedStyle}>
+          <Animated.View
+            onTouchStart={() => setIsDrawerOpen(false)}
+            className="absolute inset-0 bg-slate-950"
+            style={backdropAnimatedStyle}
+          />
+          <Animated.View
+            className="w-[300px] h-full bg-white px-5 pt-16 pb-8 shadow-2xl border-r border-indigo-50"
+            style={drawerAnimatedStyle}
+          >
+            {/* Drawer header */}
             <View className="mb-5 pb-5 border-b border-indigo-50 flex-row items-center gap-3">
               <ProfileAvatar uri={profile.avatar_url} name={profile.display_name} size={48} />
               <View className="flex-1">
                 <View className="flex-row justify-between items-center mb-1">
                   <Text className="text-xl font-bold text-text-primary">Menu</Text>
-                  <TouchableOpacity onPress={() => setIsDrawerOpen(false)} className="bg-indigo-50 w-8 h-8 rounded-full items-center justify-center">
+                  <TouchableOpacity
+                    onPress={() => setIsDrawerOpen(false)}
+                    className="bg-indigo-50 w-8 h-8 rounded-full items-center justify-center"
+                  >
                     <AppIcon name={NAV_ICONS.close} size={18} color="#64748B" />
                   </TouchableOpacity>
                 </View>
                 <Text className="text-xs text-primary-600 font-semibold capitalize">
                   {profile.display_name || 'You'} · {isPaired ? `${coupleDetails?.streak || 0} day streak` : 'Unpaired'}
                 </Text>
-                <Text className="text-3xs text-text-secondary mt-1">{isPaired ? getAnniversaryText(coupleDetails?.created_at) : 'Connect in settings'}</Text>
+                <Text className="text-3xs text-text-secondary mt-1">
+                  {isPaired ? getAnniversaryText(coupleDetails?.created_at) : 'Connect in settings'}
+                </Text>
               </View>
             </View>
 
+            {/* Drawer menu items */}
             <ScrollView showsVerticalScrollIndicator={false} className="flex-1">
               <View className="gap-2 pb-5">
                 {sidebarItems.map((item) => (
@@ -547,6 +590,7 @@ export default function HomeScreen() {
               </View>
             </ScrollView>
 
+            {/* Sign out */}
             <View className="border-t border-slate-100 pt-4">
               <Button title="Sign Out" onPress={handleSignOut} variant="secondary" className="w-full" />
             </View>
