@@ -51,20 +51,20 @@ export const FuturisticUpdateModal = ({ onConfirm, onCancel }: Props) => {
             style={[styles.glowRing, { opacity: pulseAnim }]} 
             className="w-16 h-16 rounded-full bg-indigo-500/20 border border-indigo-400 items-center justify-center mb-3"
           >
-            <Text className="text-2xl">⚡</Text>
+            <Text className="text-2xl">💌</Text>
           </Animated.View>
-          <Text className="text-xs font-black tracking-widest text-indigo-400 uppercase">System Sync Required</Text>
-          <Text className="text-xl font-bold text-white mt-1">Update Core Matrix</Text>
+          <Text className="text-xs font-black tracking-widest text-indigo-400 uppercase">Something New Awaits</Text>
+          <Text className="text-xl font-bold text-white mt-1">We Got Prettier for You</Text>
         </View>
 
         {/* HUD Details */}
         <View className="bg-slate-950/60 border border-slate-800 rounded-xl p-3.5 mb-6">
           <View className="flex-row justify-between mb-1.5">
-            <Text className="text-4xs font-bold text-slate-500 uppercase tracking-widest">Protocol</Text>
-            <Text className="text-4xs font-bold text-indigo-300 uppercase tracking-widest">OTA_PUSH_SYNC</Text>
+            <Text className="text-4xs font-bold text-slate-500 uppercase tracking-widest">Love Note</Text>
+            <Text className="text-4xs font-bold text-indigo-300 uppercase tracking-widest">NEW_VIBES_READY</Text>
           </View>
           <Text className="text-2xs text-slate-400 leading-normal">
-            A new JS update is ready. Sync the core engine to activate hot-patches and relationship modules.
+            We've been working on something special behind the scenes. Restart to feel the difference — it'll only take a moment 💜
           </Text>
         </View>
 
@@ -75,7 +75,7 @@ export const FuturisticUpdateModal = ({ onConfirm, onCancel }: Props) => {
             className="bg-indigo-600 rounded-xl py-3.5 items-center justify-center border border-indigo-400 shadow-[0_0_15px_rgba(99,102,241,0.5)] active:bg-indigo-500"
             activeOpacity={0.85}
           >
-            <Text className="text-white text-xs font-black tracking-widest uppercase">Reboot System</Text>
+            <Text className="text-white text-xs font-black tracking-widest uppercase">Refresh the Magic ✨</Text>
           </TouchableOpacity>
 
           <TouchableOpacity
@@ -83,7 +83,7 @@ export const FuturisticUpdateModal = ({ onConfirm, onCancel }: Props) => {
             className="border border-slate-700 bg-slate-800/40 rounded-xl py-3.5 items-center justify-center active:bg-slate-800"
             activeOpacity={0.85}
           >
-            <Text className="text-slate-400 text-xs font-black tracking-widest uppercase">Bypass</Text>
+            <Text className="text-slate-400 text-xs font-black tracking-widest uppercase">Maybe Later</Text>
           </TouchableOpacity>
         </View>
       </Animated.View>
