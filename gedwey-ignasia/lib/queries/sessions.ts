@@ -49,6 +49,26 @@ export const useActiveSession = (coupleId: string) => {
   });
 };
 
+// Fetch a specific session by ID
+export const useSession = (sessionId: string) => {
+  return useQuery<CoupleSession | null, Error>({
+    queryKey: ['session', sessionId],
+    queryFn: async () => {
+      if (!sessionId) return null;
+
+      const { data, error } = await supabase
+        .from('sessions')
+        .select('*, cards(*)')
+        .eq('id', sessionId)
+        .maybeSingle();
+
+      if (error) throw new Error(error.message);
+      return data as CoupleSession | null;
+    },
+    enabled: !!sessionId,
+  });
+};
+
 // Fetch completed sessions for a couple (history)
 export const useSessionHistory = (coupleId: string) => {
   return useQuery<CoupleSession[], Error>({
@@ -170,6 +190,24 @@ export const useSubmitSessionAnswer = () => {
         .single();
 
       if (error) throw new Error(error.message);
+
+      // Log to activity_logs table
+      try {
+        const promptText = (data as any).cards?.text || 'Daily Question';
+        const titleStr = data.completed
+          ? `Completed Daily Question: "${promptText}"`
+          : `Answered Daily Question: "${promptText}"`;
+
+        await supabase.from('activity_logs').insert({
+          couple_id: coupleId,
+          user_id: userId,
+          activity_type: 'session',
+          title: titleStr,
+          metadata: { sessionId: data.id },
+        });
+      } catch (logErr) {
+        console.error('[Sessions] Failed to log activity:', logErr);
+      }
 
       // Trigger notification and realtime event to partner asynchronously
       try {

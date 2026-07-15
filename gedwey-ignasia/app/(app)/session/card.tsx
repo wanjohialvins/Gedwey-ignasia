@@ -9,11 +9,11 @@ import {
   TouchableOpacity,
   SafeAreaView,
 } from 'react-native';
-import { useRouter } from 'expo-router';
+import { useRouter, useLocalSearchParams } from 'expo-router';
 import { useAuthStore } from '../../../lib/store/authStore';
 import { useUserProfile } from '../../../lib/queries/profile';
 import { Card as CardType } from '../../../lib/queries/cards';
-import { useActiveSession, useCreateSession, useSubmitSessionAnswer, useDailyQuestion } from '../../../lib/queries/sessions';
+import { useActiveSession, useCreateSession, useSubmitSessionAnswer, useDailyQuestion, useSession } from '../../../lib/queries/sessions';
 import { scheduleLocalNotification, NOTIFICATION_CHANNELS } from '../../../lib/notifications';
 import { userWantsSessionReminders, getUserPreferences } from '../../../lib/notificationPrefs';
 import { playSoundscape, stopSoundscape, isSoundscapePlaying } from '../../../lib/soundscapePlayer';
@@ -36,12 +36,14 @@ const MOODS = [
 
 export default function SessionCardScreen() {
   const router = useRouter();
+  const { id } = useLocalSearchParams<{ id?: string }>();
   const { user } = useAuthStore();
   const { data: profile } = useUserProfile(user?.id ?? '');
   const coupleId = profile?.couple_id ?? '';
   
   const { data: activeSession, isLoading: sessionLoading } = useActiveSession(coupleId);
   const { data: dailyCard, isLoading: dailyCardLoading } = useDailyQuestion(coupleId);
+  const { data: specificSession, isLoading: specificLoading } = useSession(id ?? '');
   
   const createSession = useCreateSession();
   const submitAnswer = useSubmitSessionAnswer();
@@ -53,14 +55,16 @@ export default function SessionCardScreen() {
   const [voiceDuration, setVoiceDuration] = useState<number | null>(null);
   const [isMusicPlaying, setIsMusicPlaying] = useState(false);
 
-  // If there's an active session, use that card. Otherwise use the daily card.
+  // If there's an active session or specific session, use that card. Otherwise use the daily card.
   useEffect(() => {
-    if (activeSession?.cards) {
+    if (id && specificSession?.cards) {
+      setSelectedCard(specificSession.cards);
+    } else if (activeSession?.cards) {
       setSelectedCard(activeSession.cards);
     } else if (dailyCard) {
       setSelectedCard(dailyCard);
     }
-  }, [activeSession, dailyCard]);
+  }, [id, specificSession, activeSession, dailyCard]);
 
   // Handle ambient loop playback
   useEffect(() => {
@@ -112,6 +116,7 @@ export default function SessionCardScreen() {
 
     try {
       const sessionId =
+        id ??
         activeSession?.id ??
         (
           await createSession.mutateAsync({
@@ -151,7 +156,7 @@ export default function SessionCardScreen() {
     }
   };
 
-  const isLoading = sessionLoading || dailyCardLoading;
+  const isLoading = sessionLoading || dailyCardLoading || (!!id && specificLoading);
   const isPending = createSession.isPending || submitAnswer.isPending;
 
   if (isLoading) {

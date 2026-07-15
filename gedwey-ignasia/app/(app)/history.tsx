@@ -84,9 +84,15 @@ export default function HistoryScreen() {
 
   const handleItemPress = (activityType: string, metadata: any) => {
     switch (activityType) {
-      case 'session':
-        router.push('/session/reveal');
+      case 'session': {
+        const sessionId = metadata?.sessionId || metadata?.id;
+        if (sessionId) {
+          router.push(`/session/reveal?id=${sessionId}`);
+        } else {
+          router.push('/session/reveal');
+        }
         break;
+      }
       case 'game':
         if (metadata && metadata.catCare) {
           router.push('/cat-care');

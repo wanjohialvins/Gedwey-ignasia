@@ -384,7 +384,7 @@ export default function HomeScreen() {
               <>
                 <TouchableOpacity
                   className="flex-1 bg-primary-600 rounded-xl h-12 items-center justify-center active:bg-primary-500"
-                  onPress={() => router.push('/answers')}
+                  onPress={() => router.push('/session/reveal')}
                   activeOpacity={0.85}
                 >
                   <Text className="text-white text-sm font-bold">View Answers</Text>

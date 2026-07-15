@@ -7,10 +7,10 @@ import {
   SafeAreaView,
   TouchableOpacity,
 } from 'react-native';
-import { useRouter } from 'expo-router';
+import { useRouter, useLocalSearchParams } from 'expo-router';
 import { useAuthStore } from '../../../lib/store/authStore';
 import { useUserProfile } from '../../../lib/queries/profile';
-import { useActiveSession, useSessionHistory, CoupleSession } from '../../../lib/queries/sessions';
+import { useActiveSession, useSessionHistory, useSession, CoupleSession } from '../../../lib/queries/sessions';
 import { Button } from '../../../components/Button';
 import { Card } from '../../../components/Card';
 import { Skeleton } from '../../../components/Skeleton';
@@ -36,6 +36,8 @@ export default function SessionRevealScreen() {
   const { user } = useAuthStore();
   const { theme, isDark } = useTheme();
 
+  const { id } = useLocalSearchParams<{ id?: string }>();
+
   // Fetch current user's profile
   const { data: profile, isLoading: profileLoading } = useUserProfile(user?.id ?? '');
   const coupleId = profile?.couple_id ?? '';
@@ -43,12 +45,13 @@ export default function SessionRevealScreen() {
   // Fetch active session and completed session history
   const { data: activeSession, isLoading: activeLoading } = useActiveSession(coupleId);
   const { data: sessionHistory, isLoading: historyLoading } = useSessionHistory(coupleId);
+  const { data: specificSession, isLoading: specificLoading } = useSession(id ?? '');
 
   // Fetch partner profile to get their name
   const partnerId = profile?.partner_id ?? '';
   const { data: partnerProfile, isLoading: partnerLoading } = useUserProfile(partnerId);
 
-  const isLoading = profileLoading || activeLoading || historyLoading || (!!partnerId && partnerLoading);
+  const isLoading = profileLoading || activeLoading || historyLoading || (!!partnerId && partnerLoading) || (!!id && specificLoading);
 
   if (isLoading) {
     return (
@@ -100,7 +103,41 @@ export default function SessionRevealScreen() {
   let sessionToShow: CoupleSession | null = null;
   let isWaitingState = false;
 
-  if (activeSession) {
+  if (id) {
+    if (specificSession) {
+      const isUser1 = specificSession.user1_id === user?.id;
+      const myAnswer = isUser1 ? specificSession.user1_answer : specificSession.user2_answer;
+      const partnerAnswer = isUser1 ? specificSession.user2_answer : specificSession.user1_answer;
+
+      if (!myAnswer) {
+        return (
+          <ScreenShell className="flex-1">
+            <SafeAreaView className="flex-1">
+              <View className="flex-1 justify-center items-center px-6">
+                <Text className="text-5xl mb-4">✍️</Text>
+                <Text className="text-xl font-bold text-text-primary mb-2 text-center" style={{ color: theme.textPrimary }}>Answer Prompt First</Text>
+                <Text className="text-sm text-text-secondary text-center leading-relaxed mb-6 px-4" style={{ color: theme.textSecondary }}>
+                  You need to submit your answer to this question before viewing the reveal.
+                </Text>
+                <Button
+                  title="Answer Question"
+                  onPress={() => router.replace(`/session/card?id=${id}`)}
+                  className="w-full"
+                />
+              </View>
+            </SafeAreaView>
+          </ScreenShell>
+        );
+      }
+
+      if (!partnerAnswer) {
+        isWaitingState = true;
+        sessionToShow = specificSession;
+      } else {
+        sessionToShow = specificSession;
+      }
+    }
+  } else if (activeSession) {
     const isUser1 = activeSession.user1_id === user?.id;
     const myAnswer = isUser1 ? activeSession.user1_answer : activeSession.user2_answer;
     const partnerAnswer = isUser1 ? activeSession.user2_answer : activeSession.user1_answer;

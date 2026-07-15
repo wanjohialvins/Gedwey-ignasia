@@ -160,37 +160,59 @@ export default function AnswersArchiveScreen() {
               <Text className="text-3xs font-extrabold text-primary-600 uppercase tracking-widest mb-3.5 px-1">
                 {group.day}
               </Text>
-              {group.items.map((item) => (
-                <Card key={item.id} className="p-4 mb-4 border border-indigo-50/40 bg-white">
-                  <View className="flex-row items-center gap-2 mb-2.5">
-                    <View className="px-2 py-0.5 rounded-md bg-indigo-55/10 bg-indigo-50">
-                      <Text className="text-[9px] font-bold text-indigo-600 uppercase tracking-wide">
-                        {item.source === 'game' ? CATEGORY_LABELS[item.category as keyof typeof CATEGORY_LABELS] || item.category : item.category.replace('_', ' ')}
-                      </Text>
-                    </View>
-                    <Text className="text-[9px] font-extrabold text-text-muted uppercase tracking-wider">
-                      {item.source}
-                    </Text>
-                  </View>
-                  
-                  <Text className="text-sm font-bold text-text-primary mb-4 leading-normal px-0.5">
-                    "{item.prompt}"
-                  </Text>
-                  
-                  <View className="gap-3 border-l-2 border-indigo-100 pl-3">
-                    {item.answers.map((ans, idx) => (
-                      <View key={idx} className="mb-1 last:mb-0">
-                        <Text className="text-3xs font-bold text-primary-600 uppercase tracking-wider mb-0.5">
-                          {ans.name}{ans.mood ? ` · ${ans.mood}` : ''}
-                        </Text>
-                        <Text className="text-xs text-text-secondary leading-relaxed">
-                          {ans.answer}
+              {group.items.map((item) => {
+                const isSession = item.source === 'session';
+                const content = (
+                  <Card className="p-4 mb-4 border border-indigo-50/40 bg-white">
+                    <View className="flex-row items-center gap-2 mb-2.5">
+                      <View className="px-2 py-0.5 rounded-md bg-indigo-55/10 bg-indigo-50">
+                        <Text className="text-[9px] font-bold text-indigo-600 uppercase tracking-wide">
+                          {item.source === 'game' ? CATEGORY_LABELS[item.category as keyof typeof CATEGORY_LABELS] || item.category : item.category.replace('_', ' ')}
                         </Text>
                       </View>
-                    ))}
-                  </View>
-                </Card>
-              ))}
+                      <Text className="text-[9px] font-extrabold text-text-muted uppercase tracking-wider">
+                        {item.source}
+                      </Text>
+                      {isSession && (
+                        <Text className="text-[9px] font-bold text-indigo-500 ml-auto uppercase tracking-wider">
+                          Tap to view reveal →
+                        </Text>
+                      )}
+                    </View>
+                    
+                    <Text className="text-sm font-bold text-text-primary mb-4 leading-normal px-0.5">
+                      "{item.prompt}"
+                    </Text>
+                    
+                    <View className="gap-3 border-l-2 border-indigo-100 pl-3">
+                      {item.answers.map((ans, idx) => (
+                        <View key={idx} className="mb-1 last:mb-0">
+                          <Text className="text-3xs font-bold text-primary-600 uppercase tracking-wider mb-0.5">
+                            {ans.name}{ans.mood ? ` · ${ans.mood}` : ''}
+                          </Text>
+                          <Text className="text-xs text-text-secondary leading-relaxed">
+                            {ans.answer}
+                          </Text>
+                        </View>
+                      ))}
+                    </View>
+                  </Card>
+                );
+
+                if (isSession) {
+                  return (
+                    <TouchableOpacity
+                      key={item.id}
+                      onPress={() => router.push(`/session/reveal?id=${item.id}`)}
+                      activeOpacity={0.9}
+                    >
+                      {content}
+                    </TouchableOpacity>
+                  );
+                }
+
+                return <View key={item.id}>{content}</View>;
+              })}
             </View>
           ))
         )}

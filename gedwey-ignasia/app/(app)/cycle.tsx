@@ -135,6 +135,13 @@ function InfoTile({
   );
 }
 
+const toLocalIsoString = (date: Date) => {
+  const y = date.getFullYear();
+  const m = String(date.getMonth() + 1).padStart(2, '0');
+  const d = String(date.getDate()).padStart(2, '0');
+  return `${y}-${m}-${d}`;
+};
+
 export default function CycleCalendarScreen() {
   const router = useRouter();
   const { user } = useAuthStore();
@@ -146,7 +153,7 @@ export default function CycleCalendarScreen() {
   const today = new Date();
   const [viewMonth, setViewMonth] = useState(today.getMonth());
   const [viewYear, setViewYear] = useState(today.getFullYear());
-  const [selectedDate, setSelectedDate] = useState(today.toISOString().slice(0, 10));
+  const [selectedDate, setSelectedDate] = useState(toLocalIsoString(today));
   const [flowStrength, setFlowStrength] = useState<FlowStrength>('none');
   const [mood, setMood] = useState('');
   const [symptoms, setSymptoms] = useState<string[]>([]);
@@ -222,6 +229,13 @@ export default function CycleCalendarScreen() {
   const reminders = useMemo(() => generateReminders(prediction), [prediction]);
   const recentMoodTrend = useMemo(() => moodTrend(symptomLogs).slice(0, 5), [symptomLogs]);
   const calendarDays = buildCalendarDays(viewYear, viewMonth);
+  const weeks = useMemo(() => {
+    const w: (Date | null)[][] = [];
+    for (let i = 0; i < calendarDays.length; i += 7) {
+      w.push(calendarDays.slice(i, i + 7));
+    }
+    return w;
+  }, [calendarDays]);
 
   const selectedLog = logMap.get(selectedDate);
 
@@ -536,58 +550,63 @@ export default function CycleCalendarScreen() {
             ))}
           </View>
 
-          <View className="flex-row flex-wrap">
-            {calendarDays.map((day, idx) => {
-              if (!day) return <View key={`empty-${idx}`} className="w-[14.28%] aspect-square" />;
-              const iso = day.toISOString().slice(0, 10);
-              const log = logMap.get(iso);
-              const flow = log?.flow_strength;
-              const isSelected = iso === selectedDate;
-              const isPredicted = predictionDate && iso === predictionDate;
+          <View className="gap-y-1">
+            {weeks.map((week, wIdx) => (
+              <View key={`week-${wIdx}`} className="flex-row">
+                {week.map((day, dIdx) => {
+                  if (!day) return <View key={`empty-${wIdx}-${dIdx}`} className="flex-1 aspect-square" />;
+                  const iso = toLocalIsoString(day);
+                  const log = logMap.get(iso);
+                  const flow = log?.flow_strength;
+                  const isSelected = iso === selectedDate;
+                  const isPredicted = predictionDate && iso === predictionDate;
 
-              return (
-                <TouchableOpacity
-                  key={iso}
-                  onPress={() => {
-                    setSelectedDate(iso);
-                    if (log) {
-                      setFlowStrength((log.flow_strength as FlowStrength) || 'none');
-                      setMood(log.mood || '');
-                      setSymptoms(parseSymptoms(log.symptoms));
-                      setNotes(log.notes || '');
-                    } else {
-                      setFlowStrength('none');
-                      setMood('');
-                      setSymptoms([]);
-                      setNotes('');
-                    }
-                  }}
-                  className="w-[14.28%] aspect-square items-center justify-center rounded-xl m-[1px] py-0.5"
-                  style={{
-                    backgroundColor: isSelected ? theme.accent : 'transparent',
-                    borderWidth: isPredicted ? 2 : 0,
-                    borderColor: isPredicted ? theme.accent : 'transparent',
-                  }}
-                >
-                  <Text
-                    className="text-xs font-bold"
-                    style={{ color: isSelected ? '#fff' : theme.textPrimary }}
-                  >
-                    {day.getDate()}
-                  </Text>
-                  {flow && flow !== 'none' ? (
-                    <FlowDroplets strength={flow} size={6} />
-                  ) : null}
-                  {log?.mood ? (
-                    <AppIcon
-                      name={MOOD_OPTIONS.find((m) => m.key === log.mood)?.icon ?? 'ellipse-outline'}
-                      size={9}
-                      color={isSelected ? '#fff' : MOOD_OPTIONS.find((m) => m.key === log.mood)?.color ?? theme.textTertiary}
-                    />
-                  ) : null}
-                </TouchableOpacity>
-              );
-            })}
+                  return (
+                    <TouchableOpacity
+                      key={iso}
+                      onPress={() => {
+                        setSelectedDate(iso);
+                        if (log) {
+                          setFlowStrength((log.flow_strength as FlowStrength) || 'none');
+                          setMood(log.mood || '');
+                          setSymptoms(parseSymptoms(log.symptoms));
+                          setNotes(log.notes || '');
+                        } else {
+                          setFlowStrength('none');
+                          setMood('');
+                          setSymptoms([]);
+                          setNotes('');
+                        }
+                      }}
+                      className="flex-1 aspect-square items-center justify-center rounded-xl py-0.5"
+                      style={{
+                        backgroundColor: isSelected ? theme.accent : 'transparent',
+                        borderWidth: isPredicted ? 2 : 0,
+                        borderColor: isPredicted ? theme.accent : 'transparent',
+                        margin: 2,
+                      }}
+                    >
+                      <Text
+                        className="text-xs font-bold"
+                        style={{ color: isSelected ? '#fff' : theme.textPrimary }}
+                      >
+                        {day.getDate()}
+                      </Text>
+                      {flow && flow !== 'none' ? (
+                        <FlowDroplets strength={flow} size={6} />
+                      ) : null}
+                      {log?.mood ? (
+                        <AppIcon
+                          name={MOOD_OPTIONS.find((m) => m.key === log.mood)?.icon ?? 'ellipse-outline'}
+                          size={9}
+                          color={isSelected ? '#fff' : MOOD_OPTIONS.find((m) => m.key === log.mood)?.color ?? theme.textTertiary}
+                        />
+                      ) : null}
+                    </TouchableOpacity>
+                  );
+                })}
+              </View>
+            ))}
           </View>
 
           <View className="flex-row flex-wrap gap-3 mt-4 pt-3 border-t" style={{ borderColor: theme.border }}>

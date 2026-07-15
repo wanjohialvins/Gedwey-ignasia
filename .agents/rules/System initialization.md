@@ -10,15 +10,7 @@ Before doing ANYTHING, you MUST:
 📖 Read ALL project instruction files:
 agent-rules.md
 about.md
-prompt.md
-file-system.md
-component-architecture.md
-state-management.md
-backend-architecture.md
-testing-rules.md
-design.md
-dashboard-settings.md
-design-and-improvements.md
+
 🚫 HARD BLOCK
 
 You are NOT allowed to:
